@@ -39,7 +39,7 @@ public:
 	void ChangeEffects(bool stop = false);
 
 	// Timeout Action
-	void ChangeAction(bool run = true);
+	//void ChangeAction(bool run = true);
 
 	EventHandler();
 	~EventHandler();

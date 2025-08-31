@@ -274,8 +274,8 @@ BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
                 }
             }
             else
-                if (mmap) {
-                    conf->FindCreateGroup(mmap->group)->lights.clear();
+                if (activeMapping) {
+                    conf->FindCreateGroup(activeMapping->group)->lights.clear();
                 }
             RepaintGrid();
             break;
@@ -379,7 +379,7 @@ BOOL CALLBACK TabGrid(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
                         FillRect(wDC, &ditem->rcItem, Brush);
                         DeleteObject(Brush);
                     }
-                    if (mmap && conf->IsLightInGroup(gridVal, conf->FindCreateGroup(mmap->group))) {
+                    if (activeMapping && conf->IsLightInGroup(gridVal, conf->FindCreateGroup(activeMapping->group))) {
                         for (int cx = 0; cx < size; cx++) {
                             rectClip.right = rectClip.left + buttonZone.right;
                             int border = (cx == 0 * BF_LEFT) |

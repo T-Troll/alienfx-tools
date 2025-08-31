@@ -95,14 +95,14 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
             // add/remove mapping
             conf->modifyProfile.lockWrite();
             FindCreateMappingGroup();
-            auto pos = mmap->ambients.begin();
-            for (; pos != mmap->ambients.end(); pos++)
+            auto pos = activeMapping->ambients.begin();
+            for (; pos != activeMapping->ambients.end(); pos++)
                 if (*pos == id)
                     break;
-            if (pos == mmap->ambients.end())
-                mmap->ambients.push_back(id);
+            if (pos == activeMapping->ambients.end())
+                activeMapping->ambients.push_back(id);
             else
-                mmap->ambients.erase(pos);
+                activeMapping->ambients.erase(pos);
             conf->modifyProfile.unlockWrite();
             eve->ChangeEffects();
             UpdateZoneAndGrid();
@@ -163,7 +163,7 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
                 RGB(capt->imgz[idx * 3 + 2], capt->imgz[idx * 3 + 1], capt->imgz[idx * 3]) :
                 GetSysColor(COLOR_BTNFACE));
             FillRect(ditem->hDC, &ditem->rcItem, Brush);
-            if (mmap && mmap->ambients.size() && find(mmap->ambients.begin(), mmap->ambients.end(), idx) != mmap->ambients.end())
+            if (activeMapping && activeMapping->ambients.size() && find(activeMapping->ambients.begin(), activeMapping->ambients.end(), idx) != activeMapping->ambients.end())
                 DrawEdge(ditem->hDC, &ditem->rcItem, EDGE_SUNKEN, BF_RECT);
             else
                 FrameRect(ditem->hDC, &ditem->rcItem, GetSysColorBrush(COLOR_GRAYTEXT));

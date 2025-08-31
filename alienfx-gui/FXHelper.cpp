@@ -207,6 +207,8 @@ void FXHelper::QueryAllDevs(LightQueryElement& lqe) {
 			if (!devLightQuery[devQ.pid].inUpdate || lqe.light || lqe.command != 1) {
 				QueryCommand(devQ.pid, lqe);
 			}
+			else
+				DebugPrint("Update for " + to_string(devQ.pid) + " skipped!\n");
 		}
 	}
 }
@@ -296,14 +298,15 @@ void FXHelper::Stop() {
 	updateAllowed = false;
 	SetEvent(stopQuery);
 	for (auto& devQuery : devLightQuery) {
-		if (devQuery.second.updateThread) {
+		//if (devQuery.second.updateThread) {
+			QueryCommand(devQuery.first, LightQueryElement({ 0, 1 }));
 			HANDLE oldUpate = devQuery.second.updateThread;
 			devQuery.second.updateThread = NULL;
 			WaitForSingleObject(oldUpate, 20000);
 			CloseHandle(oldUpate);
 			CloseHandle(devQuery.second.haveNewElement);
 			DebugPrint("Light updates stopped for device " + to_string(devQuery.first) + ".\n");
-		}
+		//}
 	}
 	devLightQuery.clear();
 	ResetEvent(stopQuery);

@@ -42,5 +42,5 @@ extern HWND sTip1, sTip2, sTip3;
 extern HWND mDlg;
 
 //extern int eItem;
-extern groupset* mmap;
+extern groupset* activeMapping;
 

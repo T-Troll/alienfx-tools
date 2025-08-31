@@ -27,6 +27,8 @@ void CEventProc(LPVOID);
 VOID CALLBACK CForegroundProc(HWINEVENTHOOK, DWORD, HWND, LONG, LONG, DWORD, DWORD);
 VOID CALLBACK CCreateProc(HWINEVENTHOOK, DWORD, HWND, LONG, LONG, DWORD, DWORD);
 LRESULT CALLBACK KeyProc(int nCode, WPARAM wParam, LPARAM lParam);
+LRESULT CALLBACK acProc(int nCode, WPARAM wParam, LPARAM lParam);
+DWORD WINAPI acFunc(LPVOID lpParam);
 
 EventHandler::EventHandler()
 {
@@ -41,10 +43,12 @@ EventHandler::EventHandler()
 
 	ChangePowerState();
 	SwitchActiveProfile(conf->activeProfile, true);
-	if (conf->startMinimized)
+	if (conf->startMinimized) {
 		StartProfiles();
+		CheckProfileChange();
+	}
 	acStop = CreateEvent(NULL, false, false, NULL);
-	ChangeAction();
+	//ChangeAction();
 }
 
 EventHandler::~EventHandler()
@@ -231,7 +235,15 @@ void EventHandler::StartProfiles()
 		kEvent = SetWindowsHookEx(WH_KEYBOARD_LL, KeyProc, NULL, 0);
 #endif
 		// Need to switch if already running....
-		CheckProfileChange();
+		//CheckProfileChange();
+	}
+
+	if (!ackEvent && conf->actionLights) {
+		// Set hooks and waiting procedure
+		wasAction = CreateEvent(NULL, false, false, NULL);
+		ackEvent = SetWindowsHookEx(WH_KEYBOARD_LL, acProc, NULL, 0);
+		acmEvent = SetWindowsHookEx(WH_MOUSE_LL, acProc, NULL, 0);
+		acThread = CreateThread(NULL, 0, acFunc, this, 0, NULL);
 	}
 }
 
@@ -245,6 +257,15 @@ void EventHandler::StopProfiles()
 		hEvent = NULL;
 		keyboardSwitchActive = false;
 	}
+
+	if (ackEvent) {
+		// stop hooks and waiting procedure
+		SetEvent(acStop);
+		UnhookWindowsHookEx(ackEvent);
+		UnhookWindowsHookEx(acmEvent);
+		ackEvent = NULL;
+		CloseHandle(wasAction);
+	}
 }
 
 void EventHandler::ToggleProfiles()
@@ -252,6 +273,8 @@ void EventHandler::ToggleProfiles()
 	StopProfiles();
 	conf->enableProfSwitch = !conf->enableProfSwitch;
 	StartProfiles();
+	if (conf->enableProfSwitch)
+		CheckProfileChange();
 }
 
 DWORD WINAPI acFunc(LPVOID lpParam) {
@@ -284,25 +307,25 @@ LRESULT CALLBACK acProc(int nCode, WPARAM wParam, LPARAM lParam) {
 	return CallNextHookEx(NULL, nCode, wParam, lParam);
 }
 
-void EventHandler::ChangeAction(bool run)
-{
-	if (ackEvent) {
-		// stop hooks and waiting procedure
-		SetEvent(acStop);
-		UnhookWindowsHookEx(ackEvent);
-		UnhookWindowsHookEx(acmEvent);
-		ackEvent = NULL;
-		CloseHandle(wasAction);
-	}
-
-	if (run && conf->actionLights) {
-		// Set hooks and waiting procedure
-		wasAction = CreateEvent(NULL, false, false, NULL);
-		ackEvent = SetWindowsHookEx(WH_KEYBOARD_LL, acProc, NULL, 0);
-		acmEvent = SetWindowsHookEx(WH_MOUSE_LL, acProc, NULL, 0);
-		acThread = CreateThread(NULL, 0, acFunc, this, 0, NULL);
-	}
-}
+//void EventHandler::ChangeAction(bool run)
+//{
+//	if (ackEvent) {
+//		// stop hooks and waiting procedure
+//		SetEvent(acStop);
+//		UnhookWindowsHookEx(ackEvent);
+//		UnhookWindowsHookEx(acmEvent);
+//		ackEvent = NULL;
+//		CloseHandle(wasAction);
+//	}
+//
+//	if (run && conf->actionLights) {
+//		// Set hooks and waiting procedure
+//		wasAction = CreateEvent(NULL, false, false, NULL);
+//		ackEvent = SetWindowsHookEx(WH_KEYBOARD_LL, acProc, NULL, 0);
+//		acmEvent = SetWindowsHookEx(WH_MOUSE_LL, acProc, NULL, 0);
+//		acThread = CreateThread(NULL, 0, acFunc, this, 0, NULL);
+//	}
+//}
 
 // Create/destroy callback - switch profile if new/closed process in app list
 static VOID CALLBACK CCreateProc(HWINEVENTHOOK hWinEventHook, DWORD dwEvent, HWND hwnd, LONG idObject, LONG idChild, DWORD dwEventThread, DWORD dwmsEventTime) {

@@ -17,7 +17,7 @@ extern void UpdateZoneList();
 extern void CreateGridBlock(HWND gridTab, DLGPROC, bool is = false);
 extern void OnGridSelChanged(HWND);
 extern void RedrawGridButtonZone(RECT* what = NULL);
-extern void RecalcGridZone(RECT*);
+extern void RecalcGridZone(RECT* what = NULL);
 
 extern void CreateTabControl(HWND parent, int tabsize, const char* names[], const DWORD* resID, const DLGPROC* func);
 extern void ClearOldTabs(HWND);
@@ -28,7 +28,7 @@ extern HWND zsDlg;
 void OnLightSelChanged(HWND hwndDlg);
 
 void UpdateZoneAndGrid() {
-	zonemap zone = *conf->FindZoneMap(mmap->group);
+	zonemap zone = *conf->FindZoneMap(activeMapping->group);
 	if (zone.gridID == conf->mainGrid->id) {
 		RECT zRect = { zone.gMinX, zone.gMinY, zone.xMax + 1, zone.yMax + 1 };
 		RecalcGridZone(&zRect);
@@ -52,8 +52,8 @@ BOOL CALLBACK LightDlgFrame(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 		CreateGridBlock(gridTab, (DLGPROC)TabGrid);
 	} break;
 	case WM_APP + 2: {
-		if (mmap && lParam) {
-			zonemap zone = *conf->FindZoneMap(mmap->group);
+		if (activeMapping /*&& lParam*/) {
+			zonemap zone = *conf->FindZoneMap(activeMapping->group);
 			if (zone.gridID != conf->mainGrid->id) {
 				// Switch grid tab
 				vector<AlienFX_SDK::Afx_grid>* grids = conf->afx_dev.GetGrids();
@@ -65,7 +65,10 @@ BOOL CALLBACK LightDlgFrame(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 					}
 			}
 		}
-		RedrawGridButtonZone();
+		else {
+			//RecalcGridZone();
+			RedrawGridButtonZone();
+		}
 		SendMessage(((DLGHDR*)GetWindowLongPtr(GetParent(hDlg), GWLP_USERDATA))->hwndControl, WM_APP + 2, 0, 0);
 	} break;
 	case WM_NOTIFY:

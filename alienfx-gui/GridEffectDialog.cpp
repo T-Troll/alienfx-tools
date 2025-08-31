@@ -31,13 +31,13 @@ void RebuildGEColorsList(HWND hDlg) {
 		ListView_InsertColumn(eff_list, 0, &lCol);
 		ListView_SetColumnWidth(eff_list, 0, LVSCW_AUTOSIZE_USEHEADER);
 	}
-	if (mmap) {
+	if (activeMapping) {
 		COLORREF* picData = NULL;
 		HBITMAP colorBox = NULL;
 		HIMAGELIST hSmall = ImageList_Create(GetSystemMetrics(SM_CXSMICON),
 			GetSystemMetrics(SM_CYSMICON),
 			ILC_COLOR32, 1, 1);
-		vector<AlienFX_SDK::Afx_colorcode>* colors = &mmap->effect.effectColors;
+		vector<AlienFX_SDK::Afx_colorcode>* colors = &activeMapping->effect.effectColors;
 		for (int i = 0; i < colors->size(); i++) {
 			LVITEMA lItem{ LVIF_TEXT | LVIF_IMAGE | LVIF_STATE, i };
 			picData = new COLORREF[GetSystemMetrics(SM_CXSMICON) * GetSystemMetrics(SM_CYSMICON)];
@@ -64,7 +64,7 @@ void RebuildGEColorsList(HWND hDlg) {
 void ChangeAddGEColor(HWND hDlg, int newColorID) {
 	// change color.
 	FindCreateMappingGroup();
-	vector<AlienFX_SDK::Afx_colorcode>* clr = &mmap->effect.effectColors;
+	vector<AlienFX_SDK::Afx_colorcode>* clr = &activeMapping->effect.effectColors;
 	if (newColorID < clr->size())
 		SetColor(GetDlgItem(hDlg, IDC_BUT_GECOLOR), clr->at(newColorID));
 	else {
@@ -85,18 +85,18 @@ void ChangeAddGEColor(HWND hDlg, int newColorID) {
 }
 
 void UpdateEffectInfo(HWND hDlg) {
-	if (mmap) {
-		CheckDlgButton(hDlg, IDC_CHECK_CIRCLE, mmap->effect.flags & GE_FLAG_CIRCLE);
-		CheckDlgButton(hDlg, IDC_CHECK_RANDOM, mmap->effect.flags & GE_FLAG_RANDOM);
-		CheckDlgButton(hDlg, IDC_CHECK_PHASE, mmap->effect.flags & GE_FLAG_PHASE);
-		CheckDlgButton(hDlg, IDC_CHECK_BACKGROUND, mmap->effect.flags & GE_FLAG_BACK);
-		CheckDlgButton(hDlg, IDC_CHECK_RPOS, mmap->effect.flags & GE_FLAG_RPOS);
-		ComboBox_SetCurSel(GetDlgItem(hDlg, IDC_COMBO_TRIGGER), mmap->effect.trigger);
-		ComboBox_SetCurSel(GetDlgItem(hDlg, IDC_COMBO_GEFFTYPE), mmap->effect.type);
-		//SendMessage(GetDlgItem(hDlg, IDC_SLIDER_SPEED), TBM_SETPOS, true, mmap->effect.speed - 80);
-		//SendMessage(GetDlgItem(hDlg, IDC_SLIDER_WIDTH), TBM_SETPOS, true, mmap->effect.width);
-		SetSlider(sTip2, mmap->effect.speed - 80);
-		SetSlider(sTip3, mmap->effect.width);
+	if (activeMapping) {
+		CheckDlgButton(hDlg, IDC_CHECK_CIRCLE, activeMapping->effect.flags & GE_FLAG_CIRCLE);
+		CheckDlgButton(hDlg, IDC_CHECK_RANDOM, activeMapping->effect.flags & GE_FLAG_RANDOM);
+		CheckDlgButton(hDlg, IDC_CHECK_PHASE, activeMapping->effect.flags & GE_FLAG_PHASE);
+		CheckDlgButton(hDlg, IDC_CHECK_BACKGROUND, activeMapping->effect.flags & GE_FLAG_BACK);
+		CheckDlgButton(hDlg, IDC_CHECK_RPOS, activeMapping->effect.flags & GE_FLAG_RPOS);
+		ComboBox_SetCurSel(GetDlgItem(hDlg, IDC_COMBO_TRIGGER), activeMapping->effect.trigger);
+		ComboBox_SetCurSel(GetDlgItem(hDlg, IDC_COMBO_GEFFTYPE), activeMapping->effect.type);
+		//SendMessage(GetDlgItem(hDlg, IDC_SLIDER_SPEED), TBM_SETPOS, true, activeMapping->effect.speed - 80);
+		//SendMessage(GetDlgItem(hDlg, IDC_SLIDER_WIDTH), TBM_SETPOS, true, activeMapping->effect.width);
+		SetSlider(sTip2, activeMapping->effect.speed - 80);
+		SetSlider(sTip3, activeMapping->effect.width);
 	}
 	RebuildGEColorsList(hDlg);
 }
@@ -131,7 +131,7 @@ BOOL CALLBACK TabGridDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 		UpdateEffectInfo(hDlg);
 	} break;
 	case WM_COMMAND: {
-		if (!mmap)
+		if (!activeMapping)
 			return false;
 		bool state = IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED;
 		switch (LOWORD(wParam))
@@ -139,7 +139,7 @@ BOOL CALLBACK TabGridDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 		case IDC_COMBO_TRIGGER:
 			if (HIWORD(wParam) == CBN_SELCHANGE) {
 				//conf->modifyProfile.lockWrite();
-				mmap->effect.trigger = ComboBox_GetCurSel(GetDlgItem(hDlg, LOWORD(wParam)));
+				activeMapping->effect.trigger = ComboBox_GetCurSel(GetDlgItem(hDlg, LOWORD(wParam)));
 				//conf->modifyProfile.unlockWrite();
 				eve->ChangeEffects();
 				UpdateZoneAndGrid();
@@ -147,40 +147,40 @@ BOOL CALLBACK TabGridDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 			break;
 		case IDC_COMBO_GEFFTYPE:
 			if (HIWORD(wParam) == CBN_SELCHANGE) {
-				mmap->effect.type = ComboBox_GetCurSel(GetDlgItem(hDlg, LOWORD(wParam)));
+				activeMapping->effect.type = ComboBox_GetCurSel(GetDlgItem(hDlg, LOWORD(wParam)));
 			}
 			break;
 		case IDC_CHECK_CIRCLE:
-			SetBitMask(mmap->effect.flags, GE_FLAG_CIRCLE, state);
+			SetBitMask(activeMapping->effect.flags, GE_FLAG_CIRCLE, state);
 			break;
 		case IDC_CHECK_RPOS:
-			SetBitMask(mmap->effect.flags, GE_FLAG_RPOS, state);
+			SetBitMask(activeMapping->effect.flags, GE_FLAG_RPOS, state);
 			break;
 		case IDC_CHECK_RANDOM:
-			SetBitMask(mmap->effect.flags, GE_FLAG_RANDOM, state);
+			SetBitMask(activeMapping->effect.flags, GE_FLAG_RANDOM, state);
 			break;
 		case IDC_CHECK_PHASE:
-			SetBitMask(mmap->effect.flags, GE_FLAG_PHASE, state);
+			SetBitMask(activeMapping->effect.flags, GE_FLAG_PHASE, state);
 			break;
 		case IDC_CHECK_BACKGROUND:
-			SetBitMask(mmap->effect.flags, GE_FLAG_BACK, state);
+			SetBitMask(activeMapping->effect.flags, GE_FLAG_BACK, state);
 			break;
 		case IDC_BUT_GECOLOR:
 				ChangeAddGEColor(hDlg, clrListID);
 			break;
 		case IDC_BUT_ADD_COLOR:
 			if (HIWORD(wParam) == BN_CLICKED) {
-				ChangeAddGEColor(hDlg, (int)mmap->effect.effectColors.size());
+				ChangeAddGEColor(hDlg, (int)activeMapping->effect.effectColors.size());
 			}
 			break;
 		case IDC_BUT_REMOVE_COLOR:
-			if (HIWORD(wParam) == BN_CLICKED && clrListID < mmap->effect.effectColors.size()) {
-				if (mmap->effect.effectColors.size() == 2) {
-					mmap->effect.effectColors.clear();
+			if (HIWORD(wParam) == BN_CLICKED && clrListID < activeMapping->effect.effectColors.size()) {
+				if (activeMapping->effect.effectColors.size() == 2) {
+					activeMapping->effect.effectColors.clear();
 					clrListID = 0;
 				}
 				else {
-					mmap->effect.effectColors.erase(mmap->effect.effectColors.begin() + clrListID);
+					activeMapping->effect.effectColors.erase(activeMapping->effect.effectColors.begin() + clrListID);
 					if (clrListID)
 						clrListID--;
 				}
@@ -189,20 +189,20 @@ BOOL CALLBACK TabGridDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 			}
 			break;
 		}
-		mmap->gridop.passive = true;
+		activeMapping->gridop.passive = true;
 	} break;
 	case WM_HSCROLL:
 		switch (LOWORD(wParam)) {
 		case TB_THUMBTRACK: case TB_ENDTRACK:
-			if (mmap) {
-				mmap->gridop.passive = true;
+			if (activeMapping) {
+				activeMapping->gridop.passive = true;
 				if ((HWND)lParam == speed_slider) {
-					mmap->effect.speed = (BYTE)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0) + 80;
-					SetSlider(sTip2, mmap->effect.speed - 80);
+					activeMapping->effect.speed = (BYTE)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0) + 80;
+					SetSlider(sTip2, activeMapping->effect.speed - 80);
 				}
 				if ((HWND)lParam == width_slider) {
-					mmap->effect.width = (BYTE)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
-					SetSlider(sTip3, mmap->effect.width);
+					activeMapping->effect.width = (BYTE)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
+					SetSlider(sTip3, activeMapping->effect.width);
 				}
 			}
 		} break;
@@ -217,8 +217,8 @@ BOOL CALLBACK TabGridDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 		}
 		break;
 	case WM_DRAWITEM:
-		if (mmap && clrListID < mmap->effect.effectColors.size()) {
-			RedrawButton(GetDlgItem(hDlg, IDC_BUT_GECOLOR), MakeRGB(mmap->effect.effectColors[clrListID]));
+		if (activeMapping && clrListID < activeMapping->effect.effectColors.size()) {
+			RedrawButton(GetDlgItem(hDlg, IDC_BUT_GECOLOR), MakeRGB(activeMapping->effect.effectColors[clrListID]));
 		}
 	    break;
 	case WM_NOTIFY:
@@ -230,8 +230,8 @@ BOOL CALLBACK TabGridDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 				if (lPoint->uNewState & LVIS_SELECTED && lPoint->iItem != -1) {
 					// Select other item...
 					clrListID = lPoint->iItem;
-					if (clrListID < mmap->effect.effectColors.size())
-						RedrawButton(GetDlgItem(hDlg, IDC_BUT_GECOLOR), MakeRGB(mmap->effect.effectColors[clrListID]));
+					if (clrListID < activeMapping->effect.effectColors.size())
+						RedrawButton(GetDlgItem(hDlg, IDC_BUT_GECOLOR), MakeRGB(activeMapping->effect.effectColors[clrListID]));
 				}
 			} break;
 			case NM_DBLCLK:

@@ -55,10 +55,8 @@ int tabLightSel = 0;
 // Explorer restart event
 UINT newTaskBar = RegisterWindowMessage(TEXT("TaskbarCreated"));
 
-// last light selected
-//int eItem = 0;
 // last zone selected
-groupset* mmap = NULL;
+groupset* activeMapping = NULL;
 
 const char* freqNames[] = { "Keep", "60Hz", "90Hz", "120Hz", "144Hz", "165Hz", "240Hz", "300Hz", "360Hz", ""};
 const int fvArray[] = { 0, 60, 90, 120, 144, 165, 240, 300, 360 };
@@ -119,7 +117,7 @@ void SetMainTabs();
 void SelectProfile(profile* prof = conf->activeProfile) {
 	if (!dDlg) {
 		eve->SwitchActiveProfile(prof);
-		mmap = NULL;
+		activeMapping = prof->lightsets.size() ? &prof->lightsets.front() : NULL;
 		if (tabSel == TAB_FANS || tabSel == TAB_LIGHTS)
 			OnSelChanged();
 	}
@@ -141,7 +139,6 @@ void UpdateLightDevices() {
 void PauseSystem() {
 	conf->Save();
 	eve->StopProfiles();
-	eve->ChangeAction(false);
 	eve->ChangeEffects(true);
 	fxhl->Refresh(true);
 	fxhl->Stop();
@@ -283,7 +280,7 @@ void OnSelChanged()
 
 void UpdateProfileList() {
 	if (IsWindowVisible(mDlg)) {
-		mmap = NULL;
+		//activeMapping = NULL;
 		HWND profile_list = GetDlgItem(mDlg, IDC_PROFILES);
 		EnableWindow(GetDlgItem(mDlg, IDC_PROFILE_EFFECTS), conf->enableEffects);
 		CheckDlgButton(mDlg, IDC_PROFILE_EFFECTS, conf->activeProfile->effmode);
@@ -291,6 +288,7 @@ void UpdateProfileList() {
 		int id;
 		for (profile* prof : conf->profiles) {
 			id = ComboBox_AddString(profile_list, prof->name.c_str());
+			ComboBox_SetItemData(profile_list, id, prof->id);
 			if (prof->id == conf->activeProfile->id)
 				ComboBox_SetCurSel(profile_list, id);
 		}
@@ -430,7 +428,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			switch (HIWORD(wParam))
 			{
 			case CBN_SELCHANGE:
-				SelectProfile(conf->profiles[ComboBox_GetCurSel(profile_list)]);
+				SelectProfile(conf->FindProfile((int)ComboBox_GetItemData(profile_list, ComboBox_GetCurSel(profile_list))));
 			break;
 			}
 		} break;
@@ -608,7 +606,6 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			fxhl->Start();
 			conf->SetIconState(conf->updateCheck);
 			eve->StartProfiles();
-			eve->ChangeAction();
 		} break;
 		case PBT_APMPOWERSTATUSCHANGE:
 			// ac/batt change
@@ -770,9 +767,9 @@ UINT_PTR Lpcchookproc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
 		mod->r = GetDlgItemInt(hDlg, COLOR_RED, NULL, false);
 		mod->g = GetDlgItemInt(hDlg, COLOR_GREEN, NULL, false);
 		mod->b = GetDlgItemInt(hDlg, COLOR_BLUE, NULL, false);
-		if (needColorUpdate && mmap && memcmp(&lastColor, mod, sizeof(AlienFX_SDK::Afx_action))) {
+		if (needColorUpdate && activeMapping && memcmp(&lastColor, mod, sizeof(AlienFX_SDK::Afx_action))) {
 			memcpy(&lastColor, mod, sizeof(AlienFX_SDK::Afx_action));
-			fxhl->RefreshZone(mmap);
+			fxhl->RefreshZone(activeMapping);
 		}
 	}
 	return 0;
@@ -792,8 +789,8 @@ bool SetColor(HWND ctrl, AlienFX_SDK::Afx_action* map, bool needUpdate = true) {
 
 	if (!(ret = ChooseColor(&cc))) {
 		(*map) = savedColor;
-		if (needUpdate && mmap)
-			fxhl->RefreshZone(mmap);
+		if (needUpdate && activeMapping)
+			fxhl->RefreshZone(activeMapping);
 	}
 
 	RedrawButton(ctrl, MakeRGB(map));
@@ -809,14 +806,14 @@ bool SetColor(HWND ctrl, AlienFX_SDK::Afx_colorcode& clr) {
 }
 
 AlienFX_SDK::Afx_group* FindCreateMappingGroup() {
-	if (!mmap) {
+	if (!activeMapping) {
 		int eItem = 0x10000;
 		while (conf->afx_dev.GetGroupById(eItem))
 			eItem++;
 		conf->activeProfile->lightsets.push_back({ eItem });
-		mmap = &conf->activeProfile->lightsets.back();
+		activeMapping = &conf->activeProfile->lightsets.back();
 	}
-	return conf->FindCreateGroup(mmap->group);
+	return conf->FindCreateGroup(activeMapping->group);
 }
 
 bool OpenFileOrDir(string& resname, bool doNotStrip) {

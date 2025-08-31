@@ -16,22 +16,20 @@ int effID = 0;
 const char* lightEffectNames[] { "Color", "Pulse", "Morph", "Breath", "Spectrum", "Rainbow", "" };
 
 void SetEffectData(HWND hDlg) {
-	bool hasEffects = mmap && mmap->color.size();
+	bool hasEffects = activeMapping && activeMapping->color.size();
 	if (hasEffects) {
-			ComboBox_SetCurSel(GetDlgItem(hDlg, IDC_TYPE1), mmap->color[effID].type & 0xf);
-			//SendMessage(GetDlgItem(hDlg, IDC_SPEED1), TBM_SETPOS, true, mmap->color[effID].tempo);
-			SetSlider(sTip1, mmap->color[effID].tempo);
-			//SendMessage(GetDlgItem(hDlg, IDC_LENGTH1), TBM_SETPOS, true, mmap->color[effID].time);
-			SetSlider(sTip2, mmap->color[effID].time);
-			CheckDlgButton(hDlg, IDC_ACCENT, mmap->color[effID].type & 0xf0);
+			ComboBox_SetCurSel(GetDlgItem(hDlg, IDC_TYPE1), activeMapping->color[effID].type & 0xf);
+			SetSlider(sTip1, activeMapping->color[effID].tempo);
+			SetSlider(sTip2, activeMapping->color[effID].time);
+			CheckDlgButton(hDlg, IDC_ACCENT, activeMapping->color[effID].type & 0xf0);
 	}
 	EnableWindow(GetDlgItem(hDlg, IDC_TYPE1), hasEffects);
 	EnableWindow(GetDlgItem(hDlg, IDC_SPEED1), hasEffects);
 	EnableWindow(GetDlgItem(hDlg, IDC_LENGTH1), hasEffects);
-	RedrawButton(GetDlgItem(hDlg, IDC_BUTTON_C1), mmap && mmap->color.size() ?
-		mmap->color[effID].type & 0xf0 ?
+	RedrawButton(GetDlgItem(hDlg, IDC_BUTTON_C1), activeMapping && activeMapping->color.size() ?
+		activeMapping->color[effID].type & 0xf0 ?
 			conf->accentColor :
-			MakeRGB(&mmap->color[effID]) :
+			MakeRGB(&activeMapping->color[effID]) :
 		0xff000000);
 }
 
@@ -51,25 +49,25 @@ void RebuildEffectList(HWND hDlg) {
 		ListView_InsertColumn(eff_list, 0, &lCol);
 		ListView_SetColumnWidth(eff_list, 0, LVSCW_AUTOSIZE_USEHEADER);// width);
 	}
-	if (mmap) {
+	if (activeMapping) {
 		COLORREF* picData = NULL;
 		HBITMAP colorBox = NULL;
 		HIMAGELIST hSmall = ImageList_Create(GetSystemMetrics(SM_CXSMICON),
 								  GetSystemMetrics(SM_CYSMICON),
 								  ILC_COLOR32, 1, 1);
-		for (int i = 0; i < mmap->color.size(); i++) {
+		for (int i = 0; i < activeMapping->color.size(); i++) {
 			LVITEMA lItem{ LVIF_TEXT | LVIF_IMAGE | LVIF_STATE, i };
 			picData = new COLORREF[GetSystemMetrics(SM_CXSMICON) * GetSystemMetrics(SM_CYSMICON)];
-			fill_n(picData, GetSystemMetrics(SM_CXSMICON) * GetSystemMetrics(SM_CYSMICON), Act2Code(&mmap->color[i]).ci);
+			fill_n(picData, GetSystemMetrics(SM_CXSMICON) * GetSystemMetrics(SM_CYSMICON), Act2Code(&activeMapping->color[i]).ci);
 			colorBox = CreateBitmap(GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), 1, 32, picData);
 			delete[] picData;
 			ImageList_Add(hSmall, colorBox, NULL);
 			DeleteObject(colorBox);
 			lItem.iImage = i;
 			// Patch for incorrect type
-			if (mmap->color[i].type == AlienFX_SDK::Action::AlienFX_A_Power)
-				mmap->color[i].type = 0;
-			lItem.pszText = (LPSTR)lightEffectNames[mmap->color[i].type & 0xf];
+			if (activeMapping->color[i].type == AlienFX_SDK::Action::AlienFX_A_Power)
+				activeMapping->color[i].type = 0;
+			lItem.pszText = (LPSTR)lightEffectNames[activeMapping->color[i].type & 0xf];
 			// check selection...
 			if (i == effID) {
 				lItem.state = LVIS_SELECTED;
@@ -86,24 +84,24 @@ void RebuildEffectList(HWND hDlg) {
 
 void ChangeAddColor(HWND hDlg, int newEffID) {
 	FindCreateMappingGroup();
-	if (newEffID < mmap->color.size())
-		SetColor(GetDlgItem(hDlg, IDC_BUTTON_C1), &mmap->color[newEffID]);
+	if (newEffID < activeMapping->color.size())
+		SetColor(GetDlgItem(hDlg, IDC_BUTTON_C1), &activeMapping->color[newEffID]);
 	else {
 		AlienFX_SDK::Afx_action act{ 0 };
-		bool isPower = conf->FindZoneMap(mmap->group)->havePower;
-		if (isPower && mmap->color.empty())
-			mmap->color.push_back(act);
-		if (mmap->color.size() < 9) {
-			if (effID < mmap->color.size())
-				act = mmap->color[effID];
-			mmap->color.push_back(act);
-			if (SetColor(GetDlgItem(hDlg, IDC_BUTTON_C1), &mmap->color[newEffID]))
+		bool isPower = conf->FindZoneMap(activeMapping->group)->havePower;
+		if (isPower && activeMapping->color.empty())
+			activeMapping->color.push_back(act);
+		if (activeMapping->color.size() < 9) {
+			if (effID < activeMapping->color.size())
+				act = activeMapping->color[effID];
+			activeMapping->color.push_back(act);
+			if (SetColor(GetDlgItem(hDlg, IDC_BUTTON_C1), &activeMapping->color[newEffID]))
 				effID = newEffID;
 			else {
-				if (isPower && mmap->color.size() > 2)
-					mmap->color.pop_back();
+				if (isPower && activeMapping->color.size() > 2)
+					activeMapping->color.pop_back();
 				else
-					mmap->color.clear();
+					activeMapping->color.clear();
 			}
 		}
 	}
@@ -139,20 +137,20 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 		switch (LOWORD(wParam))
 		{
 		case IDC_TYPE1:
-			if (HIWORD(wParam) == CBN_SELCHANGE && mmap) {
-				mmap->color[effID].type = IsDlgButtonChecked(hDlg, IDC_ACCENT) == BST_CHECKED ?
+			if (HIWORD(wParam) == CBN_SELCHANGE && activeMapping) {
+				activeMapping->color[effID].type = IsDlgButtonChecked(hDlg, IDC_ACCENT) == BST_CHECKED ?
 					0x10 : 0 | ComboBox_GetCurSel(GetDlgItem(hDlg, IDC_TYPE1));
 				RebuildEffectList(hDlg);
-				fxhl->RefreshZone(mmap);
+				fxhl->RefreshZone(activeMapping);
 			}
 			break;
 		case IDC_ACCENT:
-			if (mmap) {
-				mmap->color[effID].type = IsDlgButtonChecked(hDlg, IDC_ACCENT) == BST_CHECKED ?
-					mmap->color[effID].type | 0x10 :
-					mmap->color[effID].type & 0xf;
+			if (activeMapping) {
+				activeMapping->color[effID].type = IsDlgButtonChecked(hDlg, IDC_ACCENT) == BST_CHECKED ?
+					activeMapping->color[effID].type | 0x10 :
+					activeMapping->color[effID].type & 0xf;
 				SetEffectData(hDlg);
-				fxhl->RefreshZone(mmap);
+				fxhl->RefreshZone(activeMapping);
 			}
 			break;
 		case IDC_BUTTON_C1:
@@ -162,18 +160,17 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 			break;
 		case IDC_BUT_ADD_EFFECT:
 			if (HIWORD(wParam) == BN_CLICKED) {
-				FindCreateMappingGroup();
-				ChangeAddColor(hDlg, (int)mmap->color.size());
+				ChangeAddColor(hDlg, (int)activeMapping->color.size());
 			}
 			break;
 		case IDC_BUT_REMOVE_EFFECT:
-			if (HIWORD(wParam) == BN_CLICKED && mmap && effID < mmap->color.size()) {
-				if (conf->FindZoneMap(mmap->group)->havePower && mmap->color.size() == 2) {
-					mmap->color.clear();
+			if (HIWORD(wParam) == BN_CLICKED && activeMapping && effID < activeMapping->color.size()) {
+				if (conf->FindZoneMap(activeMapping->group)->havePower && activeMapping->color.size() == 2) {
+					activeMapping->color.clear();
 					effID = 0;
 				}
 				else {
-					mmap->color.erase(mmap->color.begin() + effID);
+					activeMapping->color.erase(activeMapping->color.begin() + effID);
 					if (effID)
 						effID--;
 				}
@@ -187,21 +184,21 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 	case WM_HSCROLL:
 		switch (LOWORD(wParam)) {
 		case TB_THUMBTRACK: case TB_ENDTRACK:
-			if (mmap) {
+			if (activeMapping) {
 				if ((HWND)lParam == s1_slider) {
-					mmap->color[effID].tempo = (BYTE)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
-					SetSlider(sTip1, mmap->color[effID].tempo);
+					activeMapping->color[effID].tempo = (BYTE)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
+					SetSlider(sTip1, activeMapping->color[effID].tempo);
 				}
 				if ((HWND)lParam == l1_slider) {
-					mmap->color[effID].time = (BYTE)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
-					SetSlider(sTip2, mmap->color[effID].time);
+					activeMapping->color[effID].time = (BYTE)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
+					SetSlider(sTip2, activeMapping->color[effID].time);
 				}
 				fxhl->Refresh();
 			}
 			break;
 		} break;
 	case WM_DRAWITEM: {
-		RedrawButton(((DRAWITEMSTRUCT*)lParam)->hwndItem, mmap && effID < mmap->color.size() ? MakeRGB(&mmap->color[effID]) : 0xff000000);
+		RedrawButton(((DRAWITEMSTRUCT*)lParam)->hwndItem, activeMapping && effID < activeMapping->color.size() ? MakeRGB(&activeMapping->color[effID]) : 0xff000000);
 	} break;
 	case WM_NOTIFY:
 		if (((NMHDR*)lParam)->idFrom == IDC_LEFFECTS_LIST) {

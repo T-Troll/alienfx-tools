@@ -27,17 +27,17 @@ void UpdateZoneList() {
 		LVITEMA lItem{ LVIF_TEXT | LVIF_PARAM | LVIF_STATE };
 		bool active = false;
 		switch (tabLightSel) {
-		case TAB_COLOR: active = i->color.size(); break;
-		case TAB_EVENTS: active = i->events.size(); break;
-		case TAB_AMBIENT: active = i->ambients.size(); break;
-		case TAB_HAPTICS: active = i->haptics.size(); break;
-		case TAB_GRID: active = i->effect.trigger;
+			case TAB_COLOR: active = i->color.size(); break;
+			case TAB_EVENTS: active = i->events.size(); break;
+			case TAB_AMBIENT: active = i->ambients.size(); break;
+			case TAB_HAPTICS: active = i->haptics.size(); break;
+			case TAB_GRID: active = i->effect.trigger;
 		}
 		string name = (active ? "+(" : "(") + to_string(grp->lights.size()) + ")";
 		lItem.iItem = pos;
 		lItem.lParam = i->group;
 		lItem.pszText = (LPSTR)grp->name.c_str();
-		if (mmap && grp->gid == mmap->group) {
+		if (activeMapping && grp->gid == activeMapping->group) {
 			lItem.state = LVIS_SELECTED | LVIS_FOCUSED;
 			rpos = pos;
 		}
@@ -54,7 +54,7 @@ void UpdateZoneList() {
 			ListView_SetItemState(zone_list, 0, LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED | LVIS_FOCUSED);
 		}
 		//else {
-		//	mmap = NULL;
+		//	activeMapping = NULL;
 		//}
 		SendMessage(GetParent(zsDlg), WM_APP + 2, 0, 0);
 	} else
@@ -91,12 +91,12 @@ BOOL CALLBACK AddZoneDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 			{
 				int eItem = (int)ListBox_GetItemData(grouplist, ListBox_GetCurSel(grouplist));
 				if (eItem < 0) {
-					mmap = NULL;
+					activeMapping = NULL;
 					FindCreateMappingGroup();
 				}
 				else {
 					conf->activeProfile->lightsets.push_back({ eItem });
-					mmap = &conf->activeProfile->lightsets.back();
+					activeMapping = &conf->activeProfile->lightsets.back();
 				}
 				EndDialog(hDlg, IDOK);
 			} break;
@@ -165,10 +165,7 @@ BOOL CALLBACK ZoneSelectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 	case WM_INITDIALOG:
 	{
 		zsDlg = hDlg;
-		UpdateCombo(GetDlgItem(hDlg, IDC_COMBO_GAUGE), gaugetypes/*{ "Off", "Horizontal", "Vertical", "Diagonal (left)", "Diagonal (right)", "Radial" }*/);
-		//if (conf->activeProfile->lightsets.size() && !mmap)
-		//	eItem = conf->activeProfile->lightsets.front().group;
-		//mmap = conf->FindMapping(eItem);
+		UpdateCombo(GetDlgItem(hDlg, IDC_COMBO_GAUGE), gaugetypes);
 	} break;
 	case WM_COMMAND: {
 		switch (LOWORD(wParam))
@@ -178,12 +175,12 @@ BOOL CALLBACK ZoneSelectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 			UpdateZoneList();
 		} break;
 		case IDC_BUT_DEL_ZONE:
-			if (mmap) {
+			if (activeMapping) {
 				conf->modifyProfile.lockWrite();
 				for (auto iter = conf->activeProfile->lightsets.begin(); iter != conf->activeProfile->lightsets.end(); iter++) {
-					if (iter->group == mmap->group) {
+					if (iter->group == activeMapping->group) {
 						auto newLightSet = conf->activeProfile->lightsets.erase(iter);
-						mmap = conf->FindMapping(newLightSet == conf->activeProfile->lightsets.end() ?
+						activeMapping = conf->FindMapping(newLightSet == conf->activeProfile->lightsets.end() ?
 							conf->activeProfile->lightsets.empty() ?
 								0 : (newLightSet-1)->group :
 							newLightSet->group);
@@ -199,22 +196,22 @@ BOOL CALLBACK ZoneSelectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 			}
 			break;
 		case IDC_CHECK_SPECTRUM:
-			if (mmap) {
-				SetBitMask(mmap->gaugeflags, GAUGE_GRADIENT, IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
+			if (activeMapping) {
+				SetBitMask(activeMapping->gaugeflags, GAUGE_GRADIENT, IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
 				fxhl->Refresh();
 			}
 			break;
 		case IDC_CHECK_REVERSE:
-			if (mmap) {
-				SetBitMask(mmap->gaugeflags, GAUGE_REVERSE, IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
+			if (activeMapping) {
+				SetBitMask(activeMapping->gaugeflags, GAUGE_REVERSE, IsDlgButtonChecked(hDlg, LOWORD(wParam)) == BST_CHECKED);
 				fxhl->Refresh();
 			}
 			break;
 		case IDC_COMBO_GAUGE:
-			if (mmap && HIWORD(wParam) == CBN_SELCHANGE) {
-				mmap->gauge = ComboBox_GetCurSel(GetDlgItem(hDlg, LOWORD(wParam)));
-				EnableWindow(GetDlgItem(hDlg, IDC_CHECK_SPECTRUM), mmap && mmap->gauge);
-				EnableWindow(GetDlgItem(hDlg, IDC_CHECK_REVERSE), mmap && mmap->gauge);
+			if (activeMapping && HIWORD(wParam) == CBN_SELCHANGE) {
+				activeMapping->gauge = ComboBox_GetCurSel(GetDlgItem(hDlg, LOWORD(wParam)));
+				EnableWindow(GetDlgItem(hDlg, IDC_CHECK_SPECTRUM), activeMapping && activeMapping->gauge);
+				EnableWindow(GetDlgItem(hDlg, IDC_CHECK_REVERSE), activeMapping && activeMapping->gauge);
 				fxhl->Refresh();
 			}
 			break;
@@ -239,12 +236,12 @@ BOOL CALLBACK ZoneSelectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 					if (lPoint->uNewState & LVIS_SELECTED) {
 						int neweItem = (int)lPoint->lParam;
 						// gauge and spectrum.
-						if (mmap = conf->FindMapping(neweItem)) {
+						if (activeMapping = conf->FindMapping(neweItem)) {
 							//conf->FindCreateGroup(neweItem);
-							CheckDlgButton(hDlg, IDC_CHECK_SPECTRUM, mmap->gaugeflags & GAUGE_GRADIENT);
-							CheckDlgButton(hDlg, IDC_CHECK_REVERSE, mmap->gaugeflags & GAUGE_REVERSE);
-							ComboBox_SetCurSel(GetDlgItem(hDlg, IDC_COMBO_GAUGE), mmap->gauge);
-							SendMessage(GetParent(hDlg), WM_APP + 2, 0, neweItem != mmap->group);
+							CheckDlgButton(hDlg, IDC_CHECK_SPECTRUM, activeMapping->gaugeflags & GAUGE_GRADIENT);
+							CheckDlgButton(hDlg, IDC_CHECK_REVERSE, activeMapping->gaugeflags & GAUGE_REVERSE);
+							ComboBox_SetCurSel(GetDlgItem(hDlg, IDC_COMBO_GAUGE), activeMapping->gauge);
+							SendMessage(GetParent(hDlg), WM_APP + 2, 0, 0/*neweItem != activeMapping->group*/);
 						}
 					}
 					else

@@ -80,7 +80,7 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 		case IDC_EDIT_ACTION:
 			if (HIWORD(wParam) == EN_KILLFOCUS) {
 				conf->actionTimeout = GetDlgItemInt(hDlg, IDC_EDIT_ACTION, NULL, false);
-				eve->ChangeAction();
+				//eve->ChangeAction();
 			}
 			break;
 		case IDC_STARTM:
@@ -177,9 +177,7 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 				mon = NULL;
 				eve->ChangeEffects();
 			}
-			//fxhl->FillAllDevs();
 			UpdateLightDevices();
-			//fxhl->Refresh();
 			SetHotkeys();
 			SetMainTabs();
 			break;
@@ -207,7 +205,7 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			break;
 		case IDC_LIGHTACTION:
 			conf->actionLights = state;
-			eve->ChangeAction();
+			//eve->ChangeAction();
 			break;
 		case IDC_COMBO_FREQ:
 			if (HIWORD(wParam) == CBN_SELCHANGE) {

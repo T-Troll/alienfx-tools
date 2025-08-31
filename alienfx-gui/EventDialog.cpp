@@ -58,14 +58,14 @@ void RebuildEventList(HWND hDlg) {
 	}
 	ev = NULL;
 	LVITEMA lItem{ LVIF_TEXT | LVIF_STATE };
-	if (mmap) {
-		for (int i = 0; i < mmap->events.size(); i++) {
-			if (!mmap->events[i].state)
-				mmap->events[i].state = 2;
-			int type = mmap->events[i].state - 1;
+	if (activeMapping) {
+		for (int i = 0; i < activeMapping->events.size(); i++) {
+			if (!activeMapping->events[i].state)
+				activeMapping->events[i].state = 2;
+			int type = activeMapping->events[i].state - 1;
 			string itemName = string(eventTypeNames[type]) + ", " +
-				(type ? eventNamesI[mmap->events[i].source] : eventNamesP[mmap->events[i].source]);
-				//eventNames[type][mmap->events[i].source];
+				(type ? eventNamesI[activeMapping->events[i].source] : eventNamesP[activeMapping->events[i].source]);
+				//eventNames[type][activeMapping->events[i].source];
 			lItem.iItem = i;
 			lItem.pszText = (LPSTR) itemName.c_str();
 			lItem.state = i == eventID ? LVIS_SELECTED | LVIS_FOCUSED : 0;
@@ -76,7 +76,7 @@ void RebuildEventList(HWND hDlg) {
 			ListView_InsertItem(eff_list, &lItem);
 		}
 	}
-	CheckDlgButton(hDlg, IDC_CHECK_NOEVENT, mmap && mmap->fromColor ? BST_CHECKED : BST_UNCHECKED);
+	CheckDlgButton(hDlg, IDC_CHECK_NOEVENT, activeMapping && activeMapping->fromColor ? BST_CHECKED : BST_UNCHECKED);
 	//SetEventData(hDlg);
 	ListView_EnsureVisible(eff_list, eventID, false);
 	//UpdateZoneAndGrid();
@@ -99,7 +99,7 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 		SetTimer(hDlg, 0, 500, NULL);
 	} break;
 	case WM_APP + 2: {
-		if (mmap && !(eventID < mmap->events.size()))
+		if (activeMapping && !(eventID < activeMapping->events.size()))
 			eventID = 0;
 		RebuildEventList(hDlg);
 		SetEventData(hDlg);
@@ -108,8 +108,8 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 		switch (LOWORD(wParam))
 		{
 		case IDC_CHECK_NOEVENT:
-			if (mmap) {
-				mmap->fromColor = IsDlgButtonChecked(hDlg, IDC_CHECK_NOEVENT) == BST_CHECKED;
+			if (activeMapping) {
+				activeMapping->fromColor = IsDlgButtonChecked(hDlg, IDC_CHECK_NOEVENT) == BST_CHECKED;
 				UpdateZoneAndGrid();
 			}
 			break;
@@ -118,7 +118,7 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 				ev->mode = IsDlgButtonChecked(hDlg, IDC_STATUS_BLINK) == BST_CHECKED;
 			break;
 		case IDC_BUTTON_COLORFROM:
-			if (mmap && ev && (!mmap->fromColor || mmap->color.size())) {
+			if (activeMapping && ev && (!activeMapping->fromColor || activeMapping->color.size())) {
 				SetColor(GetDlgItem(hDlg, IDC_BUTTON_COLORFROM), &ev->from);
 				UpdateZoneAndGrid();
 			}
@@ -147,20 +147,20 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 		case IDC_BUT_ADD_EVENT:
 			FindCreateMappingGroup();
 			conf->modifyProfile.lockWrite();
-			mmap->events.push_back({ (byte)(IsDlgButtonChecked(hDlg, IDC_RADIO_PERF) == BST_CHECKED ? 1 : 2),
+			activeMapping->events.push_back({ (byte)(IsDlgButtonChecked(hDlg, IDC_RADIO_PERF) == BST_CHECKED ? 1 : 2),
 				(byte)ComboBox_GetCurSel(GetDlgItem(hDlg, IDC_EVENT_SOURCE)),
 				(byte)SendMessage(GetDlgItem(hDlg, IDC_CUTLEVEL), TBM_GETPOS, 0, 0),
 				(byte)IsDlgButtonChecked(hDlg, IDC_STATUS_BLINK) == BST_CHECKED	});
-			eventID = (int)mmap->events.size() - 1;
+			eventID = (int)activeMapping->events.size() - 1;
 			conf->modifyProfile.unlockWrite();
 			eve->ChangeEffects();
 			RebuildEventList(hDlg);
 			UpdateZoneAndGrid();
 			break;
 		case IDC_BUTT_REMOVE_EVENT:
-			if (mmap && ev) {
+			if (activeMapping && ev) {
 				conf->modifyProfile.lockWrite();
-				mmap->events.erase(mmap->events.begin() + eventID);
+				activeMapping->events.erase(activeMapping->events.begin() + eventID);
 				conf->modifyProfile.unlockWrite();
 				if (eventID)
 					eventID--;
@@ -170,20 +170,20 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 			}
 			break;
 		case IDC_BUTT_EVENT_UP:
-			if (mmap && ev && eventID) {
+			if (activeMapping && ev && eventID) {
 				eventID--;
 				conf->modifyProfile.lockWrite();
-				swap(*ev, mmap->events[eventID]);
+				swap(*ev, activeMapping->events[eventID]);
 				conf->modifyProfile.unlockWrite();
 				RebuildEventList(hDlg);
 				UpdateZoneAndGrid();
 			}
 			break;
 		case IDC_BUT_EVENT_DOWN:
-			if (mmap && ev && eventID < mmap->events.size() - 1) {
+			if (activeMapping && ev && eventID < activeMapping->events.size() - 1) {
 				eventID++;
 				conf->modifyProfile.lockWrite();
-				swap(*ev, mmap->events[eventID]);
+				swap(*ev, activeMapping->events[eventID]);
 				conf->modifyProfile.unlockWrite();
 				RebuildEventList(hDlg);
 				UpdateZoneAndGrid();
@@ -193,10 +193,10 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 	} break;
 	case WM_DRAWITEM: {
 		DWORD c = 0xff000000;
-		if (mmap && ev) {
+		if (activeMapping && ev) {
 			switch (((DRAWITEMSTRUCT*)lParam)->CtlID) {
 			case IDC_BUTTON_COLORFROM:
-				c = MakeRGB(mmap->fromColor && mmap->color.size() ? &mmap->color.front() : &ev->from);
+				c = MakeRGB(activeMapping->fromColor && activeMapping->color.size() ? &activeMapping->color.front() : &ev->from);
 				break;
 			case IDC_BUTTON_COLORTO:
 				c = MakeRGB(&ev->to);
@@ -217,10 +217,10 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 	case WM_NOTIFY:
 		if (((NMHDR*)lParam)->code == LVN_ITEMCHANGED) {
 			NMLISTVIEW* lPoint = (LPNMLISTVIEW)lParam;
-			if (mmap && lPoint->uNewState & LVIS_FOCUSED /*&& lPoint->iItem >= 0*/) {
+			if (activeMapping && lPoint->uNewState & LVIS_FOCUSED /*&& lPoint->iItem >= 0*/) {
 				// Select other item...
 				eventID = lPoint->iItem;
-				ev = &mmap->events[eventID];
+				ev = &activeMapping->events[eventID];
 			}
 			else {
 				ev = NULL; eventID = 0;

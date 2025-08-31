@@ -99,13 +99,13 @@ void SetFreqGroups(HWND hDlg) {
 	HWND grp_list = GetDlgItem(hDlg, IDC_FREQ_GROUP);
 	ListBox_ResetContent(grp_list);
 	freqBlock = NULL;
-	if (mmap && mmap->haptics.size()) {
+	if (activeMapping && activeMapping->haptics.size()) {
 		// Set groups
-		for (int j = 0; j < mmap->haptics.size(); j++) {
+		for (int j = 0; j < activeMapping->haptics.size(); j++) {
 			int pos = ListBox_AddString(grp_list, ("Group " + to_string(j + 1)).c_str());
 			if (freqItem == pos) {
 				ListBox_SetCurSel(grp_list, pos);
-				freqBlock = &mmap->haptics[pos];
+				freqBlock = &activeMapping->haptics[pos];
 			}
 		}
 	}
@@ -181,10 +181,10 @@ INT_PTR CALLBACK FreqLevels(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 
 void FindHapticGroup(bool add = false) {
 	FindCreateMappingGroup();
-	if (add || mmap->haptics.empty()) {
-		mmap->haptics.push_back({ 0,0,255 });
-		freqItem = (int)mmap->haptics.size() - 1;
-		freqBlock = &mmap->haptics[freqItem];
+	if (add || activeMapping->haptics.empty()) {
+		activeMapping->haptics.push_back({ 0,0,255 });
+		freqItem = (int)activeMapping->haptics.size() - 1;
+		freqBlock = &activeMapping->haptics[freqItem];
 	}	
 }
 
@@ -226,8 +226,8 @@ BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 			UpdateZoneAndGrid();
 		} break;
 		case IDC_BUT_REM_GROUP:
-			if (mmap && freqBlock) {
-				mmap->haptics.erase(mmap->haptics.begin() + freqItem);
+			if (activeMapping && freqBlock) {
+				activeMapping->haptics.erase(activeMapping->haptics.begin() + freqItem);
 				if (freqItem) {
 					freqItem--;
 				}
@@ -258,8 +258,8 @@ BOOL CALLBACK TabHapticsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		}
 	} break;
 	case WM_APP + 2: {
-		if (mmap && freqItem >= mmap->haptics.size())
-			freqItem = (int)mmap->haptics.size() - 1;
+		if (activeMapping && freqItem >= activeMapping->haptics.size())
+			freqItem = (int)activeMapping->haptics.size() - 1;
 		SetFreqGroups(hDlg);
 	} break;
 	case WM_DRAWITEM:
