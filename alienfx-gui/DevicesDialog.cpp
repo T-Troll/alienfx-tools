@@ -15,7 +15,7 @@ extern void RedrawGridButtonZone(RECT* what = NULL);
 
 extern void FindCreateMapping(bool key);
 
-extern bool OpenFileOrDir(string& resname);
+extern bool OpenFileOrDir(string& resname, bool doNotStrip);
 
 BOOL CALLBACK KeyPressDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 extern AlienFX_SDK::Afx_light* keySetLight;
@@ -369,9 +369,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 	case WM_INITDIALOG:
 	{
 		dDlg = hDlg;
-		eve->StopProfiles();
 		eve->ChangeEffects(true);
-		eve->ChangeAction(false);
 		fxhl->Stop();
 		// Reset brightness
 		for (auto& dev : conf->afx_dev.fxdevs)
@@ -519,7 +517,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		{
 			// Load device and light mappings
 			string appName;
-			if (OpenFileOrDir(appName) && appName.back() != '\\') {
+			if (OpenFileOrDir(appName, true) && appName.back() != '\\') {
 				// Now load mappings...
 				LoadCSV(appName);
 				ApplyDeviceMaps(gridTab, true);
@@ -680,8 +678,6 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		fxhl->Start();
 		fxhl->SetState(true);
 		eve->ChangeEffectMode();
-		//eve->StartProfiles();
-		eve->ChangeAction();
 		dDlg = NULL;
 	} break;
 	default: return false;

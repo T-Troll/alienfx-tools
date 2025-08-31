@@ -3,14 +3,13 @@
 #include "FXHelper.h"
 #include "ConfigFan.h"
 #include "common.h"
-#include <Shlwapi.h>
 
 extern void UpdateProfileList();
 extern void UpdateState(bool checkMode);
 extern bool SetColor(HWND hDlg, AlienFX_SDK::Afx_colorcode&);
 extern DWORD MakeRGB(AlienFX_SDK::Afx_colorcode c);
 extern void RedrawButton(HWND hDlg, DWORD);
-extern bool OpenFileOrDir(string& resname);
+extern bool OpenFileOrDir(string& resname, bool doNotStrip = false);
 
 extern AlienFX_SDK::Afx_light* keySetLight;
 extern string GetKeyName(WORD vkcode);
@@ -452,19 +451,10 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 		} break;
 		case IDC_SCRIPT_BROWSE: {
 			string fname;
-			if (OpenFileOrDir(fname) && fname.back() != '\\') {
+			if (OpenFileOrDir(fname, true) && fname.back() != '\\') {
 				prof->script = fname;
 				SetDlgItemText(hDlg, IDC_SCRIPT_NAME, fname.c_str());
 			}
-			//OPENFILENAMEA fstruct{ sizeof(OPENFILENAMEA), hDlg, hInst, "All files (*.*)\0*.*\0\0" };
-			//static char appName[4096]; appName[0] = 0;
-			//fstruct.lpstrFile = (LPSTR)appName;
-			//fstruct.nMaxFile = 4095;
-			//fstruct.Flags = OFN_ENABLESIZING | OFN_EXPLORER | OFN_FILEMUSTEXIST | OFN_LONGNAMES | OFN_DONTADDTORECENT;
-			//if (GetOpenFileName(&fstruct)) {
-			//	prof->script = fstruct.lpstrFile;
-			//	SetDlgItemText(hDlg, IDC_SCRIPT_NAME, fstruct.lpstrFile);
-			//}
 		} break;
 		case IDC_SCRIPT_NAME:
 			switch (HIWORD(wParam)) {

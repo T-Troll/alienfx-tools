@@ -15,7 +15,6 @@
 extern HWND mDlg;
 extern ConfigFan* fan_conf;
 extern HINSTANCE hInst;
-//extern int eItem;
 
 ConfigHandler::ConfigHandler() {
 
@@ -31,7 +30,7 @@ ConfigHandler::ConfigHandler() {
 }
 
 ConfigHandler::~ConfigHandler() {
-	Save();
+	//Save();
 	delete fan_conf;
 	afx_dev.SaveMappings();
 	RegCloseKey(hKeyMain);
@@ -108,7 +107,6 @@ profile* ConfigHandler::FindProfileByApp(DWORD proc, bool active)
 			string procName = szProcessName,
 				appName = procName.substr(procName.find_last_of('\\') + 1),
 				appPath = procName.substr(0, procName.length() - appName.length());
-			//PathStripPath(szProcessName);
 			//DebugPrint("Profile: Looking for " + appName + "\n");
 			if (noDesktop && active) {
 				for (int i = 0; forbiddenApps[i].size(); i++)

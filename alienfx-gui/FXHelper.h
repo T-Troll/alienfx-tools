@@ -9,8 +9,8 @@ struct LightEventData {
 };
 
 struct LightQueryElement {
-	WORD pid;
-	byte light;
+	//WORD pid;
+	byte light;	  // lightID or forced state
 	byte command; // 0 - color, 1 - update, 2 - set brightness, 3 - set power
 	byte actsize;
 	AlienFX_SDK::Afx_action actions[9];
@@ -32,12 +32,12 @@ class FXHelper
 {
 private:
 
-	bool blinkStage = false, wasLFX = false, updateAllowed = false;
+	bool blinkStage = false, wasLFX = false;
 	int oldtest = -1;
 
 	void SetZoneLight(DWORD id, int x, int max, int scale, WORD flags, vector<AlienFX_SDK::Afx_action>* actions, double power = 0);
 	void SetGaugeGrid(groupset* grp, zonemap* zone, int phase, AlienFX_SDK::Afx_action* fin);
-	void QueryCommand(LightQueryElement &lqe);
+	void QueryCommand(WORD pid, LightQueryElement &lqe);
 	void QueryAllDevs(LightQueryElement& lqe);
 	void SetLight(DWORD lgh, vector<AlienFX_SDK::Afx_action>* actions);
 
@@ -55,13 +55,13 @@ public:
 	bool stateScreen = true,
 		stateDim = false,
 		stateAction = true,
-		finalPBState = true;
+		finalPBState = true, 
+		updateAllowed = false;
 	//bool lightsNoDelay = true;
 	int finalBrightness = -1;
 
 	FXHelper();
 	~FXHelper();
-	//void FXHelper::FillAllDevs();
 	AlienFX_SDK::Afx_action BlendPower(double power, AlienFX_SDK::Afx_action* from, AlienFX_SDK::Afx_action* to);
 	void Start();
 	void Stop();

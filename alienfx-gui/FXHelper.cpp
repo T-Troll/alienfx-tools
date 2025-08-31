@@ -174,15 +174,15 @@ void FXHelper::SetGaugeGrid(groupset* grp, zonemap* zone, int phase, AlienFX_SDK
 	}
 }
 
-void FXHelper::QueryCommand(LightQueryElement &lqe) {
+void FXHelper::QueryCommand(WORD pid, LightQueryElement &lqe) {
 	if (updateAllowed) {
-		DeviceUpdateQuery* devQuery = &devLightQuery[lqe.pid];
+		DeviceUpdateQuery* devQuery = &devLightQuery[pid];
 		if (!devQuery->haveNewElement) {
 			// create thread and event
 			devQuery->haveNewElement = CreateEvent(NULL, true, false, NULL);
-			LightQueryData* ld = new LightQueryData({ lqe.pid, this });
+			LightQueryData* ld = new LightQueryData({ pid, this });
 			devQuery->updateThread = CreateThread(NULL, 0, CLightsProc, ld, 0, NULL);
-			DebugPrint("Light updates started for device " + to_string(lqe.pid) + ".\n");
+			DebugPrint("Light updates started for device " + to_string(pid) + ".\n");
 		}
 
 		if (WaitForSingleObject(haveLightFX, 0) == WAIT_TIMEOUT) {
@@ -204,38 +204,22 @@ void FXHelper::QueryCommand(LightQueryElement &lqe) {
 void FXHelper::QueryAllDevs(LightQueryElement& lqe) {
 	for (auto& devQ : conf->afx_dev.fxdevs) {
 		if (devQ.version != AlienFX_SDK::API_UNKNOWN) {
-			if (devLightQuery[devQ.pid].inUpdate) {
-				devLightQuery[devQ.pid].lightQuery.empty();
-			}
-			else {
-				QueryCommand(LightQueryElement({ devQ.pid, lqe.light, lqe.command }));
+			if (!devLightQuery[devQ.pid].inUpdate || lqe.light || lqe.command != 1) {
+				QueryCommand(devQ.pid, lqe);
 			}
 		}
 	}
 }
 
 void FXHelper::QueryUpdate(bool force) {
-	QueryAllDevs(LightQueryElement({ NULL, force, 1 }));
-	//for (auto& devQ : devLightQuery) {
-	//	if (devQ.second.inUpdate) {
-	//		devQ.second.lightQuery.empty();
-	//	}
-	//	else {
-	//		QueryCommand(LightQueryElement({ NULL, force, 1 }));
-	//	}
-	//}
-//	lightsNoDelay = lightQuery.size() < (conf->afx_dev.activeLights << 5);
-//#ifdef _DEBUG
-//	if (!lightsNoDelay)
-//		DebugPrint("Query so big, delayed!\n");
-//#endif // _DEBUG
+	QueryAllDevs(LightQueryElement({ force, 1 }));
 }
 
 void FXHelper::SetLight(DWORD lgh, vector<AlienFX_SDK::Afx_action>* actions)
 {
 	auto dev = conf->afx_dev.GetDeviceById(LOWORD(lgh));
 	if (dev && dev->version != AlienFX_SDK::API_UNKNOWN && actions->size()) {
-		LightQueryElement newBlock{ dev->pid, (byte)HIWORD(lgh), (byte)
+		LightQueryElement newBlock{ (byte)HIWORD(lgh), (byte)
 			(conf->afx_dev.GetFlags(dev, HIWORD(lgh)) & ALIENFX_FLAG_POWER ? 3 : 0),
 			(byte)actions->size() };
 		memcpy(newBlock.actions, actions->data(), newBlock.actsize * sizeof(AlienFX_SDK::Afx_action));
@@ -255,7 +239,7 @@ void FXHelper::SetLight(DWORD lgh, vector<AlienFX_SDK::Afx_action>* actions)
 				action->b = ((UINT)action->b * action->b * dev->white.b) / 65025; // (255 * 255);
 			}
 		}
-		QueryCommand(newBlock);
+		QueryCommand(dev->pid, newBlock);
 	}
 }
 
@@ -275,8 +259,8 @@ void FXHelper::SetState(bool force) {
 		if (mDlg)
 			conf->SetIconState();
 		if (force && !finalPBState)
-			QueryAllDevs(LightQueryElement({ NULL, 1, 2 }));
-		QueryAllDevs(LightQueryElement({ NULL, 0, 2 }));
+			QueryAllDevs(LightQueryElement({ 1, 2 }));
+		QueryAllDevs(LightQueryElement({ 0, 2 }));
 	}
 }
 
@@ -299,6 +283,8 @@ void FXHelper::UpdateGlobalEffect(AlienFX_SDK::Afx_device* dev, bool reset) {
 
 void FXHelper::Start() {
 	updateAllowed = true;
+	SetState(true);
+	
 	//if (!updateThread) {
 	//	lightsNoDelay = true;
 	//	updateThread = CreateThread(NULL, 0, CLightsProc, this, 0, NULL);
@@ -725,11 +711,10 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 
 			switch (current.command) {
 			case 2: { // set brightness
-				bool pbstate = current.light || src->finalPBState, needRefresh = false;
+				bool pbstate = current.light || src->finalPBState;// , needRefresh = false;
 				byte fbright = (byte)(current.light ?
 					conf->stateDimmed && conf->dimPowerButton ? conf->dimmingPower : conf->fullPower
 					: src->finalBrightness);
-					//(byte)(current.light ? !conf->lightsOn && conf->stateDimmed && conf->dimPowerButton ? conf->dimmingPower : conf->fullPower : src->finalBrightness);
 				AlienFX_SDK::Afx_device* dev = conf->afx_dev.GetDeviceById(pid);
 				// stop thread if device removed
 				if (dev && dev->version != AlienFX_SDK::API_UNKNOWN) {

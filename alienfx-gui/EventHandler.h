@@ -17,7 +17,7 @@ public:
 	void* sysmon = NULL;
 
 	bool keyboardSwitchActive = false;
-	bool notInDestroy = true;
+	//bool notInDestroy = true;
 
 	HANDLE wasAction, acThread, acStop;
 
@@ -30,6 +30,7 @@ public:
 	void ToggleFans();
 	void StartProfiles();
 	void StopProfiles();
+	void ToggleProfiles();
 	//string GetProcessName(DWORD proc);
 	void CheckProfileChange(bool destroy = false);
 

@@ -215,7 +215,7 @@ void EventHandler::CheckProfileChange(bool destroy) {
 
 void EventHandler::StartProfiles()
 {
-	if (notInDestroy && conf->enableProfSwitch && !hEvent) {
+	if (/*notInDestroy &&*/ conf->enableProfSwitch && !hEvent) {
 		DebugPrint("Profile hooks starting.\n");
 		hEvent = SetWinEventHook(EVENT_SYSTEM_FOREGROUND,
 			EVENT_SYSTEM_FOREGROUND, NULL,
@@ -245,6 +245,13 @@ void EventHandler::StopProfiles()
 		hEvent = NULL;
 		keyboardSwitchActive = false;
 	}
+}
+
+void EventHandler::ToggleProfiles()
+{
+	StopProfiles();
+	conf->enableProfSwitch = !conf->enableProfSwitch;
+	StartProfiles();
 }
 
 DWORD WINAPI acFunc(LPVOID lpParam) {

@@ -130,13 +130,23 @@ void UpdateLightDevices() {
 	if (conf->afx_dev.AlienFXEnumDevices(mon ? mon->acpi : NULL)) {
 		DebugPrint("Active device list changed!\n");
 		if (conf->afx_dev.activeDevices && !dDlg) {
-			fxhl->Start();
-			fxhl->SetState(true);
 			fxhl->UpdateGlobalEffect(NULL);
+			fxhl->Start();
 			fxhl->Refresh();
 		}
 		SetMainTabs();
 	}
+}
+
+void PauseSystem() {
+	conf->Save();
+	eve->StopProfiles();
+	eve->ChangeAction(false);
+	eve->ChangeEffects(true);
+	fxhl->Refresh(true);
+	fxhl->Stop();
+	if (mon)
+		mon->Stop();
 }
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
@@ -204,10 +214,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		}
 	}
 
-	eve->StopProfiles();
-	eve->ChangeEffects(true);
-	eve->ChangeAction(false);
-	fxhl->Refresh(true);
+	PauseSystem();
 	delete fxhl;
 	delete eve;
 
@@ -364,17 +371,6 @@ void SetMainTabs() {
 	OnSelChanged();
 }
 
-void PauseSystem() {
-	conf->Save();
-	eve->StopProfiles();
-	eve->ChangeEffects(true);
-	eve->ChangeAction(false);
-	fxhl->Refresh(true);
-	fxhl->Stop();
-	if (mon)
-		mon->Stop();
-}
-
 BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
 	HWND tab_list = GetDlgItem(hDlg, IDC_TAB_MAIN),
 		profile_list = GetDlgItem(hDlg, IDC_PROFILES);
@@ -403,7 +399,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 				SendMessage(dDlg, message, wParam, lParam);
 			break;
 		case IDM_EXIT: case IDC_BUTTON_MINIMIZE:
-			eve->notInDestroy = false;
+			//eve->notInDestroy = false;
 			DestroyWindow(hDlg);
 			break;
 		case IDM_ABOUT:
@@ -590,9 +586,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			UpdateState(true);
 			break;
 		case ID_TRAYMENU_PROFILESWITCH:
-			eve->StopProfiles();
-			conf->enableProfSwitch = !conf->enableProfSwitch;
-			eve->StartProfiles();
+			eve->ToggleProfiles();
 			SelectProfile();
 			break;
 		case ID_TRAYMENU_RESTORE:
@@ -612,7 +606,6 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			if (mon)
 				mon->Start();
 			fxhl->Start();
-			fxhl->SetState(true);
 			conf->SetIconState(conf->updateCheck);
 			eve->StartProfiles();
 			eve->ChangeAction();
@@ -717,9 +710,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			UpdateState(true);
 			break;
 		case 6: // profile autoswitch
-			eve->StopProfiles();
-			conf->enableProfSwitch = !conf->enableProfSwitch;
-			eve->StartProfiles();
+			eve->ToggleProfiles();
 			SelectProfile();
 			break;
 		case 2: // G-key for Dell G-series power switch
@@ -748,7 +739,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		SendMessage(hDlg, WM_SIZE, SIZE_MINIMIZED, 0);
 		break;
 	case WM_DESTROY:
-		eve->notInDestroy = false;
+		//eve->notInDestroy = false;
 		Shell_NotifyIcon(NIM_DELETE, &conf->niData);
 		PostQuitMessage(0);
 		break;
@@ -828,7 +819,7 @@ AlienFX_SDK::Afx_group* FindCreateMappingGroup() {
 	return conf->FindCreateGroup(mmap->group);
 }
 
-bool OpenFileOrDir(string& resname) {
+bool OpenFileOrDir(string& resname, bool doNotStrip) {
 //	IFileDialog* pfd = NULL;
 //	HRESULT hr = CoCreateInstance(CLSID_FileOpenDialog,
 //		NULL,
@@ -880,7 +871,7 @@ bool OpenFileOrDir(string& resname) {
 		CoTaskMemFree(pIDL);
 		resname = string(fname);
 		if (resname.length() - resname.find_last_of('.') < 5) {
-			resname = dname;// resname.substr(resname.find_last_of('\\') + 1);
+			resname = doNotStrip ? resname : dname;// resname.substr(resname.find_last_of('\\') + 1);
 		}
 		else {
 			resname += '\\';
