@@ -154,6 +154,10 @@ union ambgrid {
 	DWORD ag;
 };
 
+struct processdata {
+	string appName,	appPath;
+};
+
 class ConfigHandler
 {
 private:
@@ -253,4 +257,5 @@ public:
 	bool IsPriorityProfile(profile* prof);
 	bool SetIconState(bool needCheck = false);
 	DWORD GetAccentColor();
+	processdata GetProcessData(DWORD proc);
 };

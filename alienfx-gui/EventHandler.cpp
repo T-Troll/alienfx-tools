@@ -45,10 +45,8 @@ EventHandler::EventHandler()
 	SwitchActiveProfile(conf->activeProfile, true);
 	if (conf->startMinimized) {
 		StartProfiles();
-		CheckProfileChange();
 	}
 	acStop = CreateEvent(NULL, false, false, NULL);
-	//ChangeAction();
 }
 
 EventHandler::~EventHandler()
@@ -167,6 +165,17 @@ void EventHandler::ChangeEffects(bool stop) {
 	fxhl->Refresh();
 }
 
+const char* forbiddenApps[] = { "ShellExperienceHost.exe"
+								,"explorer.exe"
+								,"SearchApp.exe"
+								,"StartMenuExperienceHost.exe"
+								,"SearchHost.exe"
+#ifdef _DEBUG
+								,"devenv.exe"
+#endif
+								, ""
+};
+
 void EventHandler::CheckProfileChange(bool destroy) {
 
 	DWORD prcId;
@@ -175,25 +184,22 @@ void EventHandler::CheckProfileChange(bool destroy) {
 
 	profile* newProf = conf->FindProfileByApp(prcId, true);
 
-	if (destroy && newProf->id == conf->activeProfile->id) {
-		newProf = NULL;
+	if (!destroy && newProf && (conf->IsPriorityProfile(newProf) || !conf->IsPriorityProfile(conf->activeProfile))) {
+		SwitchActiveProfile(newProf);
+		return;
 	}
 	else {
-		if (newProf && (conf->IsPriorityProfile(newProf) || !conf->IsPriorityProfile(conf->activeProfile))) {
-			SwitchActiveProfile(newProf);
-			return;
+		if (!destroy && !newProf) {
+			processdata app = conf->GetProcessData(prcId);
+			for (int i = 0; forbiddenApps[i][0]; i++)
+				if (forbiddenApps[i] == app.appName) {
+					DebugPrint("Profile: Forbidden!\n");
+					newProf = conf->activeProfile;
+					break;
+				}
 		}
-#ifdef _DEBUG
-		else {
-			if (newProf) {
-				DebugPrint("Blocked by priority\n");
-			}
-			else
-				DebugPrint("No foreground profile\n");
-
-		}
-#endif
 	}
+
 	DebugPrint("Profile: FP suggest " + (newProf ? newProf->name : "none") + ", TaskScan initiated.\n");
 
 	DWORD cbNeeded;
@@ -235,7 +241,7 @@ void EventHandler::StartProfiles()
 		kEvent = SetWindowsHookEx(WH_KEYBOARD_LL, KeyProc, NULL, 0);
 #endif
 		// Need to switch if already running....
-		//CheckProfileChange();
+		CheckProfileChange();
 	}
 
 	if (!ackEvent && conf->actionLights) {
@@ -338,8 +344,13 @@ static VOID CALLBACK CCreateProc(HWINEVENTHOOK hWinEventHook, DWORD dwEvent, HWN
 
 	if (idObject == OBJID_WINDOW && idChild == CHILDID_SELF) {
 		GetWindowThreadProcessId(hwnd, &prcId);
-		//DebugPrint("C/D: " + szProcessName + ", child is " + to_string(idChild == CHILDID_SELF) + "\n");
-		if (prof = conf->FindProfileByApp(prcId)) {
+#ifdef _DEBUG
+		char szProcessName[MAX_PATH]{ 0 };
+		HANDLE hProcess = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION | PROCESS_VM_READ, FALSE, prcId);
+		GetModuleFileNameEx(hProcess, NULL, szProcessName, MAX_PATH);
+		DebugPrint(string("Eve: Process ") + szProcessName + (dwEvent == EVENT_OBJECT_DESTROY ? " destroyed" : " started") + ".\n");
+#endif
+		if (prof = conf->FindProfileByApp(prcId, true)) {
 			HANDLE hProcess;
 			if (dwEvent == EVENT_OBJECT_DESTROY && prof->id == conf->activeProfile->id && 
 				(hProcess = OpenProcess(SYNCHRONIZE, FALSE, prcId))) {

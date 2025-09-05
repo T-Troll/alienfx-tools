@@ -574,20 +574,29 @@ void FXHelper::RefreshGrid(bool fromRefresh) {
 						// prepare vars..
 						grideffop* effop = &ce->gridop;
 						grideffect* eff = &ce->effect;
+						int cTact = effop->current_tact;
 						// check for initial repaint
 						if (effop->stars.empty() || fromRefresh) {
 							cur.front() = Code2Act(eff->effectColors.front());
 							SetZone(&(*ce), &cur);
 							effop->stars.resize(eff->width);
+							//effop->oldphase = -1;
 							wasChanged = true;
 						}
 						// calculate phase
-						int cTact = effop->current_tact++;
+						if (!fromRefresh)
+							++effop->current_tact;
+						else
+							continue;
+
 						int phase = eff->speed < 80 ? cTact / (80 - eff->speed) : cTact * (eff->speed - 79);
 
-						if (phase == effop->effsize * effop->lmp) {
+						if (phase >= effop->effsize * effop->lmp - 1) {
 							effop->passive = true;
-							continue;
+							if (eff->flags & GE_FLAG_CIRCLE)
+								phase = 0; 1; // for circle only!
+							//phase = 0;
+							//continue;
 						}
 
 						int backIndex = (eff->flags & GE_FLAG_PHASE ? phase : (phase / effop->effsize)) % (eff->effectColors.size());
@@ -598,11 +607,11 @@ void FXHelper::RefreshGrid(bool fromRefresh) {
 
 						phase %= effop->effsize;
 
-						if (phase > effop->size) // circle by color and direction
-							phase = effop->effsize - phase - 1;
+						if (phase >= effop->size) // circle by color and direction
+							phase = effop->effsize - phase;
 
 						if (ce->gaugeflags & GAUGE_REVERSE)
-							phase = effop->size - phase - 2;
+							phase = effop->size - phase - 1; // reverse phase position
 
 						// Set lights
 						if (effop->oldphase != phase) {
@@ -648,7 +657,7 @@ void FXHelper::RefreshGrid(bool fromRefresh) {
 										maxPhase = phase+1;
 									}
 									// cleanup
-									for (int dist = 0; dist < maxPhase; dist++)
+									for (int dist = 0; dist <= maxPhase; dist++)
 										SetGaugeGrid(&(*ce), &zone, effop->oldphase - dist, &from);
 
 									if (ce->gaugeflags & GAUGE_GRADIENT) {
@@ -664,7 +673,7 @@ void FXHelper::RefreshGrid(bool fromRefresh) {
 									for (int dist = 0; dist < maxPhase; dist++) {
 										if (phase - dist >= 0) {
 											switch (eff->type) {
-											case 0: case 3: power = 0; break;
+											case 0: case 3: power = 0.0; break;
 											case 1: power = (double)abs(halfW - dist) / halfW; break;
 											case 2: power = (maxPhase ? (double)dist / maxPhase : 0.0); break;
 											case 5: power = (double)(dist) / eff->width; break;
@@ -696,7 +705,7 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 	LightQueryData* ld = (LightQueryData*)param;
 	FXHelper* src = (FXHelper *)ld->src;
 	WORD pid = ld->pid;
-	DWORD res;
+	DWORD res = WAIT_OBJECT_0;
 	DeviceUpdateQuery* lightQuery = &src->devLightQuery[pid];
 	LightQueryElement current;
 
@@ -705,7 +714,8 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 
 	SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_ABOVE_NORMAL);
 
-	while ((res = WaitForMultipleObjects(2, waitArray, false, INFINITE)) != WAIT_FAILED) {
+	while (res == WAIT_OBJECT_0) {//(res = WaitForMultipleObjects(2, waitArray, false, INFINITE)) != WAIT_FAILED) {
+		res = WaitForMultipleObjects(2, waitArray, false, INFINITE);
 		while ( lightQuery->lightQuery.size()) {
 			src->modifyQuery.lockWrite();
 			current = lightQuery->lightQuery.front();
@@ -785,10 +795,10 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 			}
 		}
 		ResetEvent(lightQuery->haveNewElement);
-		if (res == WAIT_OBJECT_0 + 1) { // stop event
-			delete ld;
-			return 0;
-		}
+		//if (res == WAIT_OBJECT_0 + 1) { // stop event
+		//	delete ld;
+		//	return 0;
+		//}
 	}
 	delete ld;
 	return 0;

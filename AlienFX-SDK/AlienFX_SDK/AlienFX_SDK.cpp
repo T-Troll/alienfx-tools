@@ -431,8 +431,6 @@ namespace AlienFX_SDK {
 	bool Functions::SetMultiAction(vector<Afx_lightblock> *act, bool save) {
 		bool val = true;
 		vector<Afx_icommand> mods;
-		if (save)
-			return SetPowerAction(act, save);
 
 		if (!inSet) Reset();
 		switch (version) {
@@ -467,7 +465,7 @@ namespace AlienFX_SDK {
 		} break;
 		}
 
-		return val;
+		return save ? SetPowerAction(act, save) : val;
 	}
 
 	bool Functions::SetV4Action(Afx_lightblock* act) {

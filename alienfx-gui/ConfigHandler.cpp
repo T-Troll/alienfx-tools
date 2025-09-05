@@ -86,58 +86,41 @@ profile* ConfigHandler::FindProfile(int id) {
 	return NULL;
 }
 
-static const string forbiddenApps[] = { "ShellExperienceHost.exe"
-									,"explorer.exe"
-									,"SearchApp.exe"
-									,"StartMenuExperienceHost.exe"
-									,"SearchHost.exe"
-#ifdef _DEBUG
-									,"devenv.exe"
-#endif
-									, ""
-};
+processdata ConfigHandler::GetProcessData(DWORD proc) {
+	char szProcessName[MAX_PATH]{ 0 };
+	HANDLE hProcess;
+	processdata res;
+	if (hProcess = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION | PROCESS_VM_READ, FALSE, proc)) {
+		if (GetModuleFileNameEx(hProcess, NULL, szProcessName, MAX_PATH)) {
+			string procName = string(szProcessName);
+			res.appName = procName.substr(procName.find_last_of('\\') + 1),
+			res.appPath = procName.substr(0, procName.length() - res.appName.length());
+		}
+		CloseHandle(hProcess);
+	}
+	return res;
+}
 
 profile* ConfigHandler::FindProfileByApp(DWORD proc, bool active)
 {
 	profile* fprof = NULL;
-	char szProcessName[MAX_PATH]{ 0 };
-	HANDLE hProcess;
-	if (hProcess = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION | PROCESS_VM_READ, FALSE, proc)) {
-		if (GetModuleFileNameEx(hProcess, NULL, szProcessName, MAX_PATH)) {
-			string procName = szProcessName,
-				appName = procName.substr(procName.find_last_of('\\') + 1),
-				appPath = procName.substr(0, procName.length() - appName.length());
-			//DebugPrint("Profile: Looking for " + appName + "\n");
-			if (noDesktop && active) {
-				for (int i = 0; forbiddenApps[i].size(); i++)
-					if (forbiddenApps[i] == appName) {
-						//DebugPrint("Profile: Forbidden!\n");
-						CloseHandle(hProcess);
-						return activeProfile;
+	processdata procName = GetProcessData(proc);
+
+	for (profile* prof : profiles)
+		if (SamePower(prof) && (active || !(prof->flags & PROF_ACTIVE))) {
+			for (auto name : prof->triggerapp) {
+				if (name.back() == '\\' ? procName.appPath.find(name) == 0 : name == procName.appName) {
+					//DebugPrint("Profile: " + procName + " found in " + prof->name + "\n");
+					if (IsPriorityProfile(prof)) {
+						//DebugPrint(" Priority, selected!\n");
+						return prof;
 					}
-			}
-			//if (active) {
-			//	DebugPrint("Profile: New foreground " + appName + "\n");
-			//}
-			for (profile* prof : profiles)
-				if (SamePower(prof) && (active || !(prof->flags & PROF_ACTIVE))) {
-					for (auto name : prof->triggerapp) {
-						if (name.back() == '\\' ? appPath.find(name) == 0 : name == appName) {
-							//DebugPrint("Profile: " + procName + " found in " + prof->name + "\n");
-							if (IsPriorityProfile(prof)) {
-								//DebugPrint(" Priority, selected!\n");
-								CloseHandle(hProcess);
-								return prof;
-							}
-							else
-								fprof = prof;
-						}
-					}
+					else
+						fprof = prof;
 				}
+			}
 		}
-		CloseHandle(hProcess);
 		//DebugPrint("Profile: finally is " + (fprof ? fprof->name : "none") + "\n");
-	}
 	return fprof;
 }
 

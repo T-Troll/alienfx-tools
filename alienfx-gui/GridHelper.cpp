@@ -21,13 +21,13 @@ void GridHelper::StartGridRun(groupset* grp, zonemap* cz, int x, int y) {
 				esize = cy;
 				break;
 			case 0: case 3: case 4:
-				esize = cx + cy - 2;
+				esize = cx + cy - 1;
 				break;
 			case 5:
 				esize = max(cx, cy);
 				break;
 			}
-			gridop->size = max(esize + grp->effect.width, 1);
+			gridop->size = max(esize + grp->effect.width - 1, 1);
 		}
 		else
 			gridop->size = grp->effect.width;
@@ -41,9 +41,9 @@ void GridHelper::StartGridRun(groupset* grp, zonemap* cz, int x, int y) {
 		gridop->gridX = x;
 		gridop->gridY = y;
 		gridop->current_tact = 0;
-		gridop->oldphase = -1;
+		//gridop->oldphase = -1;
 		gridop->lmp = grp->effect.flags & GE_FLAG_PHASE ? 1 : ((int)grp->effect.effectColors.size() - ((grp->effect.flags & GE_FLAG_BACK) != 0));
-		gridop->effsize = grp->effect.flags & GE_FLAG_CIRCLE ? gridop->size << 1 : gridop->size;
+		gridop->effsize = grp->effect.flags & GE_FLAG_CIRCLE ? ((gridop->size - 1) << 1) - 1 : gridop->size;
 		grp->gridop.passive = false;
 	}
 }
@@ -134,9 +134,6 @@ void GridHelper::Stop() {
 			UnhookWindowsHookEx(kEvent);
 			kEvent = NULL;
 		}
-		//if (capt) {
-		//	delete (CaptureHelper*)capt; capt = NULL;
-		//}
 		if (sysmon) {
 			delete sysmon; sysmon = NULL;
 		}
