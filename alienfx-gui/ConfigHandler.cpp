@@ -27,6 +27,7 @@ ConfigHandler::ConfigHandler() {
 	afx_dev.LoadMappings();
 	fan_conf = new ConfigFan();
 	niData.hIcon = (HICON)LoadImage(hInst, MAKEINTRESOURCE(IDI_ALIENFX_ON),	IMAGE_ICON, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), LR_DEFAULTCOLOR);
+	fan_conf->niData = &niData;
 }
 
 ConfigHandler::~ConfigHandler() {
@@ -100,6 +101,12 @@ processdata ConfigHandler::GetProcessData(DWORD proc) {
 	}
 	return res;
 }
+
+//profile* ConfigHandler::FindProfileByApp(HWND wnd) {
+//	DWORD prcId;
+//	GetWindowThreadProcessId(wnd, &prcId);
+//	return FindProfileByApp(prcId, true);
+//}
 
 profile* ConfigHandler::FindProfileByApp(DWORD proc, bool active)
 {

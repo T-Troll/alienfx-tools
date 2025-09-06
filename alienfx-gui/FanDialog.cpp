@@ -10,7 +10,6 @@ extern MonHelper* mon;
 HWND fanWindow = NULL, tipWindow = NULL;
 
 GUID* sch_guid, perfset;
-extern NOTIFYICONDATA* niData;
 
 extern INT_PTR CALLBACK FanCurve(HWND, UINT, WPARAM, LPARAM);
 extern DWORD WINAPI CheckFanOverboost(LPVOID lpParam);
@@ -37,8 +36,6 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
     switch (message) {
     case WM_INITDIALOG:
     {
-        niData = &conf->niData;
-
         // set PerfBoost lists...
         IIDFromString(L"{be337238-0d82-4146-a960-4f3749d470c7}", &perfset);
         PowerGetActiveScheme(NULL, &sch_guid);

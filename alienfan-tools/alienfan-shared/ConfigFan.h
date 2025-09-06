@@ -68,6 +68,8 @@ public:
 	map<byte, string> powers;
 	map<WORD, string> sensors;
 
+	void* niData = NULL;
+
 	ConfigFan();
 	~ConfigFan();
 

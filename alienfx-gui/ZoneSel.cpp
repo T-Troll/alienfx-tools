@@ -172,6 +172,7 @@ BOOL CALLBACK ZoneSelectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 		{
 		case IDC_BUT_ADD_ZONE: {
 			DialogBox(hInst, MAKEINTRESOURCE(IDD_DIALOG_ADDGROUP), hDlg, (DLGPROC)AddZoneDialog);
+			RecalcGridZone();
 			UpdateZoneList();
 		} break;
 		case IDC_BUT_DEL_ZONE:
@@ -192,7 +193,6 @@ BOOL CALLBACK ZoneSelectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 				eve->ChangeEffects();
 				RecalcGridZone();
 				UpdateZoneList();
-				fxhl->Refresh();
 			}
 			break;
 		case IDC_CHECK_SPECTRUM:

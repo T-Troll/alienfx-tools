@@ -8,7 +8,7 @@ private:
 	HHOOK kEvent, ackEvent = NULL, acmEvent;
 	DWORD maxProcess = 1024;
 	DWORD* aProcesses = NULL;
-	DWORD currentFreq = 0;
+	//DWORD currentFreq = 0;
 
 public:
 	void* capt = NULL;

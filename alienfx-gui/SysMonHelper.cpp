@@ -1,6 +1,5 @@
 #include "SysMonHelper.h"
 #include "MonHelper.h"
-#include "FXHelper.h"
 #include <PdhMsg.h>
 
 #pragma comment(lib, "pdh.lib")
@@ -14,8 +13,6 @@
 extern FXHelper* fxhl;
 extern MonHelper* mon;
 extern ConfigHandler* conf;
-
-LightEventData sData;
 
 static SYSTEM_POWER_STATUS state;
 static PDH_FMT_COUNTERVALUE cCPUVal, cHDDVal;
@@ -86,11 +83,11 @@ void CEventProc(LPVOID param)
 {
 	DebugPrint("Event values update started\n");
 	SysMonHelper* src = (SysMonHelper*)param;
-	//LightEventData* maxData = &fxhl->maxData;
+	LightEventData* sData = &src->sData;
 #define maxData fxhl->maxData
 
 	PdhCollectQueryData(src->hQuery);
-	ZeroMemory(&sData, sizeof(LightEventData));
+	ZeroMemory(sData, sizeof(LightEventData));
 
 	// CPU load
 	PdhGetFormattedCounterValue(src->hCPUCounter, PDH_FMT_LONG, NULL, &cCPUVal);
@@ -100,8 +97,8 @@ void CEventProc(LPVOID param)
 	int maxBand = src->GetValuesArray(src->hNETMAXCounter, 0, 2048),
 		curBand = src->GetValuesArray(src->hNETCounter);
 	if (maxBand) {
-		sData.NET = min(100, curBand / maxBand);
-		maxData.NET = max(sData.NET, maxData.NET);
+		sData->NET = min(100, curBand / maxBand);
+		maxData.NET = max(sData->NET, maxData.NET);
 	}
 	// GPU load
 	DWORD count = src->GetCounterValues(src->hGPUCounter);
@@ -119,13 +116,13 @@ void CEventProc(LPVOID param)
 	for (auto it = gpusubs.begin(); it != gpusubs.end(); it++) {
 		// per-adapter
 		for (auto sub = it->second.begin(); sub != it->second.end(); sub++) {
-			sData.GPU = min(max(sData.GPU, sub->second), 100);
+			sData->GPU = min(max(sData->GPU, sub->second), 100);
 			//DebugPrint("Adapter " + to_string(sub->first) + ", system " + it->first + ": " + to_string(sub->second) + "\n");
 			//sub->second = 0;
 		}
 	}
 	// Temperatures
-	sData.Temp = src->GetValuesArray(src->hTempCounter, 273);
+	sData->Temp = src->GetValuesArray(src->hTempCounter, 273);
 	// RAM load
 	GlobalMemoryStatusEx(&memStat);
 	// Power state
@@ -133,46 +130,46 @@ void CEventProc(LPVOID param)
 	// Locale
 	if (curLocale = GetKeyboardLayout(GetWindowThreadProcessId(GetForegroundWindow(), NULL))) {
 		GetKeyboardLayoutList(10, locIDs);
-		sData.KBD = curLocale == locIDs[0] ? 0 : 100;
+		sData->KBD = curLocale == locIDs[0] ? 0 : 100;
 	}
 
 	if (mon) {
 		// Check fan RPMs
 		for (unsigned i = 0; i < mon->fansize; i++) {
-			sData.Fan = max(sData.Fan, mon->GetFanPercent(i));
+			sData->Fan = max(sData->Fan, mon->GetFanPercent(i));
 		}
-		sData.Fan = min(100, sData.Fan);
+		sData->Fan = min(100, sData->Fan);
 		// Sensors
 		for (auto i = mon->senValues.begin(); i != mon->senValues.end(); i++)
-			sData.Temp = max(sData.Temp, i->second);
+			sData->Temp = max(sData->Temp, i->second);
 		// Power mode
-		sData.PWM = mon->powerMode * 100 /	(mon->powerSize + mon->acpi->isGmode - 1);
+		sData->PWM = mon->powerMode * 100 /	(mon->powerSize + mon->acpi->isGmode - 1);
 	}
 
 	// ESIF powers and temps
 	if (conf->esif_temp) {
 		if (!mon) {
 			// ESIF temps (already in fans)
-			sData.Temp = max(sData.Temp, src->GetValuesArray(src->hTempCounter2, maxData.Temp));
+			sData->Temp = max(sData->Temp, src->GetValuesArray(src->hTempCounter2, maxData.Temp));
 		}
 		// Powers
-		sData.PWR = src->GetValuesArray(src->hPwrCounter, 0, 10);
-		maxData.PWR = max(sData.PWR, maxData.PWR);
-		sData.PWR = sData.PWR * 100 / maxData.PWR;
+		sData->PWR = src->GetValuesArray(src->hPwrCounter, 0, 10);
+		maxData.PWR = max(sData->PWR, maxData.PWR);
+		sData->PWR = sData->PWR * 100 / maxData.PWR;
 	}
 
 	// Leveling...
-	sData.Temp = min(100, max(0, sData.Temp));
-	sData.Batt = state.BatteryLifePercent;
-	sData.ACP = state.ACLineStatus;
-	sData.BST = state.BatteryFlag;
-	sData.HDD = (byte)max(0, 99 - cHDDVal.longValue);
-	maxData.RAM = max(maxData.RAM, sData.RAM = (byte)memStat.dwMemoryLoad);
-	maxData.CPU = max(maxData.CPU, sData.CPU = (byte)cCPUVal.longValue);
-	maxData.GPU = max(maxData.GPU, sData.GPU);
-	maxData.Temp = max(sData.Temp, maxData.Temp);
+	sData->Temp = min(100, max(0, sData->Temp));
+	sData->Batt = state.BatteryLifePercent;
+	sData->ACP = state.ACLineStatus;
+	sData->BST = state.BatteryFlag;
+	sData->HDD = (byte)max(0, 99 - cHDDVal.longValue);
+	maxData.RAM = max(maxData.RAM, sData->RAM = (byte)memStat.dwMemoryLoad);
+	maxData.CPU = max(maxData.CPU, sData->CPU = (byte)cCPUVal.longValue);
+	maxData.GPU = max(maxData.GPU, sData->GPU);
+	maxData.Temp = max(sData->Temp, maxData.Temp);
 
-	fxhl->RefreshCounters(&sData);
-	memcpy(&fxhl->eData, &sData, sizeof(LightEventData));
+	fxhl->RefreshCounters();
+	memcpy(&fxhl->eData, sData, sizeof(LightEventData));
 	DebugPrint("Event values update finished\n");
 }

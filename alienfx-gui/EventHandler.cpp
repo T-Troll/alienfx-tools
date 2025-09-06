@@ -30,16 +30,27 @@ LRESULT CALLBACK KeyProc(int nCode, WPARAM wParam, LPARAM lParam);
 LRESULT CALLBACK acProc(int nCode, WPARAM wParam, LPARAM lParam);
 DWORD WINAPI acFunc(LPVOID lpParam);
 
+const char* forbiddenApps[] = { "ShellExperienceHost.exe"
+								,"explorer.exe"
+								,"SearchApp.exe"
+								,"StartMenuExperienceHost.exe"
+								,"SearchHost.exe"
+#ifdef _DEBUG
+								,"devenv.exe"
+#endif
+								, ""
+};
+
 EventHandler::EventHandler()
 {
 	eve = this;
 	aProcesses = new DWORD[maxProcess >> 2];
 
 	// Check display...
-	DEVMODE current;
-	current.dmSize = sizeof(DEVMODE);
-	if (EnumDisplaySettings(NULL, ENUM_CURRENT_SETTINGS, &current))
-		currentFreq = current.dmDisplayFrequency;
+	//DEVMODE current;
+	//current.dmSize = sizeof(DEVMODE);
+	//if (EnumDisplaySettings(NULL, ENUM_CURRENT_SETTINGS, &current))
+	//	currentFreq = current.dmDisplayFrequency;
 
 	ChangePowerState();
 	SwitchActiveProfile(conf->activeProfile, true);
@@ -53,7 +64,7 @@ EventHandler::~EventHandler()
 {
 	//StopProfiles();
 	//ChangeAction(false);
-	SetDisplayFreq(currentFreq);
+	//SetDisplayFreq(currentFreq);
 	delete aProcesses;
 	CloseHandle(acStop);
 }
@@ -74,12 +85,21 @@ void EventHandler::ChangePowerState()
 }
 
 void EventHandler::SetDisplayFreq(int freq) {
-	DEVMODE params;
-	params.dmSize = sizeof(DEVMODE);
-	params.dmFields = DM_DISPLAYFREQUENCY;
-	if (params.dmDisplayFrequency = !conf->statePower && conf->dcFreq ? conf->dcFreq :
-		freq ? freq : currentFreq)
-		ChangeDisplaySettings(&params, CDS_UPDATEREGISTRY);
+	int newFreq = conf->statePower ? freq : conf->dcFreq;
+	if (newFreq) {
+		DEVMODE params;
+		params.dmSize = sizeof(DEVMODE);
+		if (EnumDisplaySettings(NULL, ENUM_CURRENT_SETTINGS, &params)) {
+			//currentFreq = params.dmDisplayFrequency;
+			if (params.dmDisplayFrequency != newFreq) {
+				params.dmFields = DM_DISPLAYFREQUENCY;
+				params.dmDisplayFrequency = newFreq;
+				ChangeDisplaySettings(&params, CDS_UPDATEREGISTRY);
+				//currentFreq = params.dmDisplayFrequency;
+				DebugPrint("Display reftesh rate changed to " + to_string(newFreq) + "\n");
+			}
+		}
+	}
 }
 
 void EventHandler::SwitchActiveProfile(profile* newID, bool force)
@@ -162,19 +182,8 @@ void EventHandler::ChangeEffects(bool stop) {
 	if (noHap && audio) {	// Haptics
 		delete (WSAudioIn*)audio; audio = NULL;
 	}
-	fxhl->Refresh();
+	fxhl->Refresh(2);
 }
-
-const char* forbiddenApps[] = { "ShellExperienceHost.exe"
-								,"explorer.exe"
-								,"SearchApp.exe"
-								,"StartMenuExperienceHost.exe"
-								,"SearchHost.exe"
-#ifdef _DEBUG
-								,"devenv.exe"
-#endif
-								, ""
-};
 
 void EventHandler::CheckProfileChange(bool destroy) {
 
@@ -182,7 +191,7 @@ void EventHandler::CheckProfileChange(bool destroy) {
 
 	GetWindowThreadProcessId(GetForegroundWindow(), &prcId);
 
-	profile* newProf = conf->FindProfileByApp(prcId, true);
+	profile* newProf = conf->FindProfileByApp(prcId);
 
 	if (!destroy && newProf && (conf->IsPriorityProfile(newProf) || !conf->IsPriorityProfile(conf->activeProfile))) {
 		SwitchActiveProfile(newProf);
@@ -313,26 +322,6 @@ LRESULT CALLBACK acProc(int nCode, WPARAM wParam, LPARAM lParam) {
 	return CallNextHookEx(NULL, nCode, wParam, lParam);
 }
 
-//void EventHandler::ChangeAction(bool run)
-//{
-//	if (ackEvent) {
-//		// stop hooks and waiting procedure
-//		SetEvent(acStop);
-//		UnhookWindowsHookEx(ackEvent);
-//		UnhookWindowsHookEx(acmEvent);
-//		ackEvent = NULL;
-//		CloseHandle(wasAction);
-//	}
-//
-//	if (run && conf->actionLights) {
-//		// Set hooks and waiting procedure
-//		wasAction = CreateEvent(NULL, false, false, NULL);
-//		ackEvent = SetWindowsHookEx(WH_KEYBOARD_LL, acProc, NULL, 0);
-//		acmEvent = SetWindowsHookEx(WH_MOUSE_LL, acProc, NULL, 0);
-//		acThread = CreateThread(NULL, 0, acFunc, this, 0, NULL);
-//	}
-//}
-
 // Create/destroy callback - switch profile if new/closed process in app list
 static VOID CALLBACK CCreateProc(HWINEVENTHOOK hWinEventHook, DWORD dwEvent, HWND hwnd, LONG idObject, LONG idChild, DWORD dwEventThread, DWORD dwmsEventTime) {
 
@@ -345,10 +334,8 @@ static VOID CALLBACK CCreateProc(HWINEVENTHOOK hWinEventHook, DWORD dwEvent, HWN
 	if (idObject == OBJID_WINDOW && idChild == CHILDID_SELF) {
 		GetWindowThreadProcessId(hwnd, &prcId);
 #ifdef _DEBUG
-		char szProcessName[MAX_PATH]{ 0 };
-		HANDLE hProcess = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION | PROCESS_VM_READ, FALSE, prcId);
-		GetModuleFileNameEx(hProcess, NULL, szProcessName, MAX_PATH);
-		DebugPrint(string("Eve: Process ") + szProcessName + (dwEvent == EVENT_OBJECT_DESTROY ? " destroyed" : " started") + ".\n");
+		processdata app = conf->GetProcessData(prcId);
+		DebugPrint(string("Eve: Process ") + app.appName + (dwEvent == EVENT_OBJECT_DESTROY ? " destroyed" : " started") + ".\n");
 #endif
 		if (prof = conf->FindProfileByApp(prcId, true)) {
 			HANDLE hProcess;

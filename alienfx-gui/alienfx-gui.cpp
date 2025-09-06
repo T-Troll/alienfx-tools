@@ -64,6 +64,7 @@ const int* freqValues = fvArray;
 
 extern string GetFanName(int ind, bool forTray = false);
 extern void AlterGMode(HWND);
+extern void PowerChangeNotify(HWND power_list=NULL);
 
 bool DetectFans() {
 	if (conf->fanControl && (conf->fanControl = EvaluteToAdmin(mDlg))) {
@@ -140,7 +141,7 @@ void PauseSystem() {
 	conf->Save();
 	eve->StopProfiles();
 	eve->ChangeEffects(true);
-	fxhl->Refresh(true);
+	fxhl->Refresh(1);
 	fxhl->Stop();
 	if (mon)
 		mon->Stop();
@@ -297,17 +298,14 @@ void UpdateProfileList() {
 }
 
 void UpdateState(bool checkMode = false) {
-	if (!dDlg)
-		//eve->ChangeEffectMode();
-		eve->SwitchActiveProfile(conf->activeProfile, true);
-
-	if (checkMode) {
-		CheckDlgButton(mDlg, IDC_PROFILE_EFFECTS, conf->activeProfile->effmode);
-		if (!dDlg && tabSel == TAB_LIGHTS)
+	if (!dDlg) {
+		if (checkMode)
+			eve->ChangeEffectMode();
+		else
+			fxhl->SetState();
+		if (tabSel == TAB_SETTINGS || tabSel == TAB_LIGHTS)
 			OnSelChanged();
 	}
-	if (tabSel == TAB_SETTINGS)
-		OnSelChanged();
 }
 
 void RestoreApp() {
@@ -417,7 +415,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		case IDC_BUTTON_SAVE:
 			conf->afx_dev.SaveMappings();
 			conf->Save();
-			fxhl->Refresh(true);
+			fxhl->Refresh(1);
 			ShowNotification(&conf->niData, "Configuration saved!", "Configuration saved successfully.");
 			break;
 		case IDC_PROFILE_EFFECTS:
@@ -645,16 +643,6 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		if (wParam == DBT_DEVNODES_CHANGED) {
 			DebugPrint("Device list changed \n");
 			UpdateLightDevices();
-			//if (conf->afx_dev.AlienFXEnumDevices(mon ? mon->acpi : NULL)) {
-			//	DebugPrint("Active device list changed!\n");
-			//	//conf->afx_dev.AlienFXApplyDevices();
-			//	if (conf->afx_dev.activeDevices && !dDlg) {
-			//		fxhl->SetState(true);
-			//		fxhl->UpdateGlobalEffect(NULL);
-			//		fxhl->Refresh();
-			//	}
-			//	SetMainTabs();
-			//}
 		}
 	} break;
 	case WM_DISPLAYCHANGE:
@@ -675,10 +663,9 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		}
 		if (mon && wParam > 29 && wParam - 30 < mon->powerSize) { // PowerMode switch
 			mon->SetPowerMode((WORD)wParam - 30);
+			PowerChangeNotify();
 			if (tabSel == TAB_FANS)
 				OnSelChanged();
-			BlinkNumLock(mon->powerMode);
-			ShowNotification(&conf->niData, "Power mode switched!", "New power mode - " + *fan_conf->GetPowerName(mon->acpi->powers[mon->powerMode]));
 			break;
 		}
 		switch (wParam) {
@@ -715,12 +702,10 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 				AlterGMode(NULL);
 				if (tabSel == TAB_FANS)
 					OnSelChanged();
-				BlinkNumLock(mon->powerMode);
-				ShowNotification(&conf->niData, "Power mode switched!", "New power mode - " + (fan_conf->lastProf->gmodeStage ? "G-mode" : * fan_conf->GetPowerName(mon->acpi->powers[mon->powerMode])));
 			}
 			break;
 		case 7: case 8: // Brightness up/down
-			if (conf->lightsOn) {
+			if (conf->stateOn) {
 				DWORD& bright = conf->stateDimmed ? conf->dimmingPower : conf->fullPower;
 				switch (wParam) {
 				case 7: bright = min(bright + 0x10, 0xff); break;

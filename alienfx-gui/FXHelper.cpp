@@ -6,6 +6,7 @@
 #include "GridHelper.h"
 #include "WSAudioIn.h"
 #include "MonHelper.h"
+#include "SysMonHelper.h"
 
 extern AlienFX_SDK::Afx_action Code2Act(AlienFX_SDK::Afx_colorcode c);
 
@@ -213,7 +214,7 @@ void FXHelper::QueryAllDevs(LightQueryElement& lqe) {
 	}
 }
 
-void FXHelper::QueryUpdate(bool force) {
+void FXHelper::QueryUpdate(byte force) {
 	QueryAllDevs(LightQueryElement({ force, 1 }));
 }
 
@@ -312,11 +313,10 @@ void FXHelper::Stop() {
 	ResetEvent(stopQuery);
 }
 
-void FXHelper::Refresh(bool forced)
+void FXHelper::Refresh(byte forced)
 {
 
 #ifdef _DEBUG
-	if (forced)
 		DebugPrint("Forced ");
 	DebugPrint("Refresh initiated.\n");
 #endif
@@ -325,8 +325,8 @@ void FXHelper::Refresh(bool forced)
 		RefreshZone(&it, false);
 	}
 	conf->modifyProfile.unlockRead();
-	if (!forced && conf->stateEffects && eve) {
-		RefreshCounters(NULL, true);
+	if (forced == 1 && conf->stateEffects && eve) {
+		RefreshCounters(true);
 		RefreshAmbient(true);
 		RefreshHaptics(true);
 		RefreshGrid(true);
@@ -343,15 +343,14 @@ void FXHelper::RefreshZone(groupset* map, bool update) {
 	}
 }
 
-void FXHelper::RefreshCounters(LightEventData* data, bool fromRefresh)
+void FXHelper::RefreshCounters(bool fromRefresh)
 {
 	if (eve->sysmon) {
 		//DebugPrint("Counter refresh started\n");
-		bool force = !data, wasChanged = false, havePower;
+		LightEventData* data = fromRefresh ? &eData : &((SysMonHelper*)eve->sysmon)->sData;
+		bool wasChanged = false, havePower;
 		AlienFX_SDK::Afx_group* grp;
-		if (force)
-			data = &eData;
-		else
+		if (!fromRefresh)
 			blinkStage = !blinkStage;
 		conf->modifyProfile.lockRead();
 		for (auto& Iter : conf->activeProfile->lightsets) {
@@ -382,7 +381,7 @@ void FXHelper::RefreshCounters(LightEventData* data, bool fromRefresh)
 						case 8: lVal = eData.PWR; cVal = data->PWR; break;
 						case 9: lVal = eData.PWM; cVal = data->PWM; break;
 						}
-						if (force || (lVal != cVal && (cVal > e->cut || lVal >= e->cut))) {
+						if (fromRefresh || (lVal != cVal && (cVal > e->cut || lVal >= e->cut))) {
 							hasDiff = true;
 							cVal -= e->cut;
 							fCoeff = cVal > 0 ? cVal / (100.0 - e->cut) : 0.0;
@@ -393,7 +392,7 @@ void FXHelper::RefreshCounters(LightEventData* data, bool fromRefresh)
 						break;
 					case MON_TYPE_IND: { // indicator
 						if (e->source == 7) {
-							if (force || eData.ACP != data->ACP || eData.BST != data->BST || (data->BST & 14)) {
+							if (fromRefresh || eData.ACP != data->ACP || eData.BST != data->BST || (data->BST & 14)) {
 								hasDiff = true;
 								if (!data->ACP || ((data->BST & 8) && blinkStage)) {
 									actions.erase(actions.begin());
@@ -404,7 +403,7 @@ void FXHelper::RefreshCounters(LightEventData* data, bool fromRefresh)
 						else {
 							cVal = CheckEvent(data, &(*e));
 
-							if (force || (cVal + CheckEvent(&eData, &(*e))) == 1 || (e->mode && cVal)) {
+							if (fromRefresh || (cVal + CheckEvent(&eData, &(*e))) == 1 || (e->mode && cVal)) {
 								hasDiff = true;
 								if (cVal && (!e->mode || blinkStage)) {
 									actions.erase(actions.begin());
@@ -732,7 +731,7 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 				// stop thread if device removed
 				if (dev && dev->version != AlienFX_SDK::API_UNKNOWN) {
 					if (conf->afx_dev.SetDeviceBrightness(&(*dev), fbright, pbstate)) {
-						src->Refresh();
+						src->Refresh(2);
 					}
 				}
 				//DebugPrint("Set brightness " + to_string(src->finalBrightness) + " for device " + to_string(dev->pid) + "\n");
@@ -743,7 +742,7 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 				if (dev && dev_query.size() && dev->version != AlienFX_SDK::API_UNKNOWN && 
 					conf->activeProfile->effects[dev->devID].empty()) {
 					lightQuery->inUpdate = true;
-					dev->dev->SetMultiAction(&dev_query, current.light);
+					dev->dev->SetMultiAction(&dev_query, current.light == 1);
 					//DebugPrint("Set action complete\n");
 					dev->dev->UpdateColors();
 					lightQuery->inUpdate = false;

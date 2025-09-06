@@ -1,6 +1,7 @@
 #pragma once
 #include <pdh.h>
 #include "ThreadHelper.h"
+#include "FXHelper.h"
 
 class SysMonHelper {
 private:
@@ -18,6 +19,7 @@ public:
 	HQUERY hQuery;
 	HCOUNTER hCPUCounter, hHDDCounter, hNETCounter, hNETMAXCounter, hGPUCounter, hTempCounter, hTempCounter2, hPwrCounter;
 	unsigned char* counterValues{ new unsigned char[1] };
+	LightEventData sData;
 
 	SysMonHelper();
 	~SysMonHelper();

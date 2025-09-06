@@ -11,8 +11,6 @@ extern HWND fanWindow, tipWindow;
 
 HWND toolTip = NULL;
 
-NOTIFYICONDATA* niData;
-
 extern HINSTANCE hInst;
 bool fanUpdateBlock = false;
 RECT cArea{ 0 };
@@ -235,7 +233,7 @@ DWORD WINAPI CheckFanOverboost(LPVOID lpParam) {
     }
     if (crpm >= 0) {
         fan_conf->UpdateBoost(fan_conf->lastSelectedFan, max(bestBoostPoint.maxBoost, 100), bestBoostPoint.maxRPM);
-        ShowNotification(niData, "Max. boost calculation done", "Fan #" + to_string(fan_conf->lastSelectedFan + 1)
+        ShowNotification((NOTIFYICONDATA*)fan_conf->niData, "Max. boost calculation done", "Fan #" + to_string(fan_conf->lastSelectedFan + 1)
             + ": Final boost " + to_string(bestBoostPoint.maxBoost)
             + " @ " + to_string(bestBoostPoint.maxRPM) + " RPM.");
     }
@@ -497,11 +495,18 @@ void FanUIEvent(NMLISTVIEW* lParam, HWND fanList, HWND tempList) {
     }
 }
 
+void PowerChangeNotify(HWND power_list) {
+    if (power_list)
+        ComboBox_SetCurSel(power_list, mon->powerMode);
+    ShowNotification((NOTIFYICONDATA*)fan_conf->niData, "Power mode switched!", "New power mode - " + 
+        (mon->powerMode == mon->powerSize ? "G-mode" : *fan_conf->GetPowerName(mon->acpi->powers[mon->powerMode])));
+    BlinkNumLock(mon->powerMode);
+}
+
 void AlterGMode(HWND power_list) {
     if (mon->acpi->isGmode) {
         fan_conf->lastProf->gmodeStage = !fan_conf->lastProf->gmodeStage;
         mon->SetCurrentMode();
-        if (power_list)
-            ComboBox_SetCurSel(power_list, mon->powerMode);
+        PowerChangeNotify(power_list);
     }
 }

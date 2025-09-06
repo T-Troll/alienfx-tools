@@ -30,7 +30,6 @@ const char* pModes[] = { "Off", "Enabled", "Aggressive", "Efficient", "Efficient
 GUID* sch_guid, perfset;
 
 NOTIFYICONDATA niDataFC;
-extern NOTIFYICONDATA* niData;
 
 bool isNewVersion = false;
 bool needUpdateFeedback = false;
@@ -48,6 +47,7 @@ extern void FanUIEvent(NMLISTVIEW* lParam, HWND fanList, HWND tempList);
 extern string GetFanName(int ind, bool forTray = false);
 extern void AlterGMode(HWND);
 extern void DrawFan();
+extern void PowerChangeNotify(HWND power_list);
 
 extern HANDLE ocStopEvent;
 extern DWORD WINAPI CheckFanOverboost(LPVOID lpParam);
@@ -95,7 +95,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
             GetSystemMetrics(SM_CYSMICON),
             LR_DEFAULTCOLOR) };
 
-    niData = &niDataFC;
+    fan_conf->niData = &niDataFC;
 
     if (mon->acpi->isSupported) {
         if (mDlg = CreateDialog(hInst, MAKEINTRESOURCE(IDD_MAIN_VIEW), NULL, (DLGPROC)FanDialog)) {
@@ -116,15 +116,15 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
         }
     }
     else {
-        if (AddTrayIcon(niData, false)) {
-            ShowNotification(niData, "Error", "Compatible hardware not found!");
+        if (AddTrayIcon(&niDataFC, false)) {
+            ShowNotification(&niDataFC, "Error", "Compatible hardware not found!");
             Sleep(5000);
         }
         WindowsStartSet(fan_conf->startWithWindows = false, "AlienFan-GUI");
     }
     delete mon;
     DoStopAWCC(wasAWCC, false);
-    Shell_NotifyIcon(NIM_DELETE, niData);
+    Shell_NotifyIcon(NIM_DELETE, &niDataFC);
     fan_conf->Save();
     delete fan_conf;
     return 0;
@@ -140,7 +140,7 @@ void RestoreApp() {
 
 void ToggleValue(DWORD& value, int cID) {
     value = !value;
-    CheckMenuItem(GetMenu(niData->hWnd), cID, value ? MF_CHECKED : MF_UNCHECKED);
+    CheckMenuItem(GetMenu(niDataFC.hWnd), cID, value ? MF_CHECKED : MF_UNCHECKED);
 }
 
 void SetOCUI(HWND hDlg) {
@@ -174,15 +174,15 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
 
     if (message == newTaskBar) {
         // Started/restarted explorer...
-        AddTrayIcon(niData, fan_conf->updateCheck);
+        AddTrayIcon(&niDataFC, fan_conf->updateCheck);
     }
 
     switch (message) {
     case WM_INITDIALOG:
     {
-        niData->hWnd = hDlg;
+        niDataFC.hWnd = hDlg;
 
-        while (!AddTrayIcon(niData, fan_conf->updateCheck))
+        while (!AddTrayIcon(&niDataFC, fan_conf->updateCheck))
             Sleep(100);
 
         // set PerfBoost lists...
@@ -286,7 +286,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             break;
         case IDM_SAVE:
             fan_conf->Save();
-            ShowNotification(niData, "Configuration saved!", "Configuration saved successfully.");
+            ShowNotification(&niDataFC, "Configuration saved!", "Configuration saved successfully.");
             break;
         case IDM_SETTINGS_STARTWITHWINDOWS:
             ToggleValue(fan_conf->startWithWindows, wmId);
@@ -298,7 +298,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         case IDM_SETTINGS_UPDATE:
             ToggleValue(fan_conf->updateCheck, wmId);
             if (fan_conf->updateCheck)
-                CreateThread(NULL, 0, CUpdateCheck, niData, 0, NULL);
+                CreateThread(NULL, 0, CUpdateCheck, &niDataFC, 0, NULL);
             break;
         case IDM_SETTINGS_KEYBOARDSHORTCUTS:
             ToggleValue(fan_conf->keyShortcuts, wmId);
@@ -421,8 +421,8 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             break;
         case NIN_BALLOONTIMEOUT:
             if (!isNewVersion) {
-                Shell_NotifyIcon(NIM_DELETE, niData);
-                Shell_NotifyIcon(NIM_ADD, niData);
+                Shell_NotifyIcon(NIM_DELETE, &niDataFC);
+                Shell_NotifyIcon(NIM_ADD, &niDataFC);
             }
             else
                 isNewVersion = false;
@@ -439,9 +439,9 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             for (int i = 0; i < mon->fansize; i++) {
                 tooltip.append("\n" + GetFanName(i, true));
             }
-            niData->szTip[127] = 0;
-            strcpy_s(niData->szTip, min(127, tooltip.length() + 1), tooltip.c_str());
-            Shell_NotifyIcon(NIM_MODIFY, niData);
+            niDataFC.szTip[127] = 0;
+            strcpy_s(niDataFC.szTip, min(127, tooltip.length() + 1), tooltip.c_str());
+            Shell_NotifyIcon(NIM_MODIFY, &niDataFC);
         } break;
         }
         break;
@@ -450,14 +450,11 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         if (wParam == 6 || wParam > 19 && wParam - 20 < mon->powerSize) {
             if (wParam == 6) { // G-key for Dell G-series power switch
                 AlterGMode(power_list);
-                BlinkNumLock(mon->powerMode);
             }
             else { // Power mode shortcut
                 mon->SetPowerMode((WORD)wParam - 20);
-                BlinkNumLock(mon->powerMode);
+                PowerChangeNotify(power_list);
             }
-            ComboBox_SetCurSel(power_list, mon->powerMode);
-            ShowNotification(niData, "Power mode switched!", "New power mode - " + (fan_conf->lastProf->gmodeStage ? "G-mode" : *fan_conf->GetPowerName(mon->acpi->powers[mon->powerMode])));
         }
         break;
     case WM_MENUCOMMAND: {
@@ -522,7 +519,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             mon->Start();
             if (fan_conf->updateCheck) {
                 //needUpdateFeedback = false;
-                CreateThread(NULL, 0, CUpdateCheck, niData, 0, NULL);
+                CreateThread(NULL, 0, CUpdateCheck, &niDataFC, 0, NULL);
             }
             break;
         case PBT_APMSUSPEND:

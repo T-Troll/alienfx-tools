@@ -40,11 +40,11 @@ private:
 	void QueryCommand(WORD pid, LightQueryElement &lqe);
 	void QueryAllDevs(LightQueryElement& lqe);
 	void SetLight(DWORD lgh, vector<AlienFX_SDK::Afx_action>* actions);
+	void QueryUpdate(byte force = 0);
+	void SetZone(groupset* grp, vector<AlienFX_SDK::Afx_action>* actions, double power = 1.0);
 
 public:
-	//HANDLE updateThread = NULL;
 	HANDLE stopQuery;
-	//HANDLE haveNewElement;
 	CustomMutex modifyQuery;
 	map<WORD, DeviceUpdateQuery> devLightQuery;
 	LightEventData eData, maxData;
@@ -57,7 +57,6 @@ public:
 		stateAction = true,
 		finalPBState = true, 
 		updateAllowed = false;
-	//bool lightsNoDelay = true;
 	int finalBrightness = -1;
 
 	FXHelper();
@@ -65,16 +64,14 @@ public:
 	AlienFX_SDK::Afx_action BlendPower(double power, AlienFX_SDK::Afx_action* from, AlienFX_SDK::Afx_action* to);
 	void Start();
 	void Stop();
-	void Refresh(bool force = false);
-	void RefreshZone(groupset* map, bool update = true);
+	void Refresh(byte force = 0); // 0 - not forced, 1 - forced and save, 2 - forced
 	void TestLight(AlienFX_SDK::Afx_device* dev, int id, bool force = false, bool wp=false);
 	bool CheckEvent(LightEventData* eData, event* e);
-	void RefreshCounters(LightEventData *data = NULL, bool fromRefresh = false);
+	void RefreshZone(groupset* map, bool update = true);
+	void RefreshCounters(bool fromRefresh = false);
 	void RefreshAmbient(bool fromRefresh = false);
 	void RefreshHaptics(bool fromRefresh = false);
 	void RefreshGrid(bool fromRefresh = false);
-	void SetZone(groupset* grp, vector<AlienFX_SDK::Afx_action>* actions, double power = 1.0);
 	void SetState(bool force = false);
 	void UpdateGlobalEffect(AlienFX_SDK::Afx_device* dev = NULL, bool reset = false);
-	void QueryUpdate(bool force = false);
 };
