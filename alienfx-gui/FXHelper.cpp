@@ -574,14 +574,7 @@ void FXHelper::RefreshGrid(bool fromRefresh) {
 						grideffop* effop = &ce->gridop;
 						grideffect* eff = &ce->effect;
 						int cTact = effop->current_tact;
-						// check for initial repaint
-						if (effop->stars.empty() || fromRefresh) {
-							cur.front() = Code2Act(eff->effectColors.front());
-							SetZone(&(*ce), &cur);
-							effop->stars.resize(eff->width);
-							//effop->oldphase = -1;
-							wasChanged = true;
-						}
+
 						// calculate phase
 						if (!fromRefresh)
 							++effop->current_tact;
@@ -603,6 +596,15 @@ void FXHelper::RefreshGrid(bool fromRefresh) {
 							eff->effectColors[backIndex]);
 						backIndex++;
 						AlienFX_SDK::Afx_action to = Code2Act(eff->effectColors[backIndex != eff->effectColors.size() ? backIndex : 0]);
+
+						// check for initial repaint/refresh
+						if (effop->stars.empty() || fromRefresh) {
+							cur.front() = from;
+							SetZone(&(*ce), &cur);
+							effop->stars.resize(eff->width);
+							//effop->oldphase = -1;
+							wasChanged = true;
+						}
 
 						phase %= effop->effsize;
 
