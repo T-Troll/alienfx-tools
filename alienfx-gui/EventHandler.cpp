@@ -191,7 +191,7 @@ void EventHandler::CheckProfileChange(bool destroy) {
 
 	GetWindowThreadProcessId(GetForegroundWindow(), &prcId);
 
-	profile* newProf = conf->FindProfileByApp(prcId);
+	profile* newProf = conf->FindProfileByApp(prcId, true);
 
 	if (!destroy && newProf && (conf->IsPriorityProfile(newProf) || !conf->IsPriorityProfile(conf->activeProfile))) {
 		SwitchActiveProfile(newProf);
@@ -325,28 +325,25 @@ LRESULT CALLBACK acProc(int nCode, WPARAM wParam, LPARAM lParam) {
 // Create/destroy callback - switch profile if new/closed process in app list
 static VOID CALLBACK CCreateProc(HWINEVENTHOOK hWinEventHook, DWORD dwEvent, HWND hwnd, LONG idObject, LONG idChild, DWORD dwEventThread, DWORD dwmsEventTime) {
 
-	DWORD prcId;
-	profile* prof = NULL;
-	bool activeDestroy = false;
-
-	//GetWindowThreadProcessId(hwnd, &prcId);
-
 	if (idObject == OBJID_WINDOW && idChild == CHILDID_SELF) {
+		DWORD prcId;
+		profile* prof = NULL;
+		bool activeDestroy = false;
+
 		GetWindowThreadProcessId(hwnd, &prcId);
 #ifdef _DEBUG
-		processdata app = conf->GetProcessData(prcId);
-		DebugPrint(string("Eve: Process ") + app.appName + (dwEvent == EVENT_OBJECT_DESTROY ? " destroyed" : " started") + ".\n");
+		//processdata app = conf->GetProcessData(prcId);
+		//DebugPrint(string("Eve: Process ") + app.appName + (dwEvent == EVENT_OBJECT_DESTROY ? " destroyed" : " started") + ".\n");
 #endif
 		if (prof = conf->FindProfileByApp(prcId, true)) {
-			HANDLE hProcess;
-			if (dwEvent == EVENT_OBJECT_DESTROY && prof->id == conf->activeProfile->id && 
-				(hProcess = OpenProcess(SYNCHRONIZE, FALSE, prcId))) {
+			HANDLE hProcess = NULL;
+			if (activeDestroy = (dwEvent == EVENT_OBJECT_DESTROY && prof->id == conf->activeProfile->id &&
+				(hProcess = OpenProcess(SYNCHRONIZE, FALSE, prcId)))) {
 				// Wait for termination
 				//DebugPrint("C/D: Active profile app closed, delay activated.\n");
 				WaitForSingleObject(hProcess, 500);
 				CloseHandle(hProcess);
 				//DebugPrint("C/D: Quit wait over.\n");
-				activeDestroy = true;
 			}
 			eve->CheckProfileChange(activeDestroy);
 		}

@@ -129,11 +129,10 @@ namespace AlienFan_SDK {
 			printf("AWCC section detected!\n");
 #endif
 			// need to get instance
-
 			if (m_WbemServices->CreateInstanceEnum((BSTR)L"AWCCWmiMethodFunction", WBEM_FLAG_FORWARD_ONLY, NULL, &enum_obj) == S_OK) {
 
 				IWbemClassObject* spInstance;
-				ULONG uNumOfInstances = 0;
+				ULONG uNumOfInstances;
 				enum_obj->Next(10000, 1, &spInstance, &uNumOfInstances);
 				spInstance->Get((BSTR)L"__Path", 0, &m_instancePath, 0, 0);
 				spInstance->Release();
