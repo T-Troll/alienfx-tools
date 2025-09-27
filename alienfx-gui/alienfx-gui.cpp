@@ -118,7 +118,7 @@ void SetMainTabs();
 void SelectProfile(profile* prof = conf->activeProfile) {
 	if (!dDlg) {
 		eve->SwitchActiveProfile(prof);
-		activeMapping = prof->lightsets.size() ? &prof->lightsets.front() : NULL;
+		activeMapping = conf->activeProfile->lightsets.size() ? &conf->activeProfile->lightsets.front() : NULL;
 		if (tabSel == TAB_FANS || tabSel == TAB_LIGHTS)
 			OnSelChanged();
 	}

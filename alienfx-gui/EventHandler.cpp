@@ -89,15 +89,12 @@ void EventHandler::SetDisplayFreq(int freq) {
 	if (newFreq) {
 		DEVMODE params;
 		params.dmSize = sizeof(DEVMODE);
-		if (EnumDisplaySettings(NULL, ENUM_CURRENT_SETTINGS, &params)) {
+		if (EnumDisplaySettings(NULL, ENUM_CURRENT_SETTINGS, &params) && params.dmDisplayFrequency != newFreq) {
+			params.dmFields = DM_DISPLAYFREQUENCY;
+			params.dmDisplayFrequency = newFreq;
+			ChangeDisplaySettings(&params, CDS_UPDATEREGISTRY);
 			//currentFreq = params.dmDisplayFrequency;
-			if (params.dmDisplayFrequency != newFreq) {
-				params.dmFields = DM_DISPLAYFREQUENCY;
-				params.dmDisplayFrequency = newFreq;
-				ChangeDisplaySettings(&params, CDS_UPDATEREGISTRY);
-				//currentFreq = params.dmDisplayFrequency;
-				DebugPrint("Display reftesh rate changed to " + to_string(newFreq) + "\n");
-			}
+			DebugPrint("Display reftesh rate changed to " + to_string(newFreq) + "\n");
 		}
 	}
 }
@@ -212,21 +209,19 @@ void EventHandler::CheckProfileChange(bool destroy) {
 	DebugPrint("Profile: FP suggest " + (newProf ? newProf->name : "none") + ", TaskScan initiated.\n");
 
 	DWORD cbNeeded;
-	if (EnumProcesses(aProcesses, maxProcess, &cbNeeded)) {
-		while (cbNeeded == maxProcess) {
-			maxProcess = maxProcess << 1;
-			delete[] aProcesses;
-			aProcesses = new DWORD[maxProcess >> 2];
-			EnumProcesses(aProcesses, maxProcess , &cbNeeded);
-		}
-		cbNeeded = cbNeeded >> 2;
-		profile* cProf;
-		for (UINT i = 0; i < cbNeeded; i++) {
-			if (aProcesses[i] && (cProf = conf->FindProfileByApp(aProcesses[i]))) {
-				newProf = cProf;
-				if (conf->IsPriorityProfile(newProf))
-					break;
-			}
+	while (EnumProcesses(aProcesses, maxProcess, &cbNeeded) && cbNeeded == maxProcess) {
+		maxProcess = maxProcess << 1;
+		delete[] aProcesses;
+		aProcesses = new DWORD[maxProcess >> 2];
+		//EnumProcesses(aProcesses, maxProcess , &cbNeeded);
+	}
+	cbNeeded = cbNeeded >> 2;
+	profile* cProf;
+	for (UINT i = 0; i < cbNeeded; i++) {
+		if (aProcesses[i] && (cProf = conf->FindProfileByApp(aProcesses[i]))) {
+			newProf = cProf;
+			if (conf->IsPriorityProfile(newProf))
+				break;
 		}
 	}
 	SwitchActiveProfile(newProf);
@@ -288,8 +283,8 @@ void EventHandler::ToggleProfiles()
 	StopProfiles();
 	conf->enableProfSwitch = !conf->enableProfSwitch;
 	StartProfiles();
-	if (conf->enableProfSwitch)
-		CheckProfileChange();
+	//if (conf->enableProfSwitch)
+	//	CheckProfileChange();
 }
 
 DWORD WINAPI acFunc(LPVOID lpParam) {
