@@ -32,7 +32,7 @@ public:
 	void StopProfiles();
 	void ToggleProfiles();
 	//string GetProcessName(DWORD proc);
-	void CheckProfileChange(bool destroy = false);
+	void CheckProfileChange();
 
 	// Effects
 	void ChangeEffectMode(bool profile = false);

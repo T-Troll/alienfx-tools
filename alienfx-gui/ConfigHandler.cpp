@@ -102,19 +102,13 @@ processdata ConfigHandler::GetProcessData(DWORD proc) {
 	return res;
 }
 
-//profile* ConfigHandler::FindProfileByApp(HWND wnd) {
-//	DWORD prcId;
-//	GetWindowThreadProcessId(wnd, &prcId);
-//	return FindProfileByApp(prcId, true);
-//}
-
-profile* ConfigHandler::FindProfileByApp(DWORD proc, bool active)
+profile* ConfigHandler::FindProfileByApp(DWORD proc)
 {
 	profile* fprof = NULL;
 	processdata procName = GetProcessData(proc);
 
 	for (profile* prof : profiles)
-		if (SamePower(prof) && (active || !(prof->flags & PROF_ACTIVE))) {
+		if (SamePower(prof)) {
 			for (auto name : prof->triggerapp) {
 				if (name.back() == '\\' ? procName.appPath.find(name) == 0 : name == procName.appName) {
 					//DebugPrint("Profile: " + procName + " found in " + prof->name + "\n");

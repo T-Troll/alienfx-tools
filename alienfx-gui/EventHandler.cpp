@@ -182,46 +182,42 @@ void EventHandler::ChangeEffects(bool stop) {
 	fxhl->Refresh(2);
 }
 
-void EventHandler::CheckProfileChange(bool destroy) {
-
+void EventHandler::CheckProfileChange() {
 	DWORD prcId;
-
 	GetWindowThreadProcessId(GetForegroundWindow(), &prcId);
-
-	profile* newProf = conf->FindProfileByApp(prcId, true);
-
-	if (!destroy && newProf && (conf->IsPriorityProfile(newProf) || !conf->IsPriorityProfile(conf->activeProfile))) {
+	profile* newProf = conf->FindProfileByApp(prcId);
+	
+	if (newProf && (conf->IsPriorityProfile(newProf) || !conf->IsPriorityProfile(conf->activeProfile))) {
 		SwitchActiveProfile(newProf);
 		return;
 	}
-	else {
-		if (!destroy && !newProf) {
-			processdata app = conf->GetProcessData(prcId);
-			for (int i = 0; forbiddenApps[i][0]; i++)
-				if (forbiddenApps[i] == app.appName) {
-					DebugPrint("Profile: Forbidden!\n");
-					newProf = conf->activeProfile;
-					break;
-				}
-		}
-	}
 
-	DebugPrint("Profile: FP suggest " + (newProf ? newProf->name : "none") + ", TaskScan initiated.\n");
+	//DebugPrint("Profile: FP suggest " + (newProf ? newProf->name : "none") + ", TaskScan initiated.\n");
 
 	DWORD cbNeeded;
 	while (EnumProcesses(aProcesses, maxProcess, &cbNeeded) && cbNeeded == maxProcess) {
 		maxProcess = maxProcess << 1;
 		delete[] aProcesses;
 		aProcesses = new DWORD[maxProcess >> 2];
-		//EnumProcesses(aProcesses, maxProcess , &cbNeeded);
 	}
 	cbNeeded = cbNeeded >> 2;
 	profile* cProf;
+	processdata app = conf->GetProcessData(prcId);
 	for (UINT i = 0; i < cbNeeded; i++) {
 		if (aProcesses[i] && (cProf = conf->FindProfileByApp(aProcesses[i]))) {
-			newProf = cProf;
-			if (conf->IsPriorityProfile(newProf))
-				break;
+			if (cProf->flags | PROF_ACTIVE) {
+				if (conf->noDesktop && conf->activeProfile == cProf) {
+					for (int i = 0; forbiddenApps[i][0]; i++)
+						if (forbiddenApps[i] == app.appName) {
+							DebugPrint("Profile: Forbidden!\n");
+							return;
+						}
+				}
+			} else {
+				newProf = cProf;
+				if (conf->IsPriorityProfile(newProf))
+					break;
+			}
 		}
 	}
 	SwitchActiveProfile(newProf);
@@ -322,25 +318,28 @@ static VOID CALLBACK CCreateProc(HWINEVENTHOOK hWinEventHook, DWORD dwEvent, HWN
 
 	if (idObject == OBJID_WINDOW && idChild == CHILDID_SELF) {
 		DWORD prcId;
-		profile* prof = NULL;
-		bool activeDestroy = false;
+		//profile* prof = NULL;
+		//bool activeDestroy = false;
 
 		GetWindowThreadProcessId(hwnd, &prcId);
 #ifdef _DEBUG
 		//processdata app = conf->GetProcessData(prcId);
 		//DebugPrint(string("Eve: Process ") + app.appName + (dwEvent == EVENT_OBJECT_DESTROY ? " destroyed" : " started") + ".\n");
 #endif
-		if (prof = conf->FindProfileByApp(prcId, true)) {
-			HANDLE hProcess = NULL;
-			if (activeDestroy = (dwEvent == EVENT_OBJECT_DESTROY && prof->id == conf->activeProfile->id &&
-				(hProcess = OpenProcess(SYNCHRONIZE, FALSE, prcId)))) {
-				// Wait for termination
-				//DebugPrint("C/D: Active profile app closed, delay activated.\n");
-				WaitForSingleObject(hProcess, 500);
-				CloseHandle(hProcess);
-				//DebugPrint("C/D: Quit wait over.\n");
-			}
-			eve->CheckProfileChange(activeDestroy);
+		if (/*prof = */conf->FindProfileByApp(prcId)) {
+			//if (dwEvent == EVENT_OBJECT_DESTROY && prof->id == conf->activeProfile->id)
+			//	conf->activeProfile = NULL;
+			//bool activeDestroy = dwEvent == EVENT_OBJECT_DESTROY && prof->id == conf->activeProfile->id;
+			//HANDLE hProcess = NULL;
+			//if (activeDestroy = (dwEvent == EVENT_OBJECT_DESTROY && prof->id == conf->activeProfile->id &&
+			//	(hProcess = OpenProcess(SYNCHRONIZE, FALSE, prcId)))) {
+			//	// Wait for termination
+			//	//DebugPrint("C/D: Active profile app closed, delay activated.\n");
+			//	WaitForSingleObject(hProcess, 500);
+			//	CloseHandle(hProcess);
+			//	//DebugPrint("C/D: Quit wait over.\n");
+			//}
+			eve->CheckProfileChange();
 		}
 	}
 }

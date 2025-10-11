@@ -252,7 +252,7 @@ public:
 	zonemap* FindZoneMap(int gid, bool reset=false);
 	profile* FindProfile(int id);
 	profile* FindDefaultProfile();
-	profile* FindProfileByApp(DWORD proc, bool active = false);
+	profile* FindProfileByApp(DWORD proc);
 	//profile* FindProfileByApp(HWND wnd);
 	AlienFX_SDK::Afx_group* FindCreateGroup(int groupID);
 	bool IsPriorityProfile(profile* prof);
