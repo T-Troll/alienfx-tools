@@ -156,8 +156,13 @@ FN_DECLSPEC LFX_RESULT STDCALL LFX_Initialize() {
 		afx_dev->LoadMappings();
 	}
 	afx_dev->AlienFXEnumDevices();
-	for (AlienFX_SDK::Afx_device& j : afx_dev->fxdevs) {
-		afx_dev->SetDeviceBrightness(&j, 255, false);
+	for (auto j = afx_dev->fxdevs.begin(); j != afx_dev->fxdevs.end();) {
+		if (j->present) {
+			afx_dev->SetDeviceBrightness(&(*j), 255, false);
+			j++;
+		}
+		else
+			j = afx_dev->fxdevs.erase(j);
 	}
 	if (!updateThread) {
 		stopQuery = CreateEvent(NULL, false, false, NULL);

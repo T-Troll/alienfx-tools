@@ -251,6 +251,7 @@ namespace AlienFX_SDK {
 		Afx_colorcode white = { 255,255,255 }; // white balance
 		byte brightness = 255;		// global device brightness
 		vector <Afx_light> lights;	// vector of lights defined
+		bool arrived = false, present = false; // for newly arrived and present devices
 	};
 
 	class Mappings {
@@ -263,17 +264,17 @@ namespace AlienFX_SDK {
 		vector<Afx_device> fxdevs; // main devices/mappings array
 		unsigned activeLights = 0,  // total number of active lights into the system
 				 activeDevices = 0; // total number of active devices
-		bool	 deviceListChanged = false; // device list changed flag
+		bool deviceListChanged = false; // Is list changed after last device scan?
 
 		~Mappings();
+
+		// Update device info after it found into the system
+		void AlienFxUpdateDevice(Functions* dev);
 
 		// Enumerate all alienware devices into the system
 		// acc - link to AlienFan_SDK::Control object for ACPI lights
 		// returns true if light device list was changed
 		bool AlienFXEnumDevices(void* acc = NULL);
-
-		// Remove unused devices from device list, if any
-		void AlienFXCleanDevices();
 
 		// load light names from registry
 		void LoadMappings();

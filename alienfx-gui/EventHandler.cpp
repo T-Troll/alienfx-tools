@@ -19,7 +19,7 @@ extern FXHelper* fxhl;
 extern MonHelper* mon;
 extern ConfigHandler* conf;
 extern ConfigFan* fan_conf;
-extern ThreadHelper* dxgi_thread;
+//extern ThreadHelper* dxgi_thread;
 
 extern HWND mDlg;
 
@@ -173,13 +173,13 @@ void EventHandler::ChangeEffects(bool stop) {
 	if (noMon && sysmon) {	// System monitoring
 		delete (SysMonHelper*)sysmon; sysmon = NULL;
 	}
-	if ((noAmb || !dxgi_thread) && capt) {	// Ambient
+	if ((noAmb /*|| !dxgi_thread*/) && capt) {	// Ambient
 		delete (CaptureHelper*)capt; capt = NULL;
 	}
 	if (noHap && audio) {	// Haptics
 		delete (WSAudioIn*)audio; audio = NULL;
 	}
-	fxhl->Refresh(2);
+	fxhl->Refresh();
 }
 
 void EventHandler::CheckProfileChange() {
@@ -225,7 +225,7 @@ void EventHandler::CheckProfileChange() {
 
 void EventHandler::StartProfiles()
 {
-	if (/*notInDestroy &&*/ conf->enableProfSwitch && !hEvent) {
+	if (conf->enableProfSwitch && !hEvent) {
 		DebugPrint("Profile hooks starting.\n");
 		hEvent = SetWinEventHook(EVENT_SYSTEM_FOREGROUND,
 			EVENT_SYSTEM_FOREGROUND, NULL,

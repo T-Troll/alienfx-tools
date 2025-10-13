@@ -215,7 +215,7 @@ BOOL CALLBACK DeviceEffectDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 	} break;
 	case WM_DESTROY:
 		if (prof->id == conf->activeProfile->id)
-			fxhl->Refresh();
+			fxhl->Refresh(2);
 		break;
 	default: return false;
 	}

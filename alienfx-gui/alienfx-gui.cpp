@@ -129,8 +129,20 @@ void UpdateLightDevices() {
 	if (conf->afx_dev.AlienFXEnumDevices(mon ? mon->acpi : NULL)) {
 		DebugPrint("Active device list changed!\n");
 		if (conf->afx_dev.activeDevices && !dDlg) {
-			fxhl->UpdateGlobalEffect(NULL);
-			fxhl->Start();
+			fxhl->updateAllowed = true;
+			for (auto& fxd : conf->afx_dev.fxdevs) {
+				if (fxd.arrived) {
+					fxhl->UpdateGlobalEffect(&fxd, true);
+					fxhl->devLightQuery[fxd.pid].lstate.clear();
+					fxhl->QueryCommand(fxd.pid, LightQueryElement({ 0, 2 }));
+				}
+				else {
+					if (!fxd.present && fxd.dev) {
+						// Schedule device removal
+						fxhl->QueryCommand(fxd.pid, LightQueryElement({ 0, 3 }));
+					}
+				}
+			}
 			fxhl->Refresh();
 		}
 		SetMainTabs();
@@ -410,7 +422,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			CreateThread(NULL, 0, CUpdateCheck, &conf->niData, 0, NULL);
 			break;
 		case IDC_BUTTON_REFRESH:
-			fxhl->Refresh();
+			fxhl->Refresh(2);
 			break;
 		case IDC_BUTTON_SAVE:
 			conf->afx_dev.SaveMappings();

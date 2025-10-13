@@ -170,7 +170,7 @@ void UpdateDeviceInfo() {
 	char descript[128];
 	sprintf_s(descript, 128, "VID_%04X/PID_%04X, %d lights, %s",
 		activeDevice->vid, activeDevice->pid, (int)activeDevice->lights.size(),
-		activeDevice->dev ? ("APIv" + to_string(activeDevice->version)).c_str() : "(inactive)");
+		("APIv" + to_string(activeDevice->version) + (activeDevice->present ? "" : " (inactive)")).c_str());
 	SetWindowText(GetDlgItem(dDlg, IDC_INFO_VID), descript);
 	EnableWindow(GetDlgItem(dDlg, IDC_ISPOWERBUTTON), activeDevice->version && activeDevice->version < 5); // v5 and higher doesn't support power button
 	UpdateLightsList();
@@ -676,7 +676,6 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 	case WM_DESTROY:
 	{
 		fxhl->Start();
-		fxhl->SetState(true);
 		eve->ChangeEffectMode();
 		dDlg = NULL;
 	} break;

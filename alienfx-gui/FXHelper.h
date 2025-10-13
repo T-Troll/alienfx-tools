@@ -11,6 +11,7 @@ struct LightEventData {
 struct LightQueryElement {
 	//WORD pid;
 	byte light;	  // lightID or forced state
+	//byte force;	  // forced state: 0 - no force, 1 - save light state, 2 - force update
 	byte command; // 0 - color, 1 - update, 2 - set brightness, 3 - set power
 	byte actsize;
 	AlienFX_SDK::Afx_action actions[9];
@@ -18,9 +19,10 @@ struct LightQueryElement {
 
 struct DeviceUpdateQuery {
 	HANDLE haveNewElement = NULL,
-		updateThread = NULL;
+		   updateThread = NULL;
 	bool inUpdate = false;
 	queue<LightQueryElement> lightQuery;
+	map<byte, LightQueryElement> lstate;
 };
 
 struct LightQueryData {
@@ -37,7 +39,8 @@ private:
 
 	void SetZoneLight(DWORD id, int x, int max, int scale, WORD flags, vector<AlienFX_SDK::Afx_action>* actions, double power = 0);
 	void SetGaugeGrid(groupset* grp, zonemap* zone, int phase, AlienFX_SDK::Afx_action* fin);
-	void QueryCommand(WORD pid, LightQueryElement &lqe);
+	//void QueryCommand(WORD pid, LightQueryElement &lqe);
+	void QueryClearState();
 	void QueryAllDevs(LightQueryElement& lqe);
 	void SetLight(DWORD lgh, vector<AlienFX_SDK::Afx_action>* actions);
 	void QueryUpdate(byte force = 0);
@@ -49,7 +52,7 @@ public:
 	map<WORD, DeviceUpdateQuery> devLightQuery;
 	LightEventData eData, maxData;
 	// Power button state...
-	map<WORD, AlienFX_SDK::Afx_action[2]> pbstate;
+	//map<WORD, AlienFX_SDK::Afx_action[2]> pbstate;
 
 	// light states
 	bool stateScreen = true,
@@ -74,4 +77,5 @@ public:
 	void RefreshGrid(bool fromRefresh = false);
 	void SetState(bool force = false);
 	void UpdateGlobalEffect(AlienFX_SDK::Afx_device* dev = NULL, bool reset = false);
+	void QueryCommand(WORD pid, LightQueryElement& lqe);
 };

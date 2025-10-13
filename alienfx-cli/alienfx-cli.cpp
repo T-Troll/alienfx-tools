@@ -130,7 +130,8 @@ int main(int argc, char* argv[])
 		devType = 1;
 		// set brightness
 		for (auto& dev : afx_map.fxdevs)
-			afx_map.SetDeviceBrightness(&dev, 255, true);
+			if (dev.present)
+				afx_map.SetDeviceBrightness(&dev, 255, true);
 	}
 	printf(", %d low-level devices found.\n", afx_map.activeDevices);
 
@@ -288,8 +289,9 @@ int main(int argc, char* argv[])
 				// status
 				if (devType) {
 					for (auto i = afx_map.fxdevs.begin(); i < afx_map.fxdevs.end(); i++) {
-						printf("Device #%d - %s, VID#%d, PID#%d, APIv%d, %d lights\n", (int)(i - afx_map.fxdevs.begin()),
-							i->name.c_str(), i->vid, i->pid, i->version, (int)i->lights.size());
+						printf("Device #%d - %s, VID#%d, PID#%d, APIv%d, %d lights%s\n", (int)(i - afx_map.fxdevs.begin()),
+							i->name.c_str(), i->vid, i->pid, i->version, (int)i->lights.size(),
+							i->present ? "" : " (inactive)");
 						for (int k = 0; k < i->lights.size(); k++)
 							printf("  Light ID#%d - %s%s%s\n", i->lights[k].lightid, i->lights[k].name.c_str(),
 								(i->lights[k].flags & ALIENFX_FLAG_POWER) ? " (Power button)" : "",
@@ -323,8 +325,8 @@ int main(int argc, char* argv[])
 					}
 				}
 				for (auto i = afx_map.fxdevs.begin(); i != afx_map.fxdevs.end(); i++) {
-					printf("===== Device VID_%04x, PID_%04x =====\n+++++ Detected as: %s, APIv%d +++++\n",
-						i->vid, i->pid, i->dev->description.c_str(), i->version);
+					printf("===== Device VID_%04x, PID_%04x =====\n+++++ Detected as: %s, APIv%d%s +++++\n",
+						i->vid, i->pid, i->dev->description.c_str(), i->version, i->present ? "" : ", Inactive");
 				}
 				printf("Do you want to set devices and lights names?");
 				char name[256];
