@@ -12,7 +12,7 @@ struct LightQueryElement {
 	byte light;
 	byte command; // 0 - color, 1 - update, 2 - set brightness
 	byte actsize;
-	AlienFX_SDK::Afx_action actions[9];
+	AlienFX_SDK::Afx_action actions[2];
 };
 
 struct deviceQuery {
@@ -24,6 +24,7 @@ bool lightsNoDelay;
 HANDLE updateThread = NULL, stopQuery, haveNewElement;
 
 queue<LightQueryElement> lightQuery;
+map<WORD, map<byte, LightQueryElement>> stateMap;
 CustomMutex modifyQuery;
 
 const BYTE actionCodes[]{ AlienFX_SDK::AlienFX_A_Color, AlienFX_SDK::AlienFX_A_Morph, AlienFX_SDK::AlienFX_A_Pulse, AlienFX_SDK::AlienFX_A_Color };
@@ -60,22 +61,27 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 				}
 			} break;
 			case 0: { // set light
-				AlienFX_SDK::Afx_device* dev = afx_dev->GetDeviceById(current.pid);
-				// Is it NOT power or indicator button?
-				if (dev && !(afx_dev->GetFlags(dev, current.light))) {
-					// form actblock...
-					AlienFX_SDK::Afx_lightblock ablock{ current.light };
-					ablock.act.resize(current.actsize);
-					memcpy(ablock.act.data(), current.actions, current.actsize * sizeof(AlienFX_SDK::Afx_action));
-					auto dv = &devs_query[current.pid];
-					for (auto lp = dv->begin(); lp != dv->end(); lp++)
-						if (lp->index == current.light) {
-							//DebugPrint("Light " + to_string(lid) + " already in query, updating data.\n");
-							dv->erase(lp);
-							break;
-						}
-					dv->push_back(ablock);
+				// checking state
+				if (stateMap[current.pid].count(current.light) && current.actsize == stateMap[current.pid][current.light].actsize &&
+					!memcmp(current.actions, stateMap[current.pid][current.light].actions, current.actsize * sizeof(AlienFX_SDK::Afx_action))) {
+					break;
 				}
+				else {
+					stateMap[current.pid][current.light].actsize = current.actsize;
+					memcpy(stateMap[current.pid][current.light].actions, current.actions, current.actsize * sizeof(AlienFX_SDK::Afx_action));
+				}
+				// form actblock...
+				AlienFX_SDK::Afx_lightblock ablock{ current.light };
+				ablock.act.resize(current.actsize);
+				memcpy(ablock.act.data(), current.actions, current.actsize * sizeof(AlienFX_SDK::Afx_action));
+				auto dv = &devs_query[current.pid];
+				for (auto lp = dv->begin(); lp != dv->end(); lp++)
+					if (lp->index == current.light) {
+						//DebugPrint("Light " + to_string(lid) + " already in query, updating data.\n");
+						dv->erase(lp);
+						break;
+					}
+				dv->push_back(ablock);
 			}
 			}
 		}
@@ -86,10 +92,10 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 
 void QueryCommand(LightQueryElement& lqe) {
 	if (updateThread) {
-			modifyQuery.lockWrite();
-			lightQuery.push(lqe);
-			modifyQuery.unlockWrite();
-			SetEvent(haveNewElement);
+		modifyQuery.lockWrite();
+		lightQuery.push(lqe);
+		modifyQuery.unlockWrite();
+		SetEvent(haveNewElement);
 	}
 }
 
@@ -101,8 +107,8 @@ void QueryUpdate() {
 
 void SetLight(DWORD lgh, vector<AlienFX_SDK::Afx_action>* actions)
 {
-	//auto dev = afx_dev->GetDeviceById(LOWORD(lgh));
-	if (actions->size()) {
+	auto dev = afx_dev->GetDeviceById(LOWORD(lgh));
+	if (dev->dev && !afx_dev->GetFlags(dev, HIWORD(lgh))) {
 		LightQueryElement newBlock{ LOWORD(lgh), (byte)HIWORD(lgh), 0, (byte)actions->size() };
 		memcpy(newBlock.actions, actions->data(), newBlock.actsize * sizeof(AlienFX_SDK::Afx_action));
 		QueryCommand(newBlock);
@@ -249,7 +255,7 @@ FN_DECLSPEC LFX_RESULT STDCALL LFX_UpdateDefault() {
 
 FN_DECLSPEC LFX_RESULT STDCALL LFX_GetNumDevices(unsigned int *const num) {
 	if (afx_dev) {
-		*num = (unsigned) afx_dev->fxdevs.size(); // afx_dev->activeDevices;
+		*num = (unsigned) afx_dev->activeDevices;
 		return LFX_SUCCESS;
 	}
 	return LFX_ERROR_NOINIT;
@@ -317,6 +323,9 @@ FN_DECLSPEC LFX_RESULT STDCALL LFX_GetLightLocation(const unsigned int dev, cons
 
 FN_DECLSPEC LFX_RESULT STDCALL LFX_GetLightColor(const unsigned int dev, const unsigned int lid, PLFX_COLOR const clr) {
 	LFX_RESULT state = CheckState(dev, lid);
+	//WORD pid = afx_dev->fxdevs[dev].pid;
+	//if (stateMap[pid].count(lid))
+	//	*clr = // translate action to LFX
 	*clr = {0};
 	return state;
 }

@@ -127,21 +127,23 @@ GridHelper::~GridHelper()
 
 void GridHelper::Stop() {
 	if (gridTrigger) {
-		delete gridTrigger;
-		gridTrigger = NULL;
-		delete gridThread;
 		if (kEvent) {
 			UnhookWindowsHookEx(kEvent);
 			kEvent = NULL;
 		}
+		delete gridTrigger;
+		gridTrigger = NULL;
+		delete gridThread;
 		if (sysmon) {
 			delete sysmon; sysmon = NULL;
 		}
+		conf->modifyProfile.lockWrite();
 		for (auto ce = conf->activeProfile->lightsets.begin(); ce < conf->activeProfile->lightsets.end(); ce++) {
 			if (ce->effect.trigger == 4 && ce->effect.capt) {
 				delete (CaptureHelper*)ce->effect.capt;
 			}
 		}
+		conf->modifyProfile.unlockWrite();
 	}
 }
 
@@ -165,7 +167,7 @@ void GridHelper::RestartWatch() {
 				if (zone.gMinX != 255/* && zone.gMinY != 255*/) {
 					ce->effect.capt = new CaptureHelper();
 					if (dxgi_thread)
-						((CaptureHelper*)ce->effect.capt)->SetLightGridSize(zone.gMaxX, zone.gMaxY);
+						((CaptureHelper*)ce->effect.capt)->SetLightGridSize(zone.gMaxX - zone.gMinX, zone.gMaxY - zone.gMinY);
 					else {
 						delete (CaptureHelper*)ce->effect.capt;
 						ce->effect.capt = NULL;

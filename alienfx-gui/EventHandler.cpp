@@ -110,7 +110,7 @@ void EventHandler::SwitchActiveProfile(profile* newID, bool force)
 		conf->modifyProfile.unlockWrite();
 		fxhl->UpdateGlobalEffect(NULL, true);
 		ToggleFans();
-		ChangeEffectMode(true);
+		ChangeEffectMode();
 
 		if (newID->flags & PROF_RUN_SCRIPT && !(newID->flags & PROF_ACTIVE) && newID->script.size())
 			ShellExecute(NULL, NULL, newID->script.c_str(), NULL, NULL, SW_SHOWDEFAULT);
@@ -135,18 +135,16 @@ void EventHandler::ToggleFans() {
 	}
 }
 
-void EventHandler::ChangeEffectMode(bool profile) {
+void EventHandler::ChangeEffectMode() {
 	fxhl->SetState();
-	bool oldgrid = grid;
 	ChangeEffects();
-	if (profile && oldgrid && grid)
-		((GridHelper*)grid)->RestartWatch();
 }
 
 void EventHandler::ChangeEffects(bool stop) {
 	bool noMon = true, noAmb = true, noHap = true, noGrid = true;
 	// Effects state...
 	conf->stateEffects = conf->stateOn && conf->enableEffects && (conf->effectsOnBattery || conf->statePower) && conf->activeProfile->effmode;
+	bool oldgrid = grid != 0;
 	if (!stop && conf->stateEffects) {
 		for (auto it = conf->activeProfile->lightsets.begin(); it != conf->activeProfile->lightsets.end(); it++) {
 			noMon = noMon && it->events.empty();
@@ -178,6 +176,9 @@ void EventHandler::ChangeEffects(bool stop) {
 	}
 	if (noHap && audio) {	// Haptics
 		delete (WSAudioIn*)audio; audio = NULL;
+	}
+	if (oldgrid && grid) {
+		((GridHelper*)grid)->RestartWatch();
 	}
 	fxhl->Refresh();
 }

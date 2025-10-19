@@ -217,8 +217,10 @@ void FXHelper::QueryAllDevs(LightQueryElement& lqe) {
 			if (!devLightQuery[devQ.pid].inUpdate || lqe.light || lqe.command != 1) {
 				QueryCommand(devQ.pid, lqe);
 			}
-			else
+			else {
+				//devLightQuery[devQ.pid].lstate.clear();
 				DebugPrint("Update for " + to_string(devQ.pid) + " skipped!\n");
+			}
 		}
 	}
 }
@@ -231,10 +233,8 @@ void FXHelper::SetLight(DWORD lgh, vector<AlienFX_SDK::Afx_action>* actions)
 {
 	auto dev = conf->afx_dev.GetDeviceById(LOWORD(lgh));
 	if (dev && dev->dev && actions->size()) {
-		LightQueryElement newBlock{ (byte)HIWORD(lgh), 0, (byte)actions->size() };
-			//(byte)
-			//(conf->afx_dev.GetFlags(dev, HIWORD(lgh)) & ALIENFX_FLAG_POWER ? 3 : 0),
-			//(byte)actions->size() };
+		LightQueryElement newBlock{ (byte)HIWORD(lgh), 
+			(byte)(conf->afx_dev.GetFlags(dev, HIWORD(lgh)) & ALIENFX_FLAG_POWER ? 4 : 0), (byte)actions->size() };
 		memcpy(newBlock.actions, actions->data(), newBlock.actsize * sizeof(AlienFX_SDK::Afx_action));
 		for (int i = 0; i < newBlock.actsize; i++) {
 			AlienFX_SDK::Afx_action* action = &newBlock.actions[i];
@@ -283,7 +283,7 @@ void FXHelper::UpdateGlobalEffect(AlienFX_SDK::Afx_device* dev, bool reset) {
 
 	for (auto cdev = conf->afx_dev.fxdevs.begin(); cdev != conf->afx_dev.fxdevs.end(); cdev++) {
 		if (cdev->dev && cdev->dev->IsHaveGlobal() && (!dev || (dev->devID == cdev->devID))) {
-			if (reset/*&& cdev->version != AlienFX_SDK::API_V5*/) {
+			if (reset && cdev->version != AlienFX_SDK::API_V5) {
 				cdev->dev->SetGlobalEffects(0, 1, 1, 0, { 0 }, { 0 });
 			}
 			for (auto it = conf->activeProfile->effects[cdev->devID].begin(); it != conf->activeProfile->effects[cdev->devID].end(); it++) {
@@ -770,22 +770,28 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 				dev_query.clear();
 				//DebugPrint("Update complete\n");
 			} break;
+			case 4: { // power button
+				if (current.actsize < 2)
+					memcpy(&current.actions[1], current.actions, sizeof(AlienFX_SDK::Afx_action));
+				current.actions[0].type = current.actions[1].type = AlienFX_SDK::AlienFX_A_Power;
+				current.actsize = 2;
+			} // no break, set light
 			case 0: { // set light
 				// Check if same color and effect...
-				src->modifyQuery.lockWrite();
+				//src->modifyQuery.lockWrite();
 				auto& lstate = lightQuery->lstate;
 				if (lstate.count(current.light) && current.actsize == lstate[current.light].actsize && 
 						!memcmp(current.actions, lstate[current.light].actions, current.actsize * sizeof(AlienFX_SDK::Afx_action))) {
 					// skip light update
 					//DebugPrint("Light update for " + to_string(pid) + ", " + to_string(current.light) + " not refreshed (same).\n");
-					src->modifyQuery.unlockWrite();
+					//src->modifyQuery.unlockWrite();
 					break;
 				}
 				else {
 					lstate[current.light].actsize = current.actsize;
 					memcpy(lstate[current.light].actions, current.actions, current.actsize * sizeof(AlienFX_SDK::Afx_action));
 				}
-				src->modifyQuery.unlockWrite();
+				//src->modifyQuery.unlockWrite();
 				// form actblock...
 				AlienFX_SDK::Afx_lightblock ablock{ current.light };
 				ablock.act.resize(current.actsize);
@@ -804,10 +810,6 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 			}
 		}
 		ResetEvent(lightQuery->haveNewElement);
-		//if (res == WAIT_OBJECT_0 + 1) { // stop event
-		//	delete ld;
-		//	return 0;
-		//}
 	}
 	delete ld;
 	return 0;

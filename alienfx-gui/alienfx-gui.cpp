@@ -579,7 +579,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			DestroyWindow(hDlg);
 			break;
 		case ID_TRAYMENU_REFRESH:
-			fxhl->Refresh();
+			fxhl->Refresh(2);
 			break;
 		case ID_TRAYMENU_LIGHTSON:
 			conf->lightsOn = !conf->lightsOn;

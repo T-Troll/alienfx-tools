@@ -35,7 +35,7 @@ public:
 	void CheckProfileChange();
 
 	// Effects
-	void ChangeEffectMode(bool profile = false);
+	void ChangeEffectMode();
 	void ChangeEffects(bool stop = false);
 
 	// Timeout Action

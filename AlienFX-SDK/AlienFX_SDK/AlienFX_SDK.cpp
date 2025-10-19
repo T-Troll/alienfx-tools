@@ -116,7 +116,7 @@ namespace AlienFX_SDK {
 				if (needV8Feature) {
 					Sleep(3);
 					bool res = HidD_SetFeature(devHandle, buffer, length);
-					Sleep(6);
+					Sleep(5);
 					return res;
 				}
 				else
@@ -733,8 +733,10 @@ namespace AlienFX_SDK {
 		switch (version) {
 		case API_V8:
 			PrepareAndSend(COMMV8_effectReady);
-			return PrepareAndSend(COMMV8_effectReady, { {3, { effType, act1.r, act1.g, act1.b, act2.r, act2.g, act2.b,
+			PrepareAndSend(COMMV8_effectReady, { {3, { effType, act1.r, act1.g, act1.b, act2.r, act2.g, act2.b,
 				tempo, bright, 1, mode, nc} }});
+			Sleep(20);
+			return true;
 		case API_V5:
 			if (inSet)
 				UpdateColors();
