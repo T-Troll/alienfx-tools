@@ -103,12 +103,17 @@ void EventHandler::SwitchActiveProfile(profile* newID, bool force)
 {
 	if (!newID) newID = conf->FindDefaultProfile();
 	if (!keyboardSwitchActive && (force || newID != conf->activeProfile)) {
-		//fxhl->UpdateGlobalEffect(NULL, true);
+		profile* oldId = conf->activeProfile;
 		conf->modifyProfile.lockWrite();
 		conf->activeProfile = newID;
 		fan_conf->lastProf = newID->flags & PROF_FANS && (fan_profile*)newID->fansets ? (fan_profile*)newID->fansets : &fan_conf->prof;
 		conf->modifyProfile.unlockWrite();
-		fxhl->UpdateGlobalEffect(NULL, true);
+		for (auto& dev : conf->afx_dev.fxdevs) {
+			if (oldId->effects[dev.devID].size() || newID->effects[dev.devID].size()) {
+				fxhl->UpdateGlobalEffect(NULL);
+				break;
+			}
+		}
 		ToggleFans();
 		ChangeEffectMode();
 
@@ -144,7 +149,6 @@ void EventHandler::ChangeEffects(bool stop) {
 	bool noMon = true, noAmb = true, noHap = true, noGrid = true;
 	// Effects state...
 	conf->stateEffects = conf->stateOn && conf->enableEffects && (conf->effectsOnBattery || conf->statePower) && conf->activeProfile->effmode;
-	bool oldgrid = grid != 0;
 	if (!stop && conf->stateEffects) {
 		for (auto it = conf->activeProfile->lightsets.begin(); it != conf->activeProfile->lightsets.end(); it++) {
 			noMon = noMon && it->events.empty();
@@ -158,8 +162,12 @@ void EventHandler::ChangeEffects(bool stop) {
 			capt = new CaptureHelper(true);
 		if (!(noHap || audio))
 			audio = new WSAudioIn();
-		if (!(noGrid || grid))
-			grid = new GridHelper();
+		if (!noGrid && grid)
+			((GridHelper*)grid)->RestartWatch();
+		else
+			if (!noGrid)
+				grid = new GridHelper();
+
 	}
 	DebugPrint(string("Profile state: ") + (noGrid ? "" : "Grid") +
 		(noMon ? "" : ", Mon") +
@@ -177,9 +185,6 @@ void EventHandler::ChangeEffects(bool stop) {
 	if (noHap && audio) {	// Haptics
 		delete (WSAudioIn*)audio; audio = NULL;
 	}
-	if (oldgrid && grid) {
-		((GridHelper*)grid)->RestartWatch();
-	}
 	fxhl->Refresh();
 }
 
@@ -188,10 +193,10 @@ void EventHandler::CheckProfileChange() {
 	GetWindowThreadProcessId(GetForegroundWindow(), &prcId);
 	profile* newProf = conf->FindProfileByApp(prcId);
 	
-	if (newProf && (conf->IsPriorityProfile(newProf) || !conf->IsPriorityProfile(conf->activeProfile))) {
-		SwitchActiveProfile(newProf);
-		return;
-	}
+	//if (newProf && (conf->IsPriorityProfile(newProf) || !conf->IsPriorityProfile(conf->activeProfile))) {
+	//	SwitchActiveProfile(newProf);
+	//	return;
+	//}
 
 	//DebugPrint("Profile: FP suggest " + (newProf ? newProf->name : "none") + ", TaskScan initiated.\n");
 
@@ -203,21 +208,24 @@ void EventHandler::CheckProfileChange() {
 	}
 	cbNeeded = cbNeeded >> 2;
 	profile* cProf;
-	processdata app = conf->GetProcessData(prcId);
+	bool forbiddenapp = false;
+	if (conf->noDesktop) {
+		processdata app = conf->GetProcessData(prcId);
+		for (int i = 0; forbiddenApps[i][0]; i++)
+			if (forbiddenApps[i] == app.appName) {
+				DebugPrint("Profile: Forbidden!\n");
+				forbiddenapp = true;
+				break;
+			}
+	}
 	for (UINT i = 0; i < cbNeeded; i++) {
 		if (aProcesses[i] && (cProf = conf->FindProfileByApp(aProcesses[i]))) {
-			if (cProf->flags | PROF_ACTIVE) {
-				if (conf->noDesktop && conf->activeProfile == cProf) {
-					for (int i = 0; forbiddenApps[i][0]; i++)
-						if (forbiddenApps[i] == app.appName) {
-							DebugPrint("Profile: Forbidden!\n");
-							return;
-						}
-				}
-			} else {
+			if (conf->IsPriorityProfile(cProf)) {
 				newProf = cProf;
-				if (conf->IsPriorityProfile(newProf))
-					break;
+				break;
+			}
+			if (!newProf && (!(cProf->flags | PROF_ACTIVE) || (forbiddenapp && cProf == conf->activeProfile))) {
+				newProf = cProf;
 			}
 		}
 	}

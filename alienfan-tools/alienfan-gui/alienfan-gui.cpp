@@ -45,15 +45,18 @@ extern void ReloadTempView(HWND list);
 extern void TempUIEvent(NMLVDISPINFO* lParam, HWND tempList);
 extern void FanUIEvent(NMLISTVIEW* lParam, HWND fanList, HWND tempList);
 extern string GetFanName(int ind, bool forTray = false);
-extern void AlterGMode(HWND);
+extern void AlterGMode(bool, HWND);
 extern void DrawFan();
-extern void PowerChangeNotify(HWND power_list);
+extern void PowerChangeNotify(bool blink, HWND power_list);
 
 extern HANDLE ocStopEvent;
 extern DWORD WINAPI CheckFanOverboost(LPVOID lpParam);
 
 void SetHotkeys() {
-    RegisterHotKey(mDlg, 6, 0, VK_F17);
+    if (fan_conf->keyShortcuts)
+        RegisterHotKey(mDlg, 6, 0, VK_F17);
+    else
+        UnregisterHotKey(mDlg, 6);
     //power mode hotkeys
     for (int i = 0; i < mon->powerSize; i++)
         if (fan_conf->keyShortcuts)
@@ -449,11 +452,11 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
     case WM_HOTKEY:
         if (wParam == 6 || wParam > 19 && wParam - 20 < mon->powerSize) {
             if (wParam == 6) { // G-key for Dell G-series power switch
-                AlterGMode(power_list);
+                AlterGMode(fan_conf->keyShortcuts, power_list);
             }
             else { // Power mode shortcut
                 mon->SetPowerMode((WORD)wParam - 20);
-                PowerChangeNotify(power_list);
+                PowerChangeNotify(fan_conf->keyShortcuts, power_list);
             }
         }
         break;
@@ -467,7 +470,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             RestoreApp();
             break;
         case ID_MENU_GMODE:
-            AlterGMode(power_list);
+            AlterGMode(fan_conf->keyShortcuts, power_list);
             break;
         default:
             mon->SetPowerMode(idx);

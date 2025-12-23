@@ -23,21 +23,6 @@ int boostScale = 10, fanMinScale = 4000, fanMaxScale = 500;
 
 HANDLE ocStopEvent = CreateEvent(NULL, false, false, NULL);
 
-//void SetFanWindow() {
-//    if (!cArea.right) {
-//        GetClientRect(fanWindow, &cArea);
-//        cArea.right--; cArea.bottom--;
-//    }
-//}
-
-//fan_point Screen2Fan(LPARAM lParam) {
-//    SetFanWindow();
-//    return {
-//        (byte)max(0, min(100, (100 * (GET_X_LPARAM(lParam))) / cArea.right)),
-//        (byte)max(0, min(100, (100 * (cArea.bottom - GET_Y_LPARAM(lParam))) / cArea.bottom))
-//    };
-//}
-
 POINT Fan2Screen(short temp, short boost) {
     return {
         temp* cArea.right / 100,
@@ -254,9 +239,6 @@ INT_PTR CALLBACK FanCurve(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         EndPaint(hDlg, &ps);
         return true;
     } break;
-    //case WM_SIZE:
-    //    cArea.right = 0;
-    //    break;
     case WM_ERASEBKGND:
         CreateToolTip(hDlg, toolTip);
         return true;
@@ -495,18 +477,19 @@ void FanUIEvent(NMLISTVIEW* lParam, HWND fanList, HWND tempList) {
     }
 }
 
-void PowerChangeNotify(HWND power_list) {
+void PowerChangeNotify(bool needBlink, HWND power_list) {
     if (power_list)
         ComboBox_SetCurSel(power_list, mon->powerMode);
     ShowNotification((NOTIFYICONDATA*)fan_conf->niData, "Power mode switched!", "New power mode - " + 
         (mon->powerMode == mon->powerSize ? "G-mode" : *fan_conf->GetPowerName(mon->acpi->powers[mon->powerMode])));
-    BlinkNumLock(mon->powerMode);
+    if (needBlink)
+        BlinkNumLock(mon->powerMode);
 }
 
-void AlterGMode(HWND power_list) {
+void AlterGMode(bool needBlink, HWND power_list) {
     if (mon->acpi->isGmode) {
         fan_conf->lastProf->gmodeStage = !fan_conf->lastProf->gmodeStage;
         mon->SetCurrentMode();
-        PowerChangeNotify(power_list);
+        PowerChangeNotify(needBlink, power_list);
     }
 }

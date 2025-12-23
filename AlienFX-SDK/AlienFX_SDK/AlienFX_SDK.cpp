@@ -116,7 +116,7 @@ namespace AlienFX_SDK {
 				if (needV8Feature) {
 					Sleep(3);
 					bool res = HidD_SetFeature(devHandle, buffer, length);
-					Sleep(5);
+					Sleep(6);
 					return res;
 				}
 				else
@@ -742,7 +742,7 @@ namespace AlienFX_SDK {
 				UpdateColors();
 			Reset();
 			if (!effType)
-				PrepareAndSend(COMMV5_setEffect, { {2,{1, 0xfe}} });
+				PrepareAndSend(COMMV5_setEffect, { {2, {1, 0xfe}} });
 			else
 				PrepareAndSend(COMMV5_setEffect, { {2, {effType,tempo}}, { 9, {(byte)(nc - 1),
 					act1.r,act1.g,act1.b,act2.r,act2.g,act2.b/*, mode*/}}});

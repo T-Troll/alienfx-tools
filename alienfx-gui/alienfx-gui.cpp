@@ -63,8 +63,8 @@ const int fvArray[] = { 0, 60, 90, 120, 144, 165, 240, 300, 360 };
 const int* freqValues = fvArray;
 
 extern string GetFanName(int ind, bool forTray = false);
-extern void AlterGMode(HWND);
-extern void PowerChangeNotify(HWND power_list=NULL);
+extern void AlterGMode(bool, HWND view = NULL);
+extern void PowerChangeNotify(bool blink, HWND power_list=NULL);
 
 bool DetectFans() {
 	if (conf->fanControl && (conf->fanControl = EvaluteToAdmin(mDlg))) {
@@ -78,14 +78,13 @@ bool DetectFans() {
 }
 
 void SetHotkeys() {
-	RegisterHotKey(mDlg, 1, 0, VK_F18);
-	if (conf->fanControl)
-		RegisterHotKey(mDlg, 2, 0, VK_F17);
-	else
-		UnregisterHotKey(mDlg, 2);
-
 	if (conf->keyShortcuts) {
 		//register global hotkeys...
+		RegisterHotKey(mDlg, 1, 0, VK_F18);
+		if (conf->fanControl)
+			RegisterHotKey(mDlg, 2, 0, VK_F17);
+		else
+			UnregisterHotKey(mDlg, 2);
 		RegisterHotKey(mDlg, 3, MOD_CONTROL | MOD_SHIFT, VK_F12);
 		RegisterHotKey(mDlg, 4, MOD_CONTROL | MOD_SHIFT, VK_F11);
 		RegisterHotKey(mDlg, 5, MOD_CONTROL | MOD_SHIFT, VK_F10);
@@ -102,6 +101,8 @@ void SetHotkeys() {
 	}
 	else {
 		//unregister global hotkeys...
+		UnregisterHotKey(mDlg, 1);
+		UnregisterHotKey(mDlg, 2);
 		for (int i = 3; i < 9; i++)
 			UnregisterHotKey(mDlg, i);
 		for (int i = 0; i < 10; i++) {
@@ -132,8 +133,7 @@ void UpdateLightDevices() {
 			fxhl->updateAllowed = true;
 			for (auto& fxd : conf->afx_dev.fxdevs) {
 				if (fxd.arrived) {
-					fxhl->UpdateGlobalEffect(&fxd, true);
-					fxhl->devLightQuery[fxd.pid].lstate.clear();
+					fxhl->UpdateGlobalEffect(&fxd);
 					fxhl->QueryCommand(fxd.pid, LightQueryElement({ 0, 2 }));
 				}
 				else {
@@ -153,7 +153,7 @@ void PauseSystem() {
 	conf->Save();
 	eve->StopProfiles();
 	eve->ChangeEffects(true);
-	fxhl->Refresh(1);
+	fxhl->ClearAndRefresh(true);
 	fxhl->Stop();
 	if (mon)
 		mon->Stop();
@@ -422,12 +422,12 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			CreateThread(NULL, 0, CUpdateCheck, &conf->niData, 0, NULL);
 			break;
 		case IDC_BUTTON_REFRESH:
-			fxhl->Refresh(2);
+			fxhl->ClearAndRefresh();
 			break;
 		case IDC_BUTTON_SAVE:
 			conf->afx_dev.SaveMappings();
 			conf->Save();
-			fxhl->Refresh(1);
+			fxhl->ClearAndRefresh(true);
 			ShowNotification(&conf->niData, "Configuration saved!", "Configuration saved successfully.");
 			break;
 		case IDC_PROFILE_EFFECTS:
@@ -579,7 +579,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			DestroyWindow(hDlg);
 			break;
 		case ID_TRAYMENU_REFRESH:
-			fxhl->Refresh(2);
+			fxhl->ClearAndRefresh();
 			break;
 		case ID_TRAYMENU_LIGHTSON:
 			conf->lightsOn = !conf->lightsOn;
@@ -675,7 +675,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		}
 		if (mon && wParam > 29 && wParam - 30 < mon->powerSize) { // PowerMode switch
 			mon->SetPowerMode((WORD)wParam - 30);
-			PowerChangeNotify();
+			PowerChangeNotify(conf->keyShortcuts);
 			if (tabSel == TAB_FANS)
 				OnSelChanged();
 			break;
@@ -711,7 +711,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			break;
 		case 2: // G-key for Dell G-series power switch
 			if (mon) {
-				AlterGMode(NULL);
+				AlterGMode(fan_conf->keyShortcuts);
 				if (tabSel == TAB_FANS)
 					OnSelChanged();
 			}
@@ -733,7 +733,6 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		SendMessage(hDlg, WM_SIZE, SIZE_MINIMIZED, 0);
 		break;
 	case WM_DESTROY:
-		//eve->notInDestroy = false;
 		Shell_NotifyIcon(NIM_DELETE, &conf->niData);
 		PostQuitMessage(0);
 		break;
@@ -814,47 +813,8 @@ AlienFX_SDK::Afx_group* FindCreateMappingGroup() {
 }
 
 bool OpenFileOrDir(string& resname, bool doNotStrip) {
-//	IFileDialog* pfd = NULL;
-//	HRESULT hr = CoCreateInstance(CLSID_FileOpenDialog,
-//		NULL,
-//		CLSCTX_INPROC_SERVER,
-//		IID_PPV_ARGS(&pfd));
-//	DWORD dwFlags;
-//	hr = pfd->GetOptions(&dwFlags);
-//	hr = pfd->SetOptions(dwFlags | FOS_FORCEFILESYSTEM | FOS_DONTADDTORECENT | FOS_PATHMUSTEXIST | 
-//			(selectFolder ? FOS_PICKFOLDERS : 0));
-//	COMDLG_FILTERSPEC fr{ L"Test", L"*.exe" };
-//	pfd->SetFileTypes(1, &fr);
-//	//hr = pfd->SetDefaultExtension(L"doc;docx");
-//	pfd->Show(NULL);
-//	IShellItem* psiResult;
-//	hr = pfd->GetResult(&psiResult);
-//	if (SUCCEEDED(hr))
-//	{
-//		PWSTR pszFilePath = NULL;
-//		hr = psiResult->GetDisplayName(SIGDN_FILESYSPATH,
-//			&pszFilePath);
-//		if (SUCCEEDED(hr))
-//		{
-//#include <locale>
-////#include <codecvt>
-//			//setup converter
-//
-//			locale::facet<std::codecvt<wchar_t, char, std::mbstate_t>> fp;
-//			std::wstring_convert<codecvt_utf8<wchar_t>, wchar_t> converterX;
-//			//use converter (.to_bytes: wstr->str, .from_bytes: str->wstr)
-//			resname = std::wstring_convert::to_bytes(pszFilePath);
-//			resname = converterX.to_bytes(pszFilePath);
-//			CoTaskMemFree(pszFilePath);
-//		}
-//		psiResult->Release();
-//	}
-//
-//	return (SUCCEEDED(hr));
-
 	BROWSEINFO bri{ 0 };
 	char dname[MAX_PATH]{ "" }, fname[MAX_PATH]{ "" };
-	//bri.hwndOwner = hDlg;
 	bri.pszDisplayName = dname;
 	bri.ulFlags = BIF_BROWSEINCLUDEFILES | BIF_DONTGOBELOWDOMAIN | BIF_NONEWFOLDERBUTTON | BIF_NOTRANSLATETARGETS /*| BIF_RETURNFSANCESTORS*/;
 	CoInitializeEx(nullptr, COINIT::COINIT_MULTITHREADED);
@@ -865,7 +825,7 @@ bool OpenFileOrDir(string& resname, bool doNotStrip) {
 		CoTaskMemFree(pIDL);
 		resname = string(fname);
 		if (resname.length() - resname.find_last_of('.') < 5) {
-			resname = doNotStrip ? resname : dname;// resname.substr(resname.find_last_of('\\') + 1);
+			resname = doNotStrip ? resname : dname;
 		}
 		else {
 			resname += '\\';

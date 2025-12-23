@@ -168,8 +168,8 @@ BOOL CALLBACK DeviceEffectDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 				}
 				if (!newEffect) {
 					b = FindDevEffect(b->globalMode, true);
-					if (prof->id == conf->activeProfile->id)
-						fxhl->UpdateGlobalEffect(activeEffectDevice, true);
+					//if (prof->id == conf->activeProfile->id)
+					//	fxhl->UpdateGlobalEffect(activeEffectDevice, true);
 				}
 				RefreshDeviceList(hDlg);
 			} break;
@@ -215,7 +215,7 @@ BOOL CALLBACK DeviceEffectDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 	} break;
 	case WM_DESTROY:
 		if (prof->id == conf->activeProfile->id)
-			fxhl->Refresh(2);
+			fxhl->ClearAndRefresh();
 		break;
 	default: return false;
 	}

@@ -175,11 +175,14 @@ void CMonProc(LPVOID param) {
 						WORD senID = fIter->first;
 						auto k = cur->points.begin() + 1;
 						for (; k != cur->points.end() && src->senValues[senID] > k->temp; k++);
-						if (k != cur->points.end())
-							cBoost = (k - 1)->boost + ((k->boost - (k - 1)->boost) * (src->senValues[senID] - (k - 1)->temp))
-							/ (k->temp - (k - 1)->temp);
-						else
-							cBoost = cur->points.back().boost;
+						cBoost = k == cur->points.end() || k->temp == (k - 1)->temp ? (k - 1)->boost :
+							(k - 1)->boost + ((k->boost - (k - 1)->boost) * (src->senValues[senID] - (k - 1)->temp))
+							/ (k->temp - (k - 1)->temp);// : k->boost;
+						//if (k != cur->points.end())
+						//	cBoost = k->temp != (k - 1)->temp ? (k - 1)->boost + ((k->boost - (k - 1)->boost) * (src->senValues[senID] - (k - 1)->temp))
+						//	/ (k->temp - (k - 1)->temp) : k->boost;
+						//else
+						//	cBoost = (k - 1)->boost;// cur->points.back().boost;
 						src->senBoosts[fanID][senID] = cBoost;
 						if (cBoost > curBoost) {
 							curBoost = cBoost;

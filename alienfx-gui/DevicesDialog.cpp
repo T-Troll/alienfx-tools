@@ -281,19 +281,6 @@ void LoadCSV(string name) {
 	}
 }
 
-//string OpenSaveFile(bool isOpen) {
-//	// Load/save device and light mappings
-//	//OPENFILENAMEA fstruct{sizeof(OPENFILENAMEA), dDlg, hInst, "Mapping files (*.csv)\0*.csv\0\0" };
-//	//char appName[MAX_PATH]{ "Current.csv" };
-//	//fstruct.lpstrFile = (LPSTR) appName;
-//	//fstruct.nMaxFile = 4095;
-//	//fstruct.lpstrInitialDir = ".\\Mappings";
-//	//fstruct.Flags = OFN_ENABLESIZING | OFN_LONGNAMES | OFN_DONTADDTORECENT |
-//	//	(isOpen ? OFN_FILEMUSTEXIST : OFN_PATHMUSTEXIST);
-//	//return (isOpen ? GetOpenFileName(&fstruct) : GetSaveFileName(&fstruct)) ? appName : "";
-//	return "";
-//}
-
 void ApplyDeviceMaps(HWND gridTab, bool force = false) {
 	// save mappings of selected.
 	int oldGridID = conf->mainGrid->id;
@@ -371,6 +358,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		dDlg = hDlg;
 		eve->ChangeEffects(true);
 		fxhl->Stop();
+		fxhl->UpdateGlobalEffect(NULL, true);
 		// Reset brightness
 		for (auto& dev : conf->afx_dev.fxdevs)
 			conf->afx_dev.SetDeviceBrightness(&dev, 255, true);
@@ -675,6 +663,7 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		break;
 	case WM_DESTROY:
 	{
+		fxhl->UpdateGlobalEffect(NULL);
 		fxhl->Start();
 		eve->ChangeEffectMode();
 		dDlg = NULL;

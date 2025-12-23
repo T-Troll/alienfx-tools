@@ -35,17 +35,14 @@ void InitButtonZone(HWND dlg) {
                 bzone.left + x * bzone.right, bzone.top + y * bzone.bottom, bzone.right, bzone.bottom, dlg, (HMENU)bId, hInst, NULL);
             bId++;
         }
-    //RedrawButtonZone(dlg);
 }
 
 void SetGridSize(HWND dlg, WORD x, WORD y) {
-    //KillTimer(dlg, 0);
     if (eve->capt) {
         ((CaptureHelper*)eve->capt)->SetLightGridSize(x, y);
     }
     conf->amb_grid = { x, y };
     InitButtonZone(dlg);
-    //SetTimer(dlg, 0, 300, NULL);
 }
 
 BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
@@ -62,25 +59,17 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
         CheckDlgButton(hDlg, conf->amb_calc ? IDC_RADIO_PREVEALING : IDC_RADIO_MEDIUM, BST_CHECKED);
 
         SendMessage(brSlider, TBM_SETRANGE, true, MAKELPARAM(0, 255));
-        //SendMessage(brSlider, TBM_SETPOS, true, conf->amb_shift);
         SendMessage(brSlider, TBM_SETTICFREQ, 16, 0);
 
         SendMessage(gridX, TBM_SETRANGE, true, MAKELPARAM(1, 20));
-        //SendMessage(gridX, TBM_SETPOS, true, conf->amb_grid.x);
-        //SendMessage(gridX, TBM_SETTICFREQ, 16, 0);
 
         SendMessage(gridY, TBM_SETRANGE, true, MAKELPARAM(1, 12));
-        //SendMessage(gridY, TBM_SETPOS, true, conf->amb_grid.y);
-        //SendMessage(gridY, TBM_SETTICFREQ, 16, 0);
 
         CreateToolTip(brSlider, sTip1, conf->amb_shift);
-        //SetSlider(sTip1, conf->amb_shift);
 
         CreateToolTip(gridX, sTip2, conf->amb_grid.x);
-        //SetSlider(sTip2, conf->amb_grid.x);
 
         CreateToolTip(gridY, sTip3, conf->amb_grid.y);
-        //SetSlider(sTip3, conf->amb_grid.y);
 
         // init grids...
         InitButtonZone(hDlg);
@@ -163,10 +152,22 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
                 RGB(capt->imgz[idx * 3 + 2], capt->imgz[idx * 3 + 1], capt->imgz[idx * 3]) :
                 GetSysColor(COLOR_BTNFACE));
             FillRect(ditem->hDC, &ditem->rcItem, Brush);
-            if (activeMapping && activeMapping->ambients.size() && find(activeMapping->ambients.begin(), activeMapping->ambients.end(), idx) != activeMapping->ambients.end())
-                DrawEdge(ditem->hDC, &ditem->rcItem, EDGE_SUNKEN, BF_RECT);
-            else
+            bool empty = true;
+            if (activeMapping) {
+                for (auto& am : activeMapping->ambients)
+                    if (am == idx) {
+                        DrawEdge(ditem->hDC, &ditem->rcItem, EDGE_SUNKEN, BF_RECT);
+                        empty = false;
+                        break;
+                    }
+            }
+            if (empty)
                 FrameRect(ditem->hDC, &ditem->rcItem, GetSysColorBrush(COLOR_GRAYTEXT));
+
+            //if (activeMapping && activeMapping->ambients.size() && find(activeMapping->ambients.begin(), activeMapping->ambients.end(), idx) != activeMapping->ambients.end())
+            //    DrawEdge(ditem->hDC, &ditem->rcItem, EDGE_SUNKEN, BF_RECT);
+            //else
+            //    FrameRect(ditem->hDC, &ditem->rcItem, GetSysColorBrush(COLOR_GRAYTEXT));
             DeleteObject(Brush);
         }
     } break;

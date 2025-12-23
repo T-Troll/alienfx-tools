@@ -65,10 +65,7 @@ BOOL CALLBACK LightDlgFrame(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 					}
 			}
 		}
-		else {
-			//RecalcGridZone();
-			RedrawGridButtonZone();
-		}
+		RedrawGridButtonZone();
 		SendMessage(((DLGHDR*)GetWindowLongPtr(GetParent(hDlg), GWLP_USERDATA))->hwndControl, WM_APP + 2, 0, 0);
 	} break;
 	case WM_NOTIFY:
