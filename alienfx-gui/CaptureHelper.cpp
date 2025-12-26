@@ -139,8 +139,7 @@ DWORD WINAPI ColorCalc(LPVOID inp) {
 	procData* src = (procData*)inp;
 	CaptureHelper* cap = (CaptureHelper*)src->cap;
 	HANDLE waitArray[2]{ cap->sEvent, src->pEvent };
-	//DWORD res;
-	while ((/*res = */WaitForMultipleObjects(2, waitArray, false, INFINITE)) != WAIT_OBJECT_0)
+	while ((WaitForMultipleObjects(2, waitArray, false, INFINITE)) != WAIT_OBJECT_0)
 		if (src->dst) {
 			UINT idx = src->idx;
 			ULONG64 r = 0, g = 0, b = 0;
@@ -185,6 +184,17 @@ DWORD WINAPI ColorCalc(LPVOID inp) {
 	return 0;
 }
 
+bool CheckAmbientMapping(int ind) {
+	// let's check we have this zone in mappings!
+	for (auto& mapping : conf->activeProfile->lightsets)
+		for (auto& ambient : mapping.ambients)
+			if (ambient == ind) {
+				// we have mapping
+				return true;
+			}
+	return false;
+}
+
 void CScreenProc(LPVOID param)
 {
 	CaptureHelper* src = (CaptureHelper*)param;
@@ -196,19 +206,21 @@ void CScreenProc(LPVOID param)
 		UINT ptr = 0;
 		UINT tInd = 0;
 		for (int ind = 0; ind < src->gridY * src->gridX; ind++) {
-			tInd = ptr % 16;
-			if (ptr > 0 && !tInd) {
+			if (!src->needLightsUpdate || CheckAmbientMapping(ind)) {
+				tInd = ptr % 16;
+				if (ptr > 0 && !tInd) {
 #ifndef _DEBUG
-				WaitForMultipleObjects(16, src->pfEvent, true, 1000);
+					WaitForMultipleObjects(16, src->pfEvent, true, 1000);
 #else
-				if (WaitForMultipleObjects(16, src->pfEvent, true, 1000) != WAIT_OBJECT_0)
-					DebugPrint("Ambient thread execution fails at " + to_string(ptr) + "\n");
+					if (WaitForMultipleObjects(16, src->pfEvent, true, 1000) != WAIT_OBJECT_0)
+						DebugPrint("Ambient thread execution fails at " + to_string(ind) + "\n");
 #endif
+				}
+				src->callData[tInd].idx = (ind / src->gridX) * src->hh * stride + (ind % src->gridX) * src->ww * 4;
+				src->callData[tInd].dst = src->imgo + ind * 3;
+				SetEvent(src->callData[tInd].pEvent);
+				ptr++;
 			}
-			src->callData[tInd].idx = (ptr / src->gridX) * src->hh * stride + (ptr % src->gridX) * src->ww * 4;
-			src->callData[tInd].dst = src->imgo + ptr * 3;
-			SetEvent(src->callData[tInd].pEvent);
-			ptr++;
 		}
 #ifndef _DEBUG
 		WaitForMultipleObjects(tInd + 1, src->pfEvent, true, INFINITE);

@@ -13,20 +13,24 @@ int main()
 	for (auto it = afx_map.fxdevs.begin(); it != afx_map.fxdevs.end(); it++)
 		cout << "Stored device " << it->name << ", " << it->lights.size() << " lights\n";
 	// Now detect active devices...
-	vector<AlienFX_SDK::Functions*> devs = afx_map.AlienFXEnumDevices();
-	cout << devs.size() << " device(s) detected." << endl;
+	afx_map.AlienFXEnumDevices();
+	cout << afx_map.fxdevs.size() << " device(s) detected." << endl;
 	// And try to set it lights...
-	for (int i = 0; i < devs.size(); i++) {
-		cout << hex << "VID: 0x" << devs[i]->GetVID() << ", PID: 0x" << devs[i]->GetPID() << ", API v" << devs[i]->GetVersion() << endl;
-		cout << "Now trying light 2 to blue... ";
-		devs[i]->SetColor(2, { 255 });
-		devs[i]->UpdateColors();
-		cin.get();
-		cout << "Now trying light 3 to mixed... ";
-		devs[i]->SetColor(3, { 255, 255 });
-		devs[i]->UpdateColors();
-		cin.get();
-		delete devs[i];
+	for (int i = 0; i < afx_map.fxdevs.size(); i++) {
+		cout << hex << "VID: 0x" << afx_map.fxdevs[i].vid << ", PID: 0x" << afx_map.fxdevs[i].pid << ", API v" << afx_map.fxdevs[i].version << endl;
+		if (afx_map.fxdevs[i].dev) {
+			cout << "Now trying light 2 to blue... ";
+			afx_map.fxdevs[i].dev->SetColor(2, { 255 });
+			afx_map.fxdevs[i].dev->UpdateColors();
+			cin.get();
+			cout << "Now trying light 3 to mixed... ";
+			afx_map.fxdevs[i].dev->SetColor(3, { 255, 255 });
+			afx_map.fxdevs[i].dev->UpdateColors();
+			cin.get();
+		}
+		else {
+			cout << "Device inactive, going next one." << endl;
+		}
 	}
 	return 0;
 }
