@@ -2,6 +2,7 @@
 #include "EventHandler.h"
 #include "CaptureHelper.h"
 #include "Common.h"
+#include "FXHelper.h"
 
 extern void UpdateZoneList();
 extern void UpdateZoneAndGrid();
@@ -9,6 +10,7 @@ extern AlienFX_SDK::Afx_group* FindCreateMappingGroup();
 extern void dxgi_Restart();
 
 extern EventHandler* eve;
+extern FXHelper* fxhl;
 
 void RedrawButtonZone(HWND dlg) {
     RECT pRect;
@@ -103,8 +105,6 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
             break;
         case IDC_RADIO_PRIMARY: case IDC_RADIO_SECONDARY:
             conf->amb_mode = LOWORD(wParam) == IDC_RADIO_SECONDARY;
-            //dxgi_Restart();
-            //break;
         case IDC_BUTTON_RESET:
             dxgi_Restart();
             break;
@@ -114,30 +114,22 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
         RedrawButtonZone(hDlg);
     } break;
     case WM_HSCROLL:
-        switch (LOWORD(wParam)) {
-        case TB_THUMBPOSITION: case TB_ENDTRACK:
-            if ((HWND)lParam == brSlider) {
-                conf->amb_shift = (DWORD)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
-                if ((CaptureHelper*)eve->capt)
-                    ((CaptureHelper*)eve->capt)->needUpdate = true;
-                break;
-            }
-            if ((HWND)lParam == gridX) {
-                SetGridSize(hDlg, (WORD)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0), conf->amb_grid.y);
-            }
-        }
         if ((HWND)lParam == brSlider) {
             SetSlider(sTip1, (int)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0));
+            conf->amb_shift = (DWORD)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
+            fxhl->RefreshAmbient();
             break;
         }
         if ((HWND)lParam == gridX) {
             SetSlider(sTip2, (int)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0));
+            if (LOWORD(wParam) == TB_THUMBPOSITION || LOWORD(wParam) == TB_ENDTRACK) {
+                SetGridSize(hDlg, (WORD)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0), conf->amb_grid.y);
+            }
         }
         break;
     case WM_VSCROLL:
         if ((HWND)lParam == gridY) {
-            switch (LOWORD(wParam)) {
-            case TB_THUMBPOSITION: case TB_ENDTRACK:
+            if (LOWORD(wParam) == TB_THUMBPOSITION || LOWORD(wParam) == TB_ENDTRACK) {
                 SetGridSize(hDlg, conf->amb_grid.x, (WORD)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0));
             }
             SetSlider(sTip3, (int)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0));
@@ -163,11 +155,6 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
             }
             if (empty)
                 FrameRect(ditem->hDC, &ditem->rcItem, GetSysColorBrush(COLOR_GRAYTEXT));
-
-            //if (activeMapping && activeMapping->ambients.size() && find(activeMapping->ambients.begin(), activeMapping->ambients.end(), idx) != activeMapping->ambients.end())
-            //    DrawEdge(ditem->hDC, &ditem->rcItem, EDGE_SUNKEN, BF_RECT);
-            //else
-            //    FrameRect(ditem->hDC, &ditem->rcItem, GetSysColorBrush(COLOR_GRAYTEXT));
             DeleteObject(Brush);
         }
     } break;

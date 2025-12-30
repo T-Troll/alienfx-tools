@@ -1,6 +1,7 @@
 #pragma once
 #include "ThreadHelper.h"
 #include "DXGIManager.hpp"
+#include <set>
 
 struct procData {
 	HANDLE pEvent;
@@ -17,13 +18,16 @@ public:
 	~CaptureHelper();
 	void Stop();
 	void SetLightGridSize(int, int);
-	bool needUpdate = false, needLightsUpdate = false;
+	void FillAmbientMap();
+	//bool needUpdate = false, 
+	bool needLightsUpdate = false;
 	byte *imgz = NULL, *imgo;
 	byte gridX, gridY;
 	DWORD gridDataSize;
 	HANDLE pfEvent[16], sEvent;
 	procData callData[16];
 	UINT ww, hh, div;
+	std::set<byte> ambient_map;
 private:
 	HANDLE pThread[16];
 	ThreadHelper* dwHandle = NULL;

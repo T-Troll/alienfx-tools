@@ -457,7 +457,6 @@ void FXHelper::RefreshAmbient(bool fromRefresh) {
 		UCHAR* img = ((CaptureHelper*)eve->capt)->imgz;
 		UINT shift = 255 - conf->amb_shift, gridsize = conf->amb_grid.x * conf->amb_grid.y;
 		vector<AlienFX_SDK::Afx_action> actions{ {0} };
-		//bool wasChanged = false;
 		conf->modifyProfile.lockRead();
 		for (auto it = conf->activeProfile->lightsets.begin(); it != conf->activeProfile->lightsets.end(); it++)
 			if (it->ambients.size()) {
@@ -475,7 +474,6 @@ void FXHelper::RefreshAmbient(bool fromRefresh) {
 				}
 				// Multi-lights and brightness correction...
 				if (dsize) {
-					//wasChanged = true;
 					dsize *= 255;
 					actions.front().r = (BYTE)((r * shift) / dsize);
 					actions.front().g = (BYTE)((g * shift) / dsize);
@@ -486,7 +484,7 @@ void FXHelper::RefreshAmbient(bool fromRefresh) {
 				}
 			}
 		conf->modifyProfile.unlockRead();
-		if (/*wasChanged && */!fromRefresh)
+		if (!fromRefresh)
 			QueryUpdate();
 	}
 }
@@ -565,8 +563,7 @@ void FXHelper::RefreshGrid(bool fromRefresh) {
 				if (ce->effect.trigger == 4) { // ambient
 					CaptureHelper* capt = (CaptureHelper*)ce->effect.capt;
 					// update lights
-					if (capt && capt->needUpdate) {
-						capt->needUpdate = false;
+					if (capt) {
 						UINT shift = 255 - conf->amb_shift;
 						auto zone = *conf->FindZoneMap(ce->group);
 						for (auto lgh = zone.lightMap.begin(); lgh != zone.lightMap.end(); lgh++) {

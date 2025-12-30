@@ -428,6 +428,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			conf->afx_dev.SaveMappings();
 			conf->Save();
 			fxhl->ClearAndRefresh(true);
+			fxhl->Refresh();
 			ShowNotification(&conf->niData, "Configuration saved!", "Configuration saved successfully.");
 			break;
 		case IDC_PROFILE_EFFECTS:

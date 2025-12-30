@@ -158,14 +158,17 @@ void EventHandler::ChangeEffects(bool stop) {
 		}
 		if (!(noMon || sysmon))
 			sysmon = new SysMonHelper();
-		if (!(noAmb || capt))
-			capt = new CaptureHelper(true);
+		if (!noAmb)
+			if (capt)
+				((CaptureHelper*)capt)->FillAmbientMap();
+			else
+				capt = new CaptureHelper(true);
 		if (!(noHap || audio))
 			audio = new WSAudioIn();
-		if (!noGrid && grid)
-			((GridHelper*)grid)->RestartWatch();
-		else
-			if (!noGrid)
+		if (!noGrid)
+			if (grid)
+				((GridHelper*)grid)->RestartWatch();
+			else
 				grid = new GridHelper();
 
 	}
@@ -179,7 +182,7 @@ void EventHandler::ChangeEffects(bool stop) {
 	if (noMon && sysmon) {	// System monitoring
 		delete (SysMonHelper*)sysmon; sysmon = NULL;
 	}
-	if ((noAmb /*|| !dxgi_thread*/) && capt) {	// Ambient
+	if (noAmb && capt) {	// Ambient
 		delete (CaptureHelper*)capt; capt = NULL;
 	}
 	if (noHap && audio) {	// Haptics

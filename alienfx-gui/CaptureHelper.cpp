@@ -128,11 +128,19 @@ void CaptureHelper::SetLightGridSize(int x, int y)
 	if (imgz)
 		delete[] imgz;
 	gridX = x; gridY = y;
-	imgz = new byte[gridX * gridY * 6];
 	gridDataSize = gridX * gridY * 3;
+	imgz = new byte[gridDataSize << 1];
 	imgo = imgz + gridDataSize;
-	needUpdate = false;
 	dwHandle = new ThreadHelper(CScreenProc, this, 100, THREAD_PRIORITY_BELOW_NORMAL);
+}
+
+void CaptureHelper::FillAmbientMap() {
+	ambient_map.clear();
+	conf->modifyProfile.lockRead();
+	for (auto& mapping : conf->activeProfile->lightsets)
+		for (auto& ambient : mapping.ambients)
+			ambient_map.emplace(ambient);
+	conf->modifyProfile.unlockRead();
 }
 
 DWORD WINAPI ColorCalc(LPVOID inp) {
@@ -184,20 +192,10 @@ DWORD WINAPI ColorCalc(LPVOID inp) {
 	return 0;
 }
 
-bool CheckAmbientMapping(int ind) {
-	// let's check we have this zone in mappings!
-	for (auto& mapping : conf->activeProfile->lightsets)
-		for (auto& ambient : mapping.ambients)
-			if (ambient == ind) {
-				// we have mapping
-				return true;
-			}
-	return false;
-}
-
 void CScreenProc(LPVOID param)
 {
 	CaptureHelper* src = (CaptureHelper*)param;
+	src->FillAmbientMap();
 
 	// Resize & calc
 	if (!capRes && scrImg) {
@@ -206,7 +204,7 @@ void CScreenProc(LPVOID param)
 		UINT ptr = 0;
 		UINT tInd = 0;
 		for (int ind = 0; ind < src->gridY * src->gridX; ind++) {
-			if (!src->needLightsUpdate || CheckAmbientMapping(ind)) {
+			if (!src->needLightsUpdate || src->ambient_map.count(ind)) {
 				tInd = ptr % 16;
 				if (ptr > 0 && !tInd) {
 #ifndef _DEBUG
@@ -225,13 +223,12 @@ void CScreenProc(LPVOID param)
 #ifndef _DEBUG
 		WaitForMultipleObjects(tInd + 1, src->pfEvent, true, INFINITE);
 #else
-		if (WaitForMultipleObjects(tInd+1, src->pfEvent, true, INFINITE) != WAIT_OBJECT_0)
+		if (WaitForMultipleObjects(tInd+1, src->pfEvent, true, 1000) != WAIT_OBJECT_0)
 			DebugPrint("Ambient thread execution fails at last set\n");
 #endif
 
 		if (memcmp(src->imgz, src->imgo, src->gridDataSize)) {
 			memcpy(src->imgz, src->imgo, src->gridDataSize);
-			src->needUpdate = true;
 			if (src->needLightsUpdate)
 				fxhl->RefreshAmbient();
 		}
