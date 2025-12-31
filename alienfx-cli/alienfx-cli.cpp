@@ -96,10 +96,6 @@ vector<AlienFX_SDK::Afx_action> ParseActions(vector<ARG>* args, int startPos) {
 				(byte)(args->at(argPos + 1).num),// * globalBright) / 255), //g
 				(byte)(args->at(argPos + 2).num),// * globalBright) / 255) //b
 		});
-		//AlienFX_SDK::Afx_action* color = &actions.back();
-		//color->r = ((unsigned)color->r * globalBright) / 255;// >> 8;
-		//color->g = ((unsigned)color->g * globalBright) / 255;// >> 8;
-		//color->b = ((unsigned)color->b * globalBright) / 255;// >> 8;
 	}
 	if (actions.size() < 2 && actions.front().type != (devType ? AlienFX_SDK::Action::AlienFX_A_Color : LFX_ACTION_COLOR))
 		actions.push_back({ actions.front().type, (BYTE)sleepy, longer, 0, 0, 0 });
@@ -108,7 +104,7 @@ vector<AlienFX_SDK::Afx_action> ParseActions(vector<ARG>* args, int startPos) {
 
 int main(int argc, char* argv[])
 {
-	printf("alienfx-cli v9.3.4\n");
+	printf("alienfx-cli v9.3.4.5\n");
 	if (argc < 2)
 	{
 		printUsage();

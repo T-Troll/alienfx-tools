@@ -63,9 +63,9 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
         SendMessage(brSlider, TBM_SETRANGE, true, MAKELPARAM(0, 255));
         SendMessage(brSlider, TBM_SETTICFREQ, 16, 0);
 
-        SendMessage(gridX, TBM_SETRANGE, true, MAKELPARAM(1, 20));
+        SendMessage(gridX, TBM_SETRANGE, true, MAKELPARAM(1, 22));
 
-        SendMessage(gridY, TBM_SETRANGE, true, MAKELPARAM(1, 12));
+        SendMessage(gridY, TBM_SETRANGE, true, MAKELPARAM(1, 10));
 
         CreateToolTip(brSlider, sTip1, conf->amb_shift);
 
