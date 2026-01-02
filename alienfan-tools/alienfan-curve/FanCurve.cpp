@@ -107,7 +107,7 @@ void DrawFan()
                     }
                 }
             }
-            // Fan dots, experimental
+            // Fan dots
             linePen = CreatePen(PS_SOLID, 2, RGB(0, 0, 255));
             SelectObject(hdc, linePen);
             for (int i = 0; i < mon->fansize; i++) {
@@ -162,18 +162,15 @@ void DrawFan()
 int SetFanSteady(byte fanID, byte boost, bool downtrend = false) {
     mon->acpi->SetFanBoost(fanID, boost);
     // Check the trend...
-    int pRpm, bRpm = mon->acpi->GetFanRPM(fanID), maxRPM;
+    int pRpm, bRpm = mon->GetFanRPM(fanID), maxRPM;
     boostCheck.push_back({ boost, (USHORT)bRpm });
     lastBoostPoint = &boostCheck.back();
-    //if (WaitForSingleObject(ocStopEvent, 3000) != WAIT_TIMEOUT)
-    //    return -1;
-    //lastBoostPoint->maxRPM = bRpm;// mon->acpi->GetFanRPM(fanID);
     do {
         pRpm = bRpm;
         bRpm = lastBoostPoint->maxRPM;
         if (WaitForSingleObject(ocStopEvent, 3000) != WAIT_TIMEOUT)
             return -1;
-        lastBoostPoint->maxRPM = mon->acpi->GetFanRPM(fanID);
+        lastBoostPoint->maxRPM = mon->GetFanRPM(fanID);
         maxRPM = max(lastBoostPoint->maxRPM, bRpm);
         bestBoostPoint.maxRPM = max(bestBoostPoint.maxRPM, maxRPM);
     } while ((lastBoostPoint->maxRPM > bRpm || bRpm < pRpm || lastBoostPoint->maxRPM != pRpm)
@@ -351,8 +348,7 @@ void ReloadFanView(HWND list) {
     }
     for (int i = 0; i < mon->fansize; i++) {
         LVITEMA lItem{ LVIF_TEXT | LVIF_STATE, i};
-        string name = GetFanName(i);
-        lItem.pszText = (LPSTR)name.c_str();
+        lItem.pszText = (LPSTR)GetFanName(i).c_str();
         if (i == fan_conf->lastSelectedFan) {
             lItem.state = LVIS_SELECTED | LVIS_FOCUSED;
         }

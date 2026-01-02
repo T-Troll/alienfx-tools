@@ -130,6 +130,14 @@ void MonHelper::SetPowerMode(byte newMode) {
 	SetCurrentMode(newMode);
 }
 
+// I need this wrapper for buggy G-series BIOS which return error from time to time
+int MonHelper::GetFanRPM(int fanID) {
+	int res;
+	if ((res = acpi->GetFanRPM(fanID)) < 0)
+		res = 0;
+	return res;
+}
+
 void CMonProc(LPVOID param) {
 	MonHelper* src = (MonHelper*)param;
 	AlienFan_SDK::Control* acpi = src->acpi;
@@ -149,7 +157,7 @@ void CMonProc(LPVOID param) {
 	}
 	// fans...
 	for (byte i = 0; i < src->fansize; i++) {
-		src->fanRpm[i] = acpi->GetFanRPM(i);
+		src->fanRpm[i] = src->GetFanRPM(i);
 	}
 
 #ifdef _DEBUG

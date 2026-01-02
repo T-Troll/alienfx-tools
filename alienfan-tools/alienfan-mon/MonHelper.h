@@ -26,6 +26,7 @@ public:
 	byte GetFanPercent(byte fanID);
 	int GetPowerMode();
 	void SetPowerMode(byte newMode);
+	int GetFanRPM(int fanID);
 	void ResetBoost();
 	void SetOC();
 };
