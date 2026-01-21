@@ -253,7 +253,7 @@ public:
 	profile* FindProfile(int id);
 	profile* FindDefaultProfile();
 	profile* FindProfileByApp(DWORD proc);
-	//profile* FindProfileByApp(HWND wnd);
+	groupset* FindCreateMapping(int groupID, profile* prof = NULL);
 	AlienFX_SDK::Afx_group* FindCreateGroup(int groupID);
 	bool IsPriorityProfile(profile* prof);
 	bool SetIconState(bool needCheck = false);

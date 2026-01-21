@@ -176,21 +176,17 @@ void CMonProc(LPVOID param) {
 			for (auto& cIter : active->fanControls) {
 				// Check boost
 				byte fanID = cIter.first;
-				int curBoost = 0;// , boostOld = src->senBoosts[fanID][src->lastBoost[fanID]];
+				int curBoost = 0;
 				for (auto fIter = cIter.second.begin(); fIter != cIter.second.end(); fIter++) {
 					if (fIter->second.active) {
 						sen_block* cur = &fIter->second;
 						WORD senID = fIter->first;
 						auto k = cur->points.begin() + 1;
 						for (; k != cur->points.end() && src->senValues[senID] > k->temp; k++);
-						cBoost = k == cur->points.end() || k->temp == (k - 1)->temp ? (k - 1)->boost :
-							(k - 1)->boost + ((k->boost - (k - 1)->boost) * (src->senValues[senID] - (k - 1)->temp))
-							/ (k->temp - (k - 1)->temp);// : k->boost;
-						//if (k != cur->points.end())
-						//	cBoost = k->temp != (k - 1)->temp ? (k - 1)->boost + ((k->boost - (k - 1)->boost) * (src->senValues[senID] - (k - 1)->temp))
-						//	/ (k->temp - (k - 1)->temp) : k->boost;
-						//else
-						//	cBoost = (k - 1)->boost;// cur->points.back().boost;
+						auto ko = k - 1;
+						cBoost = k == cur->points.end() || k->temp == ko->temp ? ko->boost :
+							ko->boost + ((k->boost - ko->boost) * (src->senValues[senID] - ko->temp))
+							/ (k->temp - ko->temp);
 						src->senBoosts[fanID][senID] = cBoost;
 						if (cBoost > curBoost) {
 							curBoost = cBoost;

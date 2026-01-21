@@ -53,9 +53,6 @@ void UpdateZoneList() {
 		if (conf->activeProfile->lightsets.size()) {
 			ListView_SetItemState(zone_list, 0, LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED | LVIS_FOCUSED);
 		}
-		//else {
-		//	activeMapping = NULL;
-		//}
 		SendMessage(GetParent(zsDlg), WM_APP + 2, 0, 0);
 	} else
 		ListView_EnsureVisible(zone_list, rpos, false);
@@ -135,12 +132,13 @@ BOOL CALLBACK SelectLightsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 		case IDCLOSE: case IDCANCEL: {
 			int numSel = ListBox_GetSelCount(llist), * buf = new int[numSel];
 			ListBox_GetSelItems(llist, numSel, buf);
-			if (grp)
+			if (grp) {
 				grp->lights.clear();
-			AlienFX_SDK::Afx_groupLight t;
-			for (int i = 0; i < numSel; i++) {
-				t.lgh = (DWORD)ListBox_GetItemData(llist, buf[i]);
-				grp->lights.push_back(t);
+				AlienFX_SDK::Afx_groupLight t;
+				for (int i = 0; i < numSel; i++) {
+					t.lgh = (DWORD)ListBox_GetItemData(llist, buf[i]);
+					grp->lights.push_back(t);
+				}
 			}
 			delete[] buf;
 			EndDialog(hDlg, IDCLOSE);
@@ -237,7 +235,6 @@ BOOL CALLBACK ZoneSelectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 						int neweItem = (int)lPoint->lParam;
 						// gauge and spectrum.
 						if (activeMapping = conf->FindMapping(neweItem)) {
-							//conf->FindCreateGroup(neweItem);
 							CheckDlgButton(hDlg, IDC_CHECK_SPECTRUM, activeMapping->gaugeflags & GAUGE_GRADIENT);
 							CheckDlgButton(hDlg, IDC_CHECK_REVERSE, activeMapping->gaugeflags & GAUGE_REVERSE);
 							ComboBox_SetCurSel(GetDlgItem(hDlg, IDC_COMBO_GAUGE), activeMapping->gauge);
@@ -253,15 +250,13 @@ BOOL CALLBACK ZoneSelectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 			case LVN_ENDLABELEDIT:
 			{
 				NMLVDISPINFO* sItem = (NMLVDISPINFO*)lParam;
-				AlienFX_SDK::Afx_group* grp = FindCreateMappingGroup();// conf->FindCreateGroup((int)sItem->item.lParam);
 				if (sItem->item.pszText) {
-					grp->name = sItem->item.pszText;
+					FindCreateMappingGroup()->name = sItem->item.pszText;
 					ListView_SetItem(((NMHDR*)lParam)->hwndFrom, &sItem->item);
 					RECT cArea;
 					GetClientRect(((NMHDR*)lParam)->hwndFrom, &cArea);
 					ListView_SetColumnWidth(((NMHDR*)lParam)->hwndFrom, 1, LVSCW_AUTOSIZE);
 					ListView_SetColumnWidth(((NMHDR*)lParam)->hwndFrom, 0, cArea.right - ListView_GetColumnWidth(((NMHDR*)lParam)->hwndFrom, 1));
-					//return true;
 				}
 				else
 					return false;

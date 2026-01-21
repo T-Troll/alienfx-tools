@@ -807,8 +807,7 @@ AlienFX_SDK::Afx_group* FindCreateMappingGroup() {
 		int eItem = 0x10000;
 		while (conf->afx_dev.GetGroupById(eItem))
 			eItem++;
-		conf->activeProfile->lightsets.push_back({ eItem });
-		activeMapping = &conf->activeProfile->lightsets.back();
+		activeMapping = conf->FindCreateMapping(eItem);
 	}
 	return conf->FindCreateGroup(activeMapping->group);
 }

@@ -84,8 +84,8 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
         if (LOWORD(wParam) >= 2000 && HIWORD(wParam) == BN_CLICKED) { // grid button
             UINT id = LOWORD(wParam) - 2000;
             // add/remove mapping
-            conf->modifyProfile.lockWrite();
             FindCreateMappingGroup();
+            conf->modifyProfile.lockWrite();
             auto pos = activeMapping->ambients.begin();
             for (; pos != activeMapping->ambients.end(); pos++)
                 if (*pos == id)

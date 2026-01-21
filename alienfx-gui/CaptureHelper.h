@@ -19,7 +19,6 @@ public:
 	void Stop();
 	void SetLightGridSize(int, int);
 	void FillAmbientMap();
-	//bool needUpdate = false, 
 	bool needLightsUpdate = false;
 	byte *imgz = NULL, *imgo;
 	byte gridX, gridY;
@@ -28,8 +27,8 @@ public:
 	procData callData[16];
 	UINT ww, hh, div;
 	std::set<byte> ambient_map;
+	ThreadHelper* dwHandle = NULL;
 private:
 	HANDLE pThread[16];
-	ThreadHelper* dwHandle = NULL;
 };
 

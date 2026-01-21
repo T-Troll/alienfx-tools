@@ -6,7 +6,7 @@
 extern EventHandler* eve;
 extern ConfigHandler* conf;
 extern FXHelper* fxhl;
-extern ThreadHelper* dxgi_thread;
+extern int dxgi_counter;
 
 void GridHelper::StartGridRun(groupset* grp, zonemap* cz, int x, int y) {
 	if (cz->lightMap.size() && (grp->effect.trigger == 4 || grp->effect.effectColors.size())) {
@@ -57,7 +57,7 @@ LRESULT CALLBACK GridKeyProc(int nCode, WPARAM wParam, LPARAM lParam) {
  		for (auto it = conf->activeProfile->lightsets.begin(); it != conf->activeProfile->lightsets.end(); it++)
 			if (it->effect.trigger == 2 && it->gridop.passive) { // keyboard effect
 				// Is it have a key pressed?
-				AlienFX_SDK::Afx_group* grp = conf->FindCreateGroup(it->group);
+				AlienFX_SDK::Afx_group* grp = conf->afx_dev.GetGroupById(it->group);
 				for (auto lgh = grp->lights.begin(); lgh != grp->lights.end(); lgh++)
 					if ((conf->afx_dev.GetMappingByID(lgh->did, lgh->lid)->scancode & 0xff) == ((LPKBDLLHOOKSTRUCT)lParam)->vkCode) {
 						zonemap zone = *conf->FindZoneMap(it->group);
@@ -66,6 +66,7 @@ LRESULT CALLBACK GridKeyProc(int nCode, WPARAM wParam, LPARAM lParam) {
 								((GridHelper*)eve->grid)->StartGridRun(&(*it), &zone, pos->x, pos->y);
 								break;
 							}
+						break;
 					}
 			}
 		conf->modifyProfile.unlockRead();
@@ -137,13 +138,13 @@ void GridHelper::Stop() {
 		if (sysmon) {
 			delete sysmon; sysmon = NULL;
 		}
-		conf->modifyProfile.lockWrite();
+		conf->modifyProfile.lockRead();
 		for (auto ce = conf->activeProfile->lightsets.begin(); ce < conf->activeProfile->lightsets.end(); ce++) {
 			if (ce->effect.trigger == 4 && ce->effect.capt) {
 				delete (CaptureHelper*)ce->effect.capt;
 			}
 		}
-		conf->modifyProfile.unlockWrite();
+		conf->modifyProfile.unlockRead();
 	}
 }
 
@@ -166,13 +167,11 @@ void GridHelper::RestartWatch() {
 				auto zone = *conf->FindZoneMap(ce->group);
 				if (zone.gMinX != 255/* && zone.gMinY != 255*/) {
 					ce->effect.capt = new CaptureHelper();
-					if (dxgi_thread)
+					if (dxgi_counter)
 						((CaptureHelper*)ce->effect.capt)->SetLightGridSize(zone.gMaxX - zone.gMinX, zone.gMaxY - zone.gMinY);
-					else {
-						delete (CaptureHelper*)ce->effect.capt;
-						ce->effect.capt = NULL;
-					}
 				}
+				else
+					ce->effect.capt = NULL;
 			} break;
 			}
 		}

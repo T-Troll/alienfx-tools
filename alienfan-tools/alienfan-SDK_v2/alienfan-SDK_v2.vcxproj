@@ -62,6 +62,7 @@
       </PrecompiledHeaderFile>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <DisableSpecificWarnings>4244</DisableSpecificWarnings>
+      <AdditionalOptions>-DUSE_SANITIZERS=OFF %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>

@@ -93,8 +93,6 @@ void UpdateEffectInfo(HWND hDlg) {
 		CheckDlgButton(hDlg, IDC_CHECK_RPOS, activeMapping->effect.flags & GE_FLAG_RPOS);
 		ComboBox_SetCurSel(GetDlgItem(hDlg, IDC_COMBO_TRIGGER), activeMapping->effect.trigger);
 		ComboBox_SetCurSel(GetDlgItem(hDlg, IDC_COMBO_GEFFTYPE), activeMapping->effect.type);
-		//SendMessage(GetDlgItem(hDlg, IDC_SLIDER_SPEED), TBM_SETPOS, true, activeMapping->effect.speed - 80);
-		//SendMessage(GetDlgItem(hDlg, IDC_SLIDER_WIDTH), TBM_SETPOS, true, activeMapping->effect.width);
 		SetSlider(sTip2, activeMapping->effect.speed - 80);
 		SetSlider(sTip3, activeMapping->effect.width);
 	}
@@ -108,7 +106,6 @@ BOOL CALLBACK TabGridDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 	HWND speed_slider = GetDlgItem(hDlg, IDC_SLIDER_SPEED),
 		width_slider = GetDlgItem(hDlg, IDC_SLIDER_WIDTH),
 		gs_slider = GetDlgItem(hDlg, IDC_SLIDER_TACT);
-	auto grid = (GridHelper*)eve->grid;
 	switch (message)
 	{
 	case WM_INITDIALOG:
@@ -119,9 +116,7 @@ BOOL CALLBACK TabGridDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 		SendMessage(width_slider, TBM_SETRANGE, true, MAKELPARAM(1, 80));
 		SendMessage(gs_slider, TBM_SETRANGE, true, MAKELPARAM(5, 1000));
 		SendMessage(gs_slider, TBM_SETTICFREQ, 50, 0);
-		//SendMessage(gs_slider, TBM_SETPOS, true, conf->geTact);
 		CreateToolTip(gs_slider, sTip1, conf->geTact);
-		//SetSlider(sTip1, conf->geTact);
 		CreateToolTip(speed_slider, sTip2);
 		CreateToolTip(width_slider, sTip3);
 		UpdateEffectInfo(hDlg);
@@ -211,8 +206,7 @@ BOOL CALLBACK TabGridDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 		case TB_THUMBTRACK: case TB_ENDTRACK:
 			conf->geTact = (DWORD)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
 			SetSlider(sTip1, conf->geTact);
-			if (grid)
-				grid->RestartWatch();
+			eve->ChangeEffects();
 			break;
 		}
 		break;

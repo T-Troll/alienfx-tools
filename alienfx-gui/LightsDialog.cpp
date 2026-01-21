@@ -52,7 +52,7 @@ BOOL CALLBACK LightDlgFrame(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 		CreateGridBlock(gridTab, (DLGPROC)TabGrid);
 	} break;
 	case WM_APP + 2: {
-		if (activeMapping /*&& lParam*/) {
+		if (activeMapping) {
 			zonemap zone = *conf->FindZoneMap(activeMapping->group);
 			if (zone.gridID != conf->mainGrid->id) {
 				// Switch grid tab

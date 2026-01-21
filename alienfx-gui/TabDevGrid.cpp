@@ -104,7 +104,6 @@ void RecalcGridZone(RECT* what = NULL) {
             colorGrid[ind].first.ci = colorGrid[ind].last.ci = 0xff000000;
             conf->modifyProfile.lockRead();
             for (auto cs = conf->activeProfile->lightsets.rbegin(); cs != conf->activeProfile->lightsets.rend(); cs++) {
-                //AlienFX_SDK::Afx_group* grp = conf->FindCreateGroup(cs->group);
                 if (conf->IsLightInGroup(conf->mainGrid->grid[ind].lgh, conf->FindCreateGroup(cs->group))) {
                     if (conf->stateEffects) {
                         if (cs->events.size()) {

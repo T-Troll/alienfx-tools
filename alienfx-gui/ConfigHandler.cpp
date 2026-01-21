@@ -64,19 +64,25 @@ AlienFX_SDK::Afx_group* ConfigHandler::FindCreateGroup(int groupID) {
 
 groupset* ConfigHandler::FindCreateGroupSet(int profID, int groupID)
 {
-	profile* prof = FindCreateProfile(profID);
+	return FindCreateMapping(groupID, FindCreateProfile(profID));
+}
 
+groupset* ConfigHandler::FindCreateMapping(int groupID, profile* prof)
+{
 	if (groupID < 0) {
 		groupID = 0x1ffff;
 	}
+	if (!prof)
+		prof = activeProfile;
 	groupset* gset = FindMapping(groupID, &prof->lightsets);
 	if (!gset) {
 		FindCreateGroup(groupID);
+		modifyProfile.lockWrite();
 		prof->lightsets.push_back({ groupID });
+		modifyProfile.unlockWrite();
 		gset = &prof->lightsets.back();
 	}
 	return gset;
-
 }
 
 profile* ConfigHandler::FindProfile(int id) {

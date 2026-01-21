@@ -116,108 +116,109 @@ namespace AlienFan_SDK {
 				}
 			}
 			enum_obj->Release();
-		}
 #ifdef _TRACE_
-		printf("%d sensors of #%d added, %d total\n", uNumOfInstances, type, (int)sensors.size());
+			printf("%d sensors of #%d added, %d total\n", uNumOfInstances, type, (int)sensors.size());
 #endif
+		}
 	}
 
 	bool Control::Probe(bool diskSensors) {
 		IEnumWbemClassObject* enum_obj;
-		if (m_WbemServices && (isAlienware = (m_WbemServices->GetObject((BSTR)L"AWCCWmiMethodFunction", NULL, nullptr, &m_AWCCGetObj, nullptr) == S_OK))) {
+		if (m_WbemServices && (isAlienware = SUCCEEDED(m_WbemServices->GetObject((BSTR)L"AWCCWmiMethodFunction", NULL, nullptr, &m_AWCCGetObj, nullptr)))) {
 #ifdef _TRACE_
 			printf("AWCC section detected!\n");
 #endif
 			// need to get instance
-			if (m_WbemServices->CreateInstanceEnum((BSTR)L"AWCCWmiMethodFunction", WBEM_FLAG_FORWARD_ONLY, NULL, &enum_obj) == S_OK) {
+			if (SUCCEEDED(m_WbemServices->CreateInstanceEnum((BSTR)L"AWCCWmiMethodFunction", WBEM_FLAG_FORWARD_ONLY, NULL, &enum_obj))) {
 
 				IWbemClassObject* spInstance;
 				ULONG uNumOfInstances;
-				enum_obj->Next(10000, 1, &spInstance, &uNumOfInstances);
-				spInstance->Get((BSTR)L"__Path", 0, &m_instancePath, 0, 0);
-				spInstance->Release();
-				enum_obj->Release();
+				if (SUCCEEDED(enum_obj->Next(10000, 1, &spInstance, &uNumOfInstances))) {
+					spInstance->Get((BSTR)L"__Path", 0, &m_instancePath, 0, 0);
+					spInstance->Release();
 
-				// check system type and fill inParams
-				for (sysType = 0; sysType < 2; sysType++)
-					if (isSupported = (m_AWCCGetObj->GetMethod(commandList[functionID[sysType][getPowerID]], NULL, &m_InParamaters, nullptr) == S_OK && m_InParamaters)) {
+					// check system type and fill inParams
+					for (sysType = 0; sysType < 2; sysType++)
+						if (isSupported = (SUCCEEDED(m_AWCCGetObj->GetMethod(commandList[functionID[sysType][getPowerID]], NULL, &m_InParamaters, nullptr)) && m_InParamaters)) {
 #ifdef _TRACE_
-						printf("Fan Control available, system type %d\n", sysType);
+							printf("Fan Control available, system type %d\n", sysType);
 #endif
-						systemID = CallWMIMethod(getSysID, 2);
+								systemID = CallWMIMethod(getSysID, 2);
 #ifdef _TRACE_
-						printf("System ID = %d\n", systemID);
+								printf("System ID = %d\n", systemID);
 #endif
-						isGmode = m_AWCCGetObj->GetMethod(commandList[2], NULL, nullptr, nullptr) == S_OK;
+							isGmode = SUCCEEDED(m_AWCCGetObj->GetMethod(commandList[2], NULL, nullptr, nullptr));
 #ifdef _TRACE_
-						if (isGmode)
-							printf("G-Mode available\n");
+							if (isGmode)
+								printf("G-Mode available\n");
 
 #endif
-						if (isTcc = (m_AWCCGetObj->GetMethod(commandList[6], NULL, nullptr, nullptr) == S_OK)) {
-							maxTCC = CallWMIMethod(getMaxTCC);
-							maxOffset = CallWMIMethod(getMaxOffset);
-						}
-#ifdef _TRACE_
-						if (isTcc)
-							printf("TCC control available\n");
-#endif
-						isXMP = m_AWCCGetObj->GetMethod(commandList[7], NULL, nullptr, nullptr) == S_OK;
-#ifdef _TRACE_
-						if (isXMP)
-							printf("Memory XMP available\n");
-#endif
-						int fIndex = 0, funcID;
-
-						powers.push_back(0); // Manual mode
-						// Scan for avaliable data
-						while ((funcID = CallWMIMethod(getPowerID, fIndex)) > 0) {
-							byte vkind = funcID & 0xff;
-							if (funcID > 0x100 && funcID < 0x110) {
-								// sensor
-#ifdef _TRACE_
-								printf("Sensor ID=%x found\n", funcID);
-#endif
-								sensors.push_back({ { vkind, 1 }, sensors.size() < 3 ? temp_names[sensors.size()] : "Sensor #" + to_string(sensors.size()) });
+							if (isTcc = SUCCEEDED(m_AWCCGetObj->GetMethod(commandList[6], NULL, nullptr, nullptr))) {
+								maxTCC = CallWMIMethod(getMaxTCC);
+								maxOffset = CallWMIMethod(getMaxOffset);
 							}
-							else {
-								if (funcID > 0x8f) {
-									// power mode
-									powers.push_back(vkind);
 #ifdef _TRACE_
-									printf("Power ID=%x found\n", funcID);
+							if (isTcc)
+								printf("TCC control available\n");
 #endif
+							isXMP = SUCCEEDED(m_AWCCGetObj->GetMethod(commandList[7], NULL, nullptr, nullptr));
+#ifdef _TRACE_
+							if (isXMP)
+								printf("Memory XMP available\n");
+#endif
+							int fIndex = 0, funcID;
+
+							powers.push_back(0); // Manual mode
+							// Scan for avaliable data
+							while ((funcID = CallWMIMethod(getPowerID, fIndex)) > 0) {
+								byte vkind = funcID & 0xff;
+								if (funcID > 0x100 && funcID < 0x110) {
+									// sensor
+#ifdef _TRACE_
+									printf("Sensor ID=%x found\n", funcID);
+#endif
+									sensors.push_back({ { vkind, 1 }, sensors.size() < 3 ? temp_names[sensors.size()] : "Sensor #" + to_string(sensors.size()) });
 								}
 								else {
-									// fan
-									fans.push_back({ vkind, (byte)CallWMIMethod(getFanSensor, vkind) });
+									if (funcID > 0x8f) {
+										// power mode
+										powers.push_back(vkind);
 #ifdef _TRACE_
-									printf("Fan ID=%x found\n", funcID);
+										printf("Power ID=%x found\n", funcID);
 #endif
+									}
+									else {
+										// fan
+										fans.push_back({ vkind, (byte)CallWMIMethod(getFanSensor, vkind) });
+#ifdef _TRACE_
+										printf("Fan ID=%x found\n", funcID);
+#endif
+									}
 								}
+								fIndex++;
 							}
-							fIndex++;
-						}
 #ifdef _TRACE_
-						printf("%d fans, %d sensors, %d Power modes found, last reply %x\n", (int) fans.size(), (int) sensors.size(), (int)powers.size(), funcID);
+							printf("%d fans, %d sensors, %d Power modes found, last reply %x\n", (int)fans.size(), (int)sensors.size(), (int)powers.size(), funcID);
 #endif
-						if (sysType) {
-							// Modes 1 and 2 for R7 desktop
-							powers.push_back(1);
-							powers.push_back(2);
-						}
+							if (sysType) {
+								// Modes 1 and 2 for R7 desktop
+								powers.push_back(1);
+								powers.push_back(2);
+							}
 
-						// ESIF sensors
-						EnumSensors(m_WbemServices, L"EsifDeviceInformation", 0);
-						// SSD sensors
-						if (diskSensors)
-							EnumSensors(m_DiskService, L"MSFT_PhysicalDiskToStorageReliabilityCounter", 2);
-						// OHM sensors
-						if (m_OHMService) {
-							EnumSensors(m_OHMService, L"Sensor", 4);
+							// ESIF sensors
+							EnumSensors(m_WbemServices, L"EsifDeviceInformation", 0);
+							// SSD sensors
+							if (diskSensors)
+								EnumSensors(m_DiskService, L"MSFT_PhysicalDiskToStorageReliabilityCounter", 2);
+							// OHM sensors
+							if (m_OHMService) {
+								EnumSensors(m_OHMService, L"Sensor", 4);
+							}
+							return true;
 						}
-						return true;
-					}
+				}
+				enum_obj->Release();
 			}
 		}
 		return false;

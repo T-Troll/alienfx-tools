@@ -86,7 +86,8 @@ CaptureHelper::CaptureHelper(bool needLights)
 		pfEvent[i] = callData[i].pfEvent;
 	}
 	needLightsUpdate = needLights;
-	SetLightGridSize(conf->amb_grid.x, conf->amb_grid.y);
+	if (needLightsUpdate)
+		SetLightGridSize(conf->amb_grid.x, conf->amb_grid.y);
 }
 
 CaptureHelper::~CaptureHelper()
