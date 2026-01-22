@@ -309,10 +309,10 @@ void FXHelper::Stop() {
 	SetEvent(stopQuery);
 	for (auto& devQuery : devLightQuery) {
 		//QueryCommand(devQuery.first, LightQueryElement({ 0, 1 }));
-		HANDLE oldUpate = devQuery.second.updateThread;
+		HANDLE oldUpdate = devQuery.second.updateThread;
 		devQuery.second.updateThread = NULL;
-		WaitForSingleObject(oldUpate, 20000);
-		CloseHandle(oldUpate);
+		WaitForSingleObject(oldUpdate, 20000);
+		CloseHandle(oldUpdate);
 		CloseHandle(devQuery.second.haveNewElement);
 		DebugPrint("Light updates stopped for device " + to_string(devQuery.first) + ".\n");
 	}

@@ -62,7 +62,7 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 
 VS_VERSION_INFO VERSIONINFO
  FILEVERSION 9,3,4,5
- PRODUCTVERSION 9,3,4,5
+ PRODUCTVERSION 9,3,4,6
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -83,7 +83,7 @@ BEGIN
             VALUE "LegalCopyright", "Copyright (C) 2021"
             VALUE "OriginalFilename", "LightFX.dll"
             VALUE "ProductName", "AlienFX Tools"
-            VALUE "ProductVersion", "9.3.4.5"
+            VALUE "ProductVersion", "9.3.4.6"
         END
     END
     BLOCK "VarFileInfo"
