@@ -10,7 +10,7 @@ struct LightEventData {
 
 struct LightQueryElement {
 	byte light;	  // lightID or forced state
-	byte command; // 0 - color, 1 - update, 2 - set brightness, 3 - device clean, 4 - power button
+	byte command; // 0 - color, 1 - update, 2 - set brightness, 3 - device clean, 4 - power button, 5 - light state clean
 	byte actsize;
 	AlienFX_SDK::Afx_action actions[9];
 };

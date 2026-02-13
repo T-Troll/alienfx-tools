@@ -113,6 +113,8 @@ profile* ConfigHandler::FindProfileByApp(DWORD proc)
 	profile* fprof = NULL;
 	processdata procName = GetProcessData(proc);
 
+	//DebugPrint("Profile: looking for " + procName.appName + "\n");
+
 	for (profile* prof : profiles)
 		if (SamePower(prof)) {
 			for (auto name : prof->triggerapp) {

@@ -303,6 +303,10 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 		case IDC_DEV_EFFECT:
 			DialogBox(hInst, MAKEINTRESOURCE(IDD_DIALOG_DEVICEEFFECTS), hDlg, (DLGPROC)DeviceEffectDialog);
 			break;
+		case IDC_ADD_LOCK:
+			prof->triggerapp.push_back("LockApp.exe");
+			ReloadProfileView(hDlg);
+			break;
 		case IDC_ADDPROFILE: {
 			unsigned vacID = 0;
 			for (auto prof = conf->profiles.begin(); prof != conf->profiles.end();)

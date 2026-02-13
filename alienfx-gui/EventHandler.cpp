@@ -194,6 +194,11 @@ void EventHandler::ChangeEffects(bool stop) {
 void EventHandler::CheckProfileChange() {
 	DWORD prcId;
 	GetWindowThreadProcessId(GetForegroundWindow(), &prcId);
+
+	// Debug
+	processdata procName = conf->GetProcessData(prcId);
+	DebugPrint("Profile: looking for " + procName.appName + "(" + to_string(prcId) + ")\n");
+
 	profile* newProf = conf->FindProfileByApp(prcId);
 	
 	//if (newProf && (conf->IsPriorityProfile(newProf) || !conf->IsPriorityProfile(conf->activeProfile))) {

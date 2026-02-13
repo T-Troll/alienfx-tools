@@ -223,6 +223,7 @@
 #define IDC_EDIT_TCC                    1218
 #define IDC_ACCENT                      1219
 #define IDC_COMBO_FREQ                  1220
+#define IDC_ADD_LOCK                    1222
 #define IDC_BUTREMRGH                   1228
 #define IDC_BUTREMBOT                   1229
 #define IDC_BUTADDTOP                   1230
@@ -249,7 +250,7 @@
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        167
 #define _APS_NEXT_COMMAND_VALUE         32814
-#define _APS_NEXT_CONTROL_VALUE         1222
+#define _APS_NEXT_CONTROL_VALUE         1223
 #define _APS_NEXT_SYMED_VALUE           113
 #endif
 #endif

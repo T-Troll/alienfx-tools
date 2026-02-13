@@ -114,7 +114,7 @@ namespace AlienFX_SDK {
 				//break;
 			case API_V8:
 				if (needV8Feature) {
-					Sleep(3);
+					Sleep(4);
 					bool res = HidD_SetFeature(devHandle, buffer, length);
 					Sleep(6);
 					return res;

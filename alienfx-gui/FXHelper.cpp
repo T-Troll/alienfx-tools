@@ -204,11 +204,11 @@ void FXHelper::QueryCommand(WORD pid, LightQueryElement &lqe) {
 
 // Clear light states before forced save
 void FXHelper::ClearAndRefresh(bool force) {
-	modifyQuery.lockWrite();
-	for (auto& lqstate : devLightQuery) {
-		lqstate.second.lstate.clear();
-	}
-	modifyQuery.unlockWrite();
+	//for (auto& lqstate : devLightQuery) {
+	//	lqstate.second.lstate.clear();
+	//}
+	//modifyQuery.unlockWrite();
+	QueryAllDevs(LightQueryElement({ 0,5 }));
 	Refresh(force);
 }
 
@@ -308,7 +308,6 @@ void FXHelper::Stop() {
 	updateAllowed = false;
 	SetEvent(stopQuery);
 	for (auto& devQuery : devLightQuery) {
-		//QueryCommand(devQuery.first, LightQueryElement({ 0, 1 }));
 		HANDLE oldUpdate = devQuery.second.updateThread;
 		devQuery.second.updateThread = NULL;
 		WaitForSingleObject(oldUpdate, 20000);
@@ -710,7 +709,7 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 	LightQueryData* ld = (LightQueryData*)param;
 	FXHelper* src = (FXHelper *)ld->src;
 	WORD pid = ld->pid;
-	DWORD res = WAIT_OBJECT_0;
+	//DWORD res = WAIT_OBJECT_0;
 	DeviceUpdateQuery* lightQuery = &src->devLightQuery[pid];
 	LightQueryElement current;
 
@@ -719,8 +718,9 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 
 	SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_ABOVE_NORMAL);
 
-	while (res == WAIT_OBJECT_0) {//(res = WaitForMultipleObjects(2, waitArray, false, INFINITE)) != WAIT_FAILED) {
-		res = WaitForMultipleObjects(2, waitArray, false, INFINITE);
+	while (WaitForMultipleObjects(2, waitArray, false, INFINITE) == WAIT_OBJECT_0) {
+		//(res = WaitForMultipleObjects(2, waitArray, false, INFINITE)) != WAIT_FAILED) {
+		//res = WaitForMultipleObjects(2, waitArray, false, INFINITE);
 		while ( lightQuery->lightQuery.size()) {
 			src->modifyQuery.lockWrite();
 			current = lightQuery->lightQuery.front();
@@ -728,6 +728,9 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 			src->modifyQuery.unlockWrite();
 
 			switch (current.command) {
+			case 5: // clear light states
+				lightQuery->lstate.clear();
+				break;
 			case 3: { // scheduled to remove
 				AlienFX_SDK::Afx_device* dev = conf->afx_dev.GetDeviceById(pid);
 				//if (!dev->present && dev->dev) {

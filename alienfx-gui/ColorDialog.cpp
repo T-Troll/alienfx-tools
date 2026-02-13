@@ -26,6 +26,7 @@ void SetEffectData(HWND hDlg) {
 	EnableWindow(GetDlgItem(hDlg, IDC_TYPE1), hasEffects);
 	EnableWindow(GetDlgItem(hDlg, IDC_SPEED1), hasEffects);
 	EnableWindow(GetDlgItem(hDlg, IDC_LENGTH1), hasEffects);
+	EnableWindow(GetDlgItem(hDlg, IDC_ACCENT), hasEffects);
 	RedrawButton(GetDlgItem(hDlg, IDC_BUTTON_C1), activeMapping && activeMapping->color.size() ?
 		activeMapping->color[effID].type & 0xf0 ?
 			conf->accentColor :
