@@ -130,7 +130,7 @@ void UpdateLightDevices() {
 	if (conf->afx_dev.AlienFXEnumDevices(mon ? mon->acpi : NULL)) {
 		DebugPrint("Active device list changed!\n");
 		if (conf->afx_dev.activeDevices && !dDlg) {
-			fxhl->updateAllowed = true;
+			//fxhl->updateAllowed = true;
 			for (auto& fxd : conf->afx_dev.fxdevs) {
 				if (fxd.arrived) {
 					fxhl->UpdateGlobalEffect(&fxd);

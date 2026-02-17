@@ -29,5 +29,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="aliefan_v1.md" />
+    <None Include="packages.config" />
   </ItemGroup>
 </Project>

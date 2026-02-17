@@ -50,9 +50,9 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 
 			switch (current.command) {
 			case 1: { // update command
-				AlienFX_SDK::Afx_device* dev;
 				for (auto devQ = devs_query.begin(); devQ != devs_query.end(); devQ++) {
-					if (devQ->second.size() && (dev = afx_dev->GetDeviceById(devQ->first)) && dev->dev) {
+					AlienFX_SDK::Afx_device* dev = afx_dev->GetDeviceById(devQ->first);
+					if (devQ->second.size() && dev->present) {
 						//DebugPrint("Updating device " + to_string(devQ->first) + ", " + to_string(devQ->second.size()) + " lights\n");
 						dev->dev->SetMultiAction(&devQ->second, current.light);
 						dev->dev->UpdateColors();

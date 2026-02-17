@@ -18,7 +18,6 @@ struct LightQueryElement {
 struct DeviceUpdateQuery {
 	HANDLE haveNewElement = NULL,
 		   updateThread = NULL;
-	//bool inUpdate = false;
 	queue<LightQueryElement> lightQuery;
 	map<byte, LightQueryElement> lstate;
 };
@@ -48,15 +47,13 @@ public:
 	CustomMutex modifyQuery;
 	map<WORD, DeviceUpdateQuery> devLightQuery;
 	LightEventData eData, maxData;
-	// Power button state...
-	//map<WORD, AlienFX_SDK::Afx_action[2]> pbstate;
 
 	// light states
 	bool stateScreen = true,
 		stateDim = false,
 		stateAction = true,
 		finalPBState = true, 
-		updateAllowed = false;
+		updateAllowed = true;
 	int finalBrightness = -1;
 
 	FXHelper();

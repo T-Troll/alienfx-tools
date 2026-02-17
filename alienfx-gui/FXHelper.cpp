@@ -25,7 +25,6 @@ FXHelper::FXHelper() {
 FXHelper::~FXHelper() {
 	Stop();
 	CloseHandle(stopQuery);
-	//CloseHandle(haveNewElement);
 	CloseHandle(haveLightFX);
 };
 
@@ -102,7 +101,7 @@ void FXHelper::SetZone(groupset* grp, vector<AlienFX_SDK::Afx_action>* actions, 
 void FXHelper::TestLight(AlienFX_SDK::Afx_device* dev, int id, bool force, bool wp)
 {
 	DebugPrint("Testing light #" + to_string(id));
-	if (dev && dev->dev) {
+	if (dev && dev->present) {
 		DebugPrint(", have device");
 		AlienFX_SDK::Afx_action c = { wp ? Code2Act(dev->white) : AlienFX_SDK::Afx_action({0})};
 
@@ -134,16 +133,14 @@ void FXHelper::TestLight(AlienFX_SDK::Afx_device* dev, int id, bool force, bool 
 }
 
 bool FXHelper::CheckEvent(LightEventData* eData, event* e) {
-#define ccut e->cut
-//	byte ccut = e->cut;
 	switch (e->source) {
-	case 0: return eData->HDD; break;
-	case 1: return eData->NET; break;
-	case 2: return eData->Temp - ccut > 0; break;
-	case 3: return eData->RAM - ccut > 0; break;
-	case 4: return ccut - eData->Batt > 0; break;
-	case 5: return eData->KBD; break;
-	case 6: return eData->PWM - ccut > 0; break;
+	case 0: return eData->HDD;
+	case 1: return eData->NET;
+	case 2: return eData->Temp - e->cut > 0;
+	case 3: return eData->RAM - e->cut > 0;
+	case 4: return e->cut - eData->Batt > 0;
+	case 5: return eData->KBD;
+	case 6: return eData->PWM - e->cut > 0;
 	}
 	return false;
 }
@@ -204,10 +201,6 @@ void FXHelper::QueryCommand(WORD pid, LightQueryElement &lqe) {
 
 // Clear light states before forced save
 void FXHelper::ClearAndRefresh(bool force) {
-	//for (auto& lqstate : devLightQuery) {
-	//	lqstate.second.lstate.clear();
-	//}
-	//modifyQuery.unlockWrite();
 	QueryAllDevs(LightQueryElement({ 0,5 }));
 	Refresh(force);
 }
@@ -215,13 +208,7 @@ void FXHelper::ClearAndRefresh(bool force) {
 void FXHelper::QueryAllDevs(LightQueryElement& lqe) {
 	for (auto& devQ : conf->afx_dev.fxdevs) {
 		if (devQ.dev) {
-			//if (!devLightQuery[devQ.pid].inUpdate || lqe.light || lqe.command != 1) {
-				QueryCommand(devQ.pid, lqe);
-			//}
-			//else {
-			//	//devLightQuery[devQ.pid].lstate.clear();
-			//	DebugPrint("Update for " + to_string(devQ.pid) + " skipped!\n");
-			//}
+			QueryCommand(devQ.pid, lqe);
 		}
 	}
 }
@@ -308,11 +295,10 @@ void FXHelper::Stop() {
 	updateAllowed = false;
 	SetEvent(stopQuery);
 	for (auto& devQuery : devLightQuery) {
-		HANDLE oldUpdate = devQuery.second.updateThread;
-		devQuery.second.updateThread = NULL;
-		WaitForSingleObject(oldUpdate, 20000);
-		CloseHandle(oldUpdate);
+		WaitForSingleObject(devQuery.second.updateThread, 20000);
+		CloseHandle(devQuery.second.updateThread);
 		CloseHandle(devQuery.second.haveNewElement);
+		devQuery.second.haveNewElement = NULL;
 		DebugPrint("Light updates stopped for device " + to_string(devQuery.first) + ".\n");
 	}
 	devLightQuery.clear();
@@ -709,9 +695,10 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 	LightQueryData* ld = (LightQueryData*)param;
 	FXHelper* src = (FXHelper *)ld->src;
 	WORD pid = ld->pid;
-	//DWORD res = WAIT_OBJECT_0;
 	DeviceUpdateQuery* lightQuery = &src->devLightQuery[pid];
 	LightQueryElement current;
+
+	AlienFX_SDK::Afx_device* dev = conf->afx_dev.GetDeviceById(pid);
 
 	HANDLE waitArray[2]{ lightQuery->haveNewElement, src->stopQuery };
 	vector<AlienFX_SDK::Afx_lightblock> dev_query;
@@ -719,8 +706,6 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 	SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_ABOVE_NORMAL);
 
 	while (WaitForMultipleObjects(2, waitArray, false, INFINITE) == WAIT_OBJECT_0) {
-		//(res = WaitForMultipleObjects(2, waitArray, false, INFINITE)) != WAIT_FAILED) {
-		//res = WaitForMultipleObjects(2, waitArray, false, INFINITE);
 		while ( lightQuery->lightQuery.size()) {
 			src->modifyQuery.lockWrite();
 			current = lightQuery->lightQuery.front();
@@ -732,22 +717,19 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 				lightQuery->lstate.clear();
 				break;
 			case 3: { // scheduled to remove
-				AlienFX_SDK::Afx_device* dev = conf->afx_dev.GetDeviceById(pid);
-				//if (!dev->present && dev->dev) {
-					delete dev->dev;
-					dev->dev = NULL;
-				//}
+				//AlienFX_SDK::Afx_device* dev = conf->afx_dev.GetDeviceById(pid);
+				delete dev->dev;
+				dev->dev = NULL;
 				lightQuery->lstate.clear();
-				dev_query.clear();
+				//dev_query.clear();
 			} break;
 			case 2: { // set brightness
 				bool pbstate = current.light || src->finalPBState;// , needRefresh = false;
 				byte fbright = (byte)(current.light ?
 					conf->stateDimmed && conf->dimPowerButton ? conf->dimmingPower : conf->fullPower
 					: src->finalBrightness);
-				AlienFX_SDK::Afx_device* dev = conf->afx_dev.GetDeviceById(pid);
-				// stop thread if device removed
-				if (dev && dev->dev) {
+				//AlienFX_SDK::Afx_device* dev = conf->afx_dev.GetDeviceById(pid);
+				if (dev && dev->present) {
 					if (conf->afx_dev.SetDeviceBrightness(&(*dev), fbright, pbstate)) {
 						src->ClearAndRefresh();
 					}
@@ -755,9 +737,9 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 				//DebugPrint("Set brightness " + to_string(src->finalBrightness) + " for device " + to_string(dev->pid) + "\n");
 			} break;
 			case 1: { // update command
-				AlienFX_SDK::Afx_device* dev = conf->afx_dev.GetDeviceById(pid);
+				//AlienFX_SDK::Afx_device* dev = conf->afx_dev.GetDeviceById(pid);
 				//DebugPrint("Updating device " + to_string(devQ->first) + ", " + to_string(devQ->second.size()) + " lights\n");
-				if (dev && dev_query.size() && dev->dev && conf->activeProfile->effects[dev->devID].empty()) {
+				if (dev && dev_query.size() && dev->present && conf->activeProfile->effects[dev->devID].empty()) {
 					//lightQuery->inUpdate = true;
 					dev->dev->SetMultiAction(&dev_query, current.light == 1);
 					//DebugPrint("Set action complete\n");

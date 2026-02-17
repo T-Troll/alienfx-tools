@@ -8,7 +8,6 @@ private:
 	HHOOK kEvent, ackEvent = NULL, acmEvent;
 	DWORD maxProcess = 1024;
 	DWORD* aProcesses = NULL;
-	//DWORD currentFreq = 0;
 
 public:
 	void* capt = NULL;
@@ -17,7 +16,6 @@ public:
 	void* sysmon = NULL;
 
 	bool keyboardSwitchActive = false;
-	//bool notInDestroy = true;
 
 	HANDLE wasAction, acThread, acStop;
 
@@ -31,15 +29,11 @@ public:
 	void StartProfiles();
 	void StopProfiles();
 	void ToggleProfiles();
-	//string GetProcessName(DWORD proc);
 	void CheckProfileChange();
 
 	// Effects
 	void ChangeEffectMode();
 	void ChangeEffects(bool stop = false);
-
-	// Timeout Action
-	//void ChangeAction(bool run = true);
 
 	EventHandler();
 	~EventHandler();

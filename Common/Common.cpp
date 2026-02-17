@@ -46,7 +46,7 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 }
 
 DWORD WINAPI Blinker(LPVOID lparam) {
-	int howmany = ((int)lparam + 1) << 1;
+	int howmany = (((int)lparam) + 1) << 1;
 	for (int i = 0; i < howmany; i++) {
 		keybd_event(VK_CAPITAL, 0x3A, 0, 0);
 		keybd_event(VK_CAPITAL, 0x3A, KEYEVENTF_KEYUP, 0);

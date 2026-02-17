@@ -19,7 +19,6 @@ extern FXHelper* fxhl;
 extern MonHelper* mon;
 extern ConfigHandler* conf;
 extern ConfigFan* fan_conf;
-//extern ThreadHelper* dxgi_thread;
 
 extern HWND mDlg;
 
@@ -296,8 +295,6 @@ void EventHandler::ToggleProfiles()
 	StopProfiles();
 	conf->enableProfSwitch = !conf->enableProfSwitch;
 	StartProfiles();
-	//if (conf->enableProfSwitch)
-	//	CheckProfileChange();
 }
 
 DWORD WINAPI acFunc(LPVOID lpParam) {

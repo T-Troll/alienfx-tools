@@ -46,7 +46,7 @@ AlienFX_SDK::Afx_device* activeDevice = NULL;
 
 void ResetPower()
 {
-	if (activeDevice->dev && activeDevice->version < AlienFX_SDK::API_V5) {
+	if (activeDevice->present && activeDevice->version < AlienFX_SDK::API_V5) {
 		ShowNotification(&conf->niData, "Warning", "Reassigning power button, please wait...");
 		vector<AlienFX_SDK::Afx_lightblock> act{ { (byte)(keySetLight->flags & ALIENFX_FLAG_POWER ?
 			 keySetLight->lightid : 127), {{AlienFX_SDK::AlienFX_A_Power, 3, 0x64}, {AlienFX_SDK::AlienFX_A_Power, 3, 0x64}} } };
@@ -700,9 +700,6 @@ BOOL CALLBACK DetectionDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 	switch (message) {
 	case WM_INITDIALOG:
 	{
-		// add fake device for testing...
-		//conf->afx_dev.GetDevices()->push_back({ 0x0461 , 20160, "Unknown mouse" });
-
 		LoadCSV(".\\Mappings\\devices.csv");
 		UpdateSavedDevices(hDlg);
 	} break;

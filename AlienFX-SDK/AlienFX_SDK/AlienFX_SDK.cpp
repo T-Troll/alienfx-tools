@@ -865,14 +865,13 @@ namespace AlienFX_SDK {
 	void Mappings::AlienFxUpdateDevice(Functions* dev) {
 		auto devInfo = GetDeviceById(dev->pid, dev->vid);
 		if (devInfo) {
-			devInfo->version = dev->version;
+			//devInfo->version = dev->version;
 			devInfo->present = true;
 			activeLights += (unsigned)devInfo->lights.size();
 			if (devInfo->dev) {
 				delete dev;
 				DebugPrint("Scan: VID: " + to_string(devInfo->vid) + ", PID: " + to_string(devInfo->pid) + ", Version: "
 					+ to_string(devInfo->version) + " - present already\n");
-				devInfo->arrived = false;
 			}
 			else {
 				devInfo->dev = dev;
@@ -880,15 +879,14 @@ namespace AlienFX_SDK {
 				DebugPrint("Scan: VID: " + to_string(devInfo->vid) + ", PID: " + to_string(devInfo->pid) + ", Version: "
 					+ to_string(devInfo->version) + " - return back\n");
 			}
-			activeDevices++;
 		}
 		else {
 			fxdevs.push_back({ dev->pid, dev->vid, dev, dev->description, dev->version });
 			deviceListChanged = fxdevs.back().arrived = fxdevs.back().present = true;
-			activeDevices++;
 			DebugPrint("Scan: VID: " + to_string(dev->vid) + ", PID: " + to_string(dev->pid) + ", Version: "
 				+ to_string(dev->version) + " - new device added\n");
 		}
+		activeDevices++;
 	}
 
 	bool Mappings::AlienFXEnumDevices(void* acc) {
@@ -897,7 +895,7 @@ namespace AlienFX_SDK {
 
 		// Reset active status
 		for (auto i = fxdevs.begin(); i != fxdevs.end(); i++)
-			i->present = false;
+			i->present = i->arrived = false;
 		activeDevices = activeLights = 0;
 
 		HDEVINFO hDevInfo = SetupDiGetClassDevs(&GUID_DEVINTERFACE_HID, NULL, NULL, DIGCF_PRESENT | DIGCF_DEVICEINTERFACE);
@@ -931,7 +929,6 @@ namespace AlienFX_SDK {
 			if (!i->present && i->dev) {
 				deviceListChanged = true;
 				DebugPrint("Scan: VID: " + to_string(i->vid) + ", PID: " + to_string(i->pid) + " - removed\n");
-				i->arrived = false;
 				break;
 			}
 		return deviceListChanged;
