@@ -4,7 +4,6 @@
 #include <windows.h>
 #include <Setupapi.h>
 #include <devioctl.h>
-#include <tchar.h>
 #include <strsafe.h>
 #include <acpiioct.h>
 

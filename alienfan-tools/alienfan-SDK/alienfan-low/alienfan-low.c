@@ -1,5 +1,5 @@
 #include "alienfan-low.h"
-#include <acpiioct.h>
+//#include <acpiioct.h>
 #include <stdlib.h>
 #include "ioctl.h"
 
@@ -431,7 +431,7 @@ EvalAcpiMethod(
 
     PACPI_EVAL_INPUT_BUFFER_EX      inbuf;
     PACPI_EVAL_OUTPUT_BUFFER       outbuf;
-    PACPI_EVAL_OUTPUT_BUFFER       ActualData;
+    //PACPI_EVAL_OUTPUT_BUFFER       ActualData;
 
     EvalMethod = pArgs ? IOCTL_GPD_EVAL_ACPI_WITH_DIRECT : IOCTL_GPD_EVAL_ACPI_WITHOUT_DIRECT;
 
