@@ -82,7 +82,7 @@ Feel free to promote this project online if you like it instead!
 ## How to build from source code
 
 Prerequisites:
-- Visual Studio Community 2019
+- Visual Studio Community 2019 (Visual Studio 2026 starting from v9.4.0).
 - (Optional) Microsoft WDK (Driver kit) should be installed in case you want to build against older V1 fan SDK.
 
 Build process:
