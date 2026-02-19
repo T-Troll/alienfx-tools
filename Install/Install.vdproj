@@ -33,6 +33,12 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_055E075BF224A12F432351DF93952E0E"
+        "OwnerKey" = "8:_4B7975803E6C492C8F7D8B599766674C"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_09B1992F95E748E1845109AD2B634C5A"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -53,6 +59,12 @@
         {
         "MsmKey" = "8:_1924518F6EA84AD696BCCE8E589E25C7"
         "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_2C114A408AF54575063F1111E23C7F1B"
+        "OwnerKey" = "8:_E287D1712A1A426DA4A815104949F017"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -111,6 +123,12 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_83763AF12CFE41FE16B491DE99592F8F"
+        "OwnerKey" = "8:_4B7975803E6C492C8F7D8B599766674C"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_8F3090BEFD2084C54DFF0BFAD98DA84F"
         "OwnerKey" = "8:_1924518F6EA84AD696BCCE8E589E25C7"
         "MsmSig" = "8:_UNDEFINED"
@@ -131,12 +149,6 @@
         {
         "MsmKey" = "8:_9503587A884F4044BECE7881E4187E1C"
         "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_956FE78A4A297C09DE94A9BF30BBA83C"
-        "OwnerKey" = "8:_E287D1712A1A426DA4A815104949F017"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -173,6 +185,12 @@
         {
         "MsmKey" = "8:_E57C9B0CB5862DCB6BAC31D289B34509"
         "OwnerKey" = "8:_FA7989C51ECD437AB3316446FB849F60"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_E57C9B0CB5862DCB6BAC31D289B34509"
+        "OwnerKey" = "8:_4B7975803E6C492C8F7D8B599766674C"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -399,6 +417,26 @@
             "IsDependency" = "11:TRUE"
             "IsolateTo" = "8:"
             }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_2C114A408AF54575063F1111E23C7F1B"
+            {
+            "SourcePath" = "8:LightFX.dll"
+            "TargetName" = "8:LightFX.dll"
+            "Tag" = "8:"
+            "Folder" = "8:_77CCC7F3944A4B009D9231F8B41DFD6D"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:TRUE"
+            "IsDependency" = "11:TRUE"
+            "IsolateTo" = "8:"
+            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_3AE7CAAC94814B3090DEAE0C5F50265B"
             {
             "SourcePath" = "8:..\\Doc\\alienfan-cli.md"
@@ -557,26 +595,6 @@
             "Register" = "3:1"
             "Exclude" = "11:FALSE"
             "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_956FE78A4A297C09DE94A9BF30BBA83C"
-            {
-            "SourcePath" = "8:LightFX.dll"
-            "TargetName" = "8:LightFX.dll"
-            "Tag" = "8:"
-            "Folder" = "8:_77CCC7F3944A4B009D9231F8B41DFD6D"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:TRUE"
-            "IsDependency" = "11:TRUE"
             "IsolateTo" = "8:"
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_C4B1307E827A4442ACD87D8B7EAF7F24"
@@ -768,15 +786,15 @@
         {
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:AlienFX Tools"
-        "ProductCode" = "8:{729B6A30-4C7F-4B94-B890-20A1A21159D2}"
-        "PackageCode" = "8:{A8894D3C-A2C3-461C-AA55-10A5890FB49D}"
+        "ProductCode" = "8:{DADBDFB5-375B-4001-96FA-A27868488D60}"
+        "PackageCode" = "8:{04EFF013-CF70-4283-9B5B-5156A05EDB0F}"
         "UpgradeCode" = "8:{EFC2D182-AE5E-4585-92D3-0759F77F59AA}"
         "AspNetVersion" = "8:4.0.30319.0"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:TRUE"
         "DetectNewerInstalledVersion" = "11:FALSE"
         "InstallAllUsers" = "11:FALSE"
-        "ProductVersion" = "8:9.3.406"
+        "ProductVersion" = "8:9.4.0"
         "Manufacturer" = "8:T-Troll"
         "ARPHELPTELEPHONE" = "8:"
         "ARPHELPLINK" = "8:https://github.com/T-Troll/alienfx-tools/discussions"
