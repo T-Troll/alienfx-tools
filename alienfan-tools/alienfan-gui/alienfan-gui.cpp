@@ -217,6 +217,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         CheckMenuItem(GetMenu(hDlg), IDM_SETTINGS_UPDATE, fan_conf->updateCheck ? MF_CHECKED : MF_UNCHECKED);
         CheckMenuItem(GetMenu(hDlg), IDM_SETTINGS_DISABLEAWCC, fan_conf->awcc_disable ? MF_CHECKED : MF_UNCHECKED);
         CheckMenuItem(GetMenu(hDlg), IDM_SETTINGS_KEYBOARDSHORTCUTS, fan_conf->keyShortcuts ? MF_CHECKED : MF_UNCHECKED);
+        CheckMenuItem(GetMenu(hDlg), IDM_SETTINGS_NUMLOCK, fan_conf->numlockActive ? MF_CHECKED : MF_UNCHECKED);
         CheckMenuItem(GetMenu(hDlg), IDM_SETTINGS_RESTOREPOWERMODE, fan_conf->keepSystem ? MF_CHECKED : MF_UNCHECKED);
         CheckMenuItem(GetMenu(hDlg), IDM_SETTINGS_ENABLEOC, fan_conf->ocEnable ? MF_CHECKED : MF_UNCHECKED);
         CheckMenuItem(GetMenu(hDlg), IDM_SETTINGS_DISKSENSORS, fan_conf->diskSensors ? MF_CHECKED : MF_UNCHECKED);
@@ -306,6 +307,9 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         case IDM_SETTINGS_KEYBOARDSHORTCUTS:
             ToggleValue(fan_conf->keyShortcuts, wmId);
             SetHotkeys();
+            break;
+        case IDM_SETTINGS_NUMLOCK:
+            ToggleValue(fan_conf->numlockActive, wmId);
             break;
         case IDM_SETTINGS_DISABLEAWCC:
             ToggleValue(fan_conf->awcc_disable, wmId);
@@ -452,11 +456,11 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
     case WM_HOTKEY:
         if (wParam == 6 || wParam > 19 && wParam - 20 < mon->powerSize) {
             if (wParam == 6) { // G-key for Dell G-series power switch
-                AlterGMode(fan_conf->keyShortcuts, power_list);
+                AlterGMode(fan_conf->numlockActive, power_list);
             }
             else { // Power mode shortcut
                 mon->SetPowerMode((WORD)wParam - 20);
-                PowerChangeNotify(fan_conf->keyShortcuts, power_list);
+                PowerChangeNotify(fan_conf->numlockActive, power_list);
             }
         }
         break;
@@ -470,7 +474,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             RestoreApp();
             break;
         case ID_MENU_GMODE:
-            AlterGMode(fan_conf->keyShortcuts, power_list);
+            AlterGMode(fan_conf->numlockActive, power_list);
             break;
         default:
             mon->SetPowerMode(idx);

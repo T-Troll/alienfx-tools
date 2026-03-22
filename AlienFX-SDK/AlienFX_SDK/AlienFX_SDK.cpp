@@ -871,17 +871,18 @@ namespace AlienFX_SDK {
 			if (devInfo->dev) {
 				delete dev;
 				DebugPrint("Scan: VID: " + to_string(devInfo->vid) + ", PID: " + to_string(devInfo->pid) + ", Version: "
-					+ to_string(devInfo->version) + " - present already\n");
+					+ to_string(dev->version) + " - present already\n");
 			}
 			else {
 				devInfo->dev = dev;
 				deviceListChanged = devInfo->arrived = true;
+				//devInfo->version = dev->version;
 				DebugPrint("Scan: VID: " + to_string(devInfo->vid) + ", PID: " + to_string(devInfo->pid) + ", Version: "
-					+ to_string(devInfo->version) + " - return back\n");
+					+ to_string(dev->version) + " - return back\n");
 			}
 		}
 		else {
-			fxdevs.push_back({ dev->pid, dev->vid, dev, dev->description, dev->version });
+			fxdevs.push_back({ dev->pid, dev->vid, dev, dev->description/*, dev->version*/ });
 			deviceListChanged = fxdevs.back().arrived = fxdevs.back().present = true;
 			DebugPrint("Scan: VID: " + to_string(dev->vid) + ", PID: " + to_string(dev->pid) + ", Version: "
 				+ to_string(dev->version) + " - new device added\n");

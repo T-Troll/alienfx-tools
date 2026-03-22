@@ -50,6 +50,7 @@ void ConfigFan::Load() {
 	GetReg("PollingRate", &pollingRate, 750);
 	GetReg("OCEnable", &ocEnable);
 	GetReg("DiskSensors", &diskSensors, 1);
+	GetReg("NumLockActive", &numlockActive, 1);
 
 	// Now load sensor mappings...
 	char name[256];
@@ -105,6 +106,7 @@ void ConfigFan::Save() {
 	SetReg("PollingRate", pollingRate);
 	SetReg("OCEnable", ocEnable);
 	SetReg("DiskSensors", diskSensors);
+	SetReg("NumLockActive", numlockActive);
 
 	// clean old data
 	RegDeleteTree(keyMain, "Sensors");

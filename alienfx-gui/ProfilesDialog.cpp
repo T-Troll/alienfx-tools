@@ -63,7 +63,7 @@ void RefreshDeviceList(HWND hDlg) {
 	HWND dev_list = GetDlgItem(hDlg, IDC_DE_LIST);
 	ListBox_ResetContent(dev_list);
 	for (auto i = conf->afx_dev.fxdevs.begin(); i != conf->afx_dev.fxdevs.end(); i++) 
-		if (i->dev && i->dev->IsHaveGlobal()) {
+		if (i->present && i->dev->IsHaveGlobal()) {
 			int pos = (int)(i - conf->afx_dev.fxdevs.begin());
 			int ind = ListBox_AddString(dev_list, i->name.c_str());
 			if (!activeEffectDevice)
@@ -74,8 +74,8 @@ void RefreshDeviceList(HWND hDlg) {
 				deviceeffect* b;
 				AlienFX_SDK::Afx_colorcode c1{ 0,0,0,0xff }, c2{ 0,0,0,0xff };
 
-				EnableWindow(GetDlgItem(hDlg, IDC_GLOBAL_KEYEFFECT), i->version == 8);
-				EnableWindow(GetDlgItem(hDlg, IDC_CMODE_KEY), i->version == 8);
+				EnableWindow(GetDlgItem(hDlg, IDC_GLOBAL_KEYEFFECT), i->dev->version == 8);
+				EnableWindow(GetDlgItem(hDlg, IDC_CMODE_KEY), i->dev->version == 8);
 
 				if (b = FindDevEffect(1)) {
 					//SendMessage(GetDlgItem(hDlg, IDC_SLIDER_TEMPO), TBM_SETPOS, true, b->globalDelay);
@@ -85,7 +85,7 @@ void RefreshDeviceList(HWND hDlg) {
 
 				RedrawButton(GetDlgItem(hDlg, IDC_BUTTON_EFFCLR1), MakeRGB(c1));
 				RedrawButton(GetDlgItem(hDlg, IDC_BUTTON_EFFCLR2), MakeRGB(c2));
-				UpdateCombo(GetDlgItem(hDlg, IDC_GLOBAL_EFFECT), i->version == 8 ? ge_names8 : ge_names5, b ? b->globalEffect : 0, i->version == 8 ? ge_types8 : ge_types5);
+				UpdateCombo(GetDlgItem(hDlg, IDC_GLOBAL_EFFECT), i->dev->version == 8 ? ge_names8 : ge_names5, b ? b->globalEffect : 0, i->dev->version == 8 ? ge_types8 : ge_types5);
 				UpdateCombo(GetDlgItem(hDlg, IDC_CMODE), cModeNames, b ? b->colorMode - 1 : 0);
 
 				c1 = c2 = { 0,0,0,0xff };
@@ -98,7 +98,7 @@ void RefreshDeviceList(HWND hDlg) {
 
 				RedrawButton(GetDlgItem(hDlg, IDC_BUTTON_EFFCLR3), MakeRGB(c1));
 				RedrawButton(GetDlgItem(hDlg, IDC_BUTTON_EFFCLR4), MakeRGB(c2));
-				UpdateCombo(GetDlgItem(hDlg, IDC_GLOBAL_KEYEFFECT), i->version == 8 ? ge_names8 : ge_names5, b ? b->globalEffect : 0, i->version == 8 ? ge_types8 : ge_types5);
+				UpdateCombo(GetDlgItem(hDlg, IDC_GLOBAL_KEYEFFECT), i->dev->version == 8 ? ge_names8 : ge_names5, b ? b->globalEffect : 0, i->dev->version == 8 ? ge_types8 : ge_types5);
 				UpdateCombo(GetDlgItem(hDlg, IDC_CMODE_KEY), cModeNames, b ? b->colorMode - 1 : 0);
 			}
 		}

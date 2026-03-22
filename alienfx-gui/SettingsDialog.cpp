@@ -53,6 +53,7 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 		CheckDlgButton(hDlg, IDC_OFFONBATTERY, conf->offOnBattery);
 		CheckDlgButton(hDlg, IDC_CHECK_LIGHTNAMES, conf->showGridNames);
 		CheckDlgButton(hDlg, IDC_HOTKEYS, conf->keyShortcuts);
+		CheckDlgButton(hDlg, IDC_CHECK_NUMLOCK, fan_conf->numlockActive);
 		CheckDlgButton(hDlg, IDC_LIGHTACTION, conf->actionLights);
 
 		SetDlgItemInt(hDlg, IDC_EDIT_POLLING, fan_conf->pollingRate, false);
@@ -202,6 +203,9 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 		case IDC_HOTKEYS:
 			conf->keyShortcuts = state;
 			SetHotkeys();
+			break;
+		case IDC_CHECK_NUMLOCK:
+			fan_conf->numlockActive = state;
 			break;
 		case IDC_LIGHTACTION:
 			conf->actionLights = state;

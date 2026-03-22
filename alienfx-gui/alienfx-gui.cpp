@@ -676,7 +676,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		}
 		if (mon && wParam > 29 && wParam - 30 < mon->powerSize) { // PowerMode switch
 			mon->SetPowerMode((WORD)wParam - 30);
-			PowerChangeNotify(conf->keyShortcuts);
+			PowerChangeNotify(fan_conf->numlockActive);
 			if (tabSel == TAB_FANS)
 				OnSelChanged();
 			break;
@@ -712,7 +712,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			break;
 		case 2: // G-key for Dell G-series power switch
 			if (mon) {
-				AlterGMode(fan_conf->keyShortcuts);
+				AlterGMode(fan_conf->numlockActive);
 				if (tabSel == TAB_FANS)
 					OnSelChanged();
 			}

@@ -59,6 +59,7 @@ public:
 	DWORD pollingRate;
 	DWORD ocEnable;
 	DWORD diskSensors;
+	DWORD numlockActive;
 	bool acPower = true;
 
 	fan_profile prof;

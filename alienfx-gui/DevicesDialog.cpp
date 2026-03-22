@@ -46,7 +46,7 @@ AlienFX_SDK::Afx_device* activeDevice = NULL;
 
 void ResetPower()
 {
-	if (activeDevice->present && activeDevice->version < AlienFX_SDK::API_V5) {
+	if (activeDevice->present && activeDevice->dev->version < AlienFX_SDK::API_V5) {
 		ShowNotification(&conf->niData, "Warning", "Reassigning power button, please wait...");
 		vector<AlienFX_SDK::Afx_lightblock> act{ { (byte)(keySetLight->flags & ALIENFX_FLAG_POWER ?
 			 keySetLight->lightid : 127), {{AlienFX_SDK::AlienFX_A_Power, 3, 0x64}, {AlienFX_SDK::AlienFX_A_Power, 3, 0x64}} } };
@@ -169,10 +169,10 @@ void UpdateLightsList() {
 void UpdateDeviceInfo() {
 	char descript[128];
 	sprintf_s(descript, 128, "VID_%04X/PID_%04X, %d lights, %s",
-		activeDevice->vid, activeDevice->pid, (int)activeDevice->lights.size(),
-		("APIv" + to_string(activeDevice->version) + (activeDevice->present ? "" : " (inactive)")).c_str());
+		activeDevice->vid, activeDevice->pid, (int)activeDevice->lights.size(), 
+		(activeDevice->present ? "APIv" + to_string(activeDevice->dev->version) : " (inactive)").c_str());
 	SetWindowText(GetDlgItem(dDlg, IDC_INFO_VID), descript);
-	EnableWindow(GetDlgItem(dDlg, IDC_ISPOWERBUTTON), activeDevice->version && activeDevice->version < 5); // v5 and higher doesn't support power button
+	EnableWindow(GetDlgItem(dDlg, IDC_ISPOWERBUTTON), activeDevice->present && activeDevice->dev->version > 0 && activeDevice->dev->version < 5); // v5 and higher doesn't support power button
 	UpdateLightsList();
 }
 
@@ -376,7 +376,8 @@ BOOL CALLBACK TabDevicesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		switch (LOWORD(wParam))
 		{
 		case IDC_BUT_NEXT:
-			eLid++;
+			if (eLid != 255)
+				eLid++;
 			UpdateLightsList();
 			break;
 		case IDC_BUT_PREV:

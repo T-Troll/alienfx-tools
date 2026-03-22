@@ -277,7 +277,7 @@ static const unsigned char devTypes[]{
 FN_DECLSPEC LFX_RESULT STDCALL LFX_GetDeviceDescription(const unsigned int dev, char *const name, const unsigned int namelen, unsigned char *const devtype) {
 	LFX_RESULT state = CheckState(dev);
 	if (!state) {
-		*devtype = devTypes[afx_dev->fxdevs[dev].version];
+		*devtype = devTypes[afx_dev->fxdevs[dev].dev->version];
 		if (namelen > afx_dev->fxdevs[dev].name.length()) {
 			strcpy_s(name, afx_dev->fxdevs[dev].name.length()+1, afx_dev->fxdevs[dev].name.data());
 		} else

@@ -247,7 +247,7 @@ namespace AlienFX_SDK {
 		};
 		Functions* dev = NULL;		// device control object pointer
 		string name;				// device name
-		int version = API_UNKNOWN;	// API version used for this device
+		//int version = API_UNKNOWN;	// API version used for this device
 		Afx_colorcode white = { 255,255,255 }; // white balance
 		byte brightness = 255;		// global device brightness
 		vector <Afx_light> lights;	// vector of lights defined
