@@ -22,7 +22,7 @@ namespace AlienFan_SDK {
 			nullptr, EOAC_NONE, nullptr);
 
 		CoCreateInstance(CLSID_WbemLocator, nullptr, CLSCTX_INPROC_SERVER, IID_IWbemLocator, (void**)&m_WbemLocator);
-		m_WbemLocator->ConnectServer((BSTR)L"ROOT\\WMI", nullptr, nullptr, nullptr, NULL, nullptr, nullptr, &m_WbemServices);
+		m_WbemLocator->ConnectServer((BSTR)L"ROOT\\WMI", nullptr, nullptr, nullptr, WBEM_FLAG_CONNECT_USE_MAX_WAIT, nullptr, nullptr, &m_WbemServices);
 		// Windows bug with disk drives list
 		//m_WbemLocator->ConnectServer((BSTR)L"ROOT\\Microsoft\\Windows\\Storage", nullptr, nullptr, nullptr, NULL, nullptr, nullptr, &m_DiskService);
 		//IEnumWbemClassObject* enum_obj;
@@ -31,8 +31,8 @@ namespace AlienFan_SDK {
 		//}
 		//m_DiskService->Release();
 		// End Windows bugfix
-		m_WbemLocator->ConnectServer((BSTR)L"ROOT\\Microsoft\\Windows\\Storage\\Providers_v2", nullptr, nullptr, nullptr, NULL, nullptr, nullptr, &m_DiskService);
-		m_WbemLocator->ConnectServer((BSTR)L"ROOT\\LibreHardwareMonitor", nullptr, nullptr, nullptr, NULL, nullptr, nullptr, &m_OHMService);
+		m_WbemLocator->ConnectServer((BSTR)L"ROOT\\Microsoft\\Windows\\Storage\\Providers_v2", nullptr, nullptr, nullptr, WBEM_FLAG_CONNECT_USE_MAX_WAIT, nullptr, nullptr, &m_DiskService);
+		m_WbemLocator->ConnectServer((BSTR)L"ROOT\\LibreHardwareMonitor", nullptr, nullptr, nullptr, WBEM_FLAG_CONNECT_USE_MAX_WAIT, nullptr, nullptr, &m_OHMService);
 		m_WbemLocator->Release();
 	}
 
@@ -58,8 +58,8 @@ namespace AlienFan_SDK {
 			VARIANT parameters = { VT_I4 };
 			parameters.uintVal = ALIENFAN_INTERFACE{ dev_controls[com], arg1, arg2, 0 }.args;
 			m_InParamaters->Put(L"arg2", NULL, &parameters, 0);
-			if (m_WbemServices->ExecMethod(m_instancePath.bstrVal,
-				commandList[functionID[sysType][com]], 0, NULL, m_InParamaters, &m_outParameters, NULL) == S_OK && m_outParameters) {
+			if (SUCCEEDED(m_WbemServices->ExecMethod(m_instancePath.bstrVal,
+				commandList[functionID[sysType][com]], 0, NULL, m_InParamaters, &m_outParameters, NULL)) && m_outParameters) {
 				m_outParameters->Get(L"argr", 0, &result, nullptr, nullptr);
 				m_outParameters->Release();
 			}
@@ -69,7 +69,7 @@ namespace AlienFan_SDK {
 
 	void Control::EnumSensors(IWbemServices* srv, const wchar_t* s_name, byte type) {
 		IEnumWbemClassObject* enum_obj;
-		if (srv && srv->CreateInstanceEnum((BSTR)s_name, /*WBEM_FLAG_SHALLOW |*/ WBEM_FLAG_FORWARD_ONLY, NULL, &enum_obj) == S_OK) {
+		if (srv && SUCCEEDED(srv->CreateInstanceEnum((BSTR)s_name, WBEM_FLAG_SHALLOW | WBEM_FLAG_FORWARD_ONLY, NULL, &enum_obj))) {
 			IWbemClassObject* spInstance[32];
 			ULONG uNumOfInstances;
 			LPCWSTR instansePath = L"__Path", valuePath = L"Temperature";
@@ -90,7 +90,9 @@ namespace AlienFan_SDK {
 			name += " sensor ";
 
 			byte senID = 0;
-			while (enum_obj->Next(3000, 32, spInstance, &uNumOfInstances) != WBEM_S_FALSE || uNumOfInstances) {
+
+			HRESULT res = WBEM_S_NO_ERROR;
+			while (res == WBEM_S_NO_ERROR && SUCCEEDED(res = enum_obj->Next(3000, 32, spInstance, &uNumOfInstances)) && uNumOfInstances) {
 				for (byte ind = 0; ind < uNumOfInstances; ind++) {
 					if (type == 4) { // OHM sensors
 						VARIANT type{ 0 };
@@ -106,8 +108,8 @@ namespace AlienFan_SDK {
 							continue;
 						}
 					}
-					spInstance[ind]->Get(instansePath, 0, &instPath, 0, 0);
-					if (instPath.bstrVal) {
+					;
+					if (SUCCEEDED(spInstance[ind]->Get(instansePath, 0, &instPath, 0, 0)) && instPath.bstrVal) {
 						spInstance[ind]->Get(valuePath, 0, &cTemp, 0, 0);
 						spInstance[ind]->Release();
 						if (type == 2 || cTemp.intVal > 0 || cTemp.fltVal > 0)
@@ -212,9 +214,7 @@ namespace AlienFan_SDK {
 							if (diskSensors)
 								EnumSensors(m_DiskService, L"MSFT_PhysicalDiskToStorageReliabilityCounter", 2);
 							// OHM sensors
-							if (m_OHMService) {
-								EnumSensors(m_OHMService, L"Sensor", 4);
-							}
+							EnumSensors(m_OHMService, L"Sensor", 4);
 							return true;
 						}
 				}
