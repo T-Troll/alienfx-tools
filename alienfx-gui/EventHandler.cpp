@@ -131,7 +131,7 @@ void EventHandler::SwitchActiveProfile(profile* newID, bool force)
 }
 
 void EventHandler::ToggleFans() {
-	if (conf->fanControl) {
+	if (conf->fanControl && mon) {
 		if (conf->fansOnBattery || conf->statePower)
 			mon->Start();
 		else

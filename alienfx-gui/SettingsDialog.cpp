@@ -74,7 +74,7 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 		case IDC_EDIT_POLLING:
 			if (HIWORD(wParam) == EN_KILLFOCUS) {
 				fan_conf->pollingRate = GetDlgItemInt(hDlg, IDC_EDIT_POLLING, NULL, false);
-				if (conf->fanControl) {
+				if (conf->fanControl && mon) {
 					mon->Stop();
 					mon->Start();
 				}

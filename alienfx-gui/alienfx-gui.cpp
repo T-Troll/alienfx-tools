@@ -96,16 +96,16 @@ void SetHotkeys() {
 		RegisterHotKey(mDlg, 8, MOD_CONTROL | MOD_SHIFT, VK_OEM_MINUS);
 		for (int i = 0; i < 10; i++)
 			RegisterHotKey(mDlg, 10 + i, MOD_CONTROL | MOD_SHIFT, 0x30 + i); // 1,2,3...
-		if (mon) {
-			for (int i = 0; i < mon->powerSize; i++)
+		int monCount = mon ? mon->powerSize : 10;
+		for (int i = 0; i < mon->powerSize; i++)
+			if (mon)
 				RegisterHotKey(mDlg, 30 + i, MOD_CONTROL | MOD_ALT, 0x30 + i); // 0,1,2...
-		}
+			else
+				UnregisterHotKey(mDlg, 30 + i);
 	}
 	else {
 		//unregister global hotkeys...
-		UnregisterHotKey(mDlg, 1);
-		UnregisterHotKey(mDlg, 2);
-		for (int i = 3; i < 9; i++)
+		for (int i = 1; i < 9; i++)
 			UnregisterHotKey(mDlg, i);
 		for (int i = 0; i < 10; i++) {
 			UnregisterHotKey(mDlg, 10 + i);
