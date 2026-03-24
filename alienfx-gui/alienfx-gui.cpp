@@ -67,14 +67,16 @@ extern void AlterGMode(bool, HWND view = NULL);
 extern void PowerChangeNotify(bool blink, HWND power_list=NULL);
 
 bool DetectFans() {
-	if (conf->fanControl && (conf->fanControl = EvaluteToAdmin(mDlg))) {
+	if (conf->fanControl && EvaluteToAdmin(mDlg)) {
 		mon = new MonHelper();
-		if (!(conf->fanControl = mon->acpi->isSupported)) {
+		if (mon->acpi->isSupported) {
+			return true;
+		} else {
 			delete mon;
 			mon = NULL;
 		}
 	}
-	return conf->fanControl;
+	return false;
 }
 
 void SetHotkeys() {
@@ -186,7 +188,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	if (conf->esif_temp || conf->fanControl || conf->awcc_disable)
 		if (EvaluteToAdmin()) {
 			wasAWCC = DoStopAWCC(conf->awcc_disable, true);
-			DetectFans();
+			conf->fanControl = DetectFans();
 		}
 		else {
 			conf->fanControl = conf->esif_temp = false;

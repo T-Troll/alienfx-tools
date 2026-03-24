@@ -14,7 +14,8 @@ extern ConfigFan* fan_conf;
 fan_profile* active = NULL;
 
 MonHelper::MonHelper() {
-	if ((acpi = new AlienFan_SDK::Control())->Probe(fan_conf->diskSensors)) {
+	acpi = new AlienFan_SDK::Control();
+	if (acpi->Probe(fan_conf->diskSensors)) {
 		fan_conf->lastSelectedSensor = acpi->sensors.front().sid;
 		fansize = (WORD)acpi->fans.size();
 		powerSize = (WORD)acpi->powers.size();

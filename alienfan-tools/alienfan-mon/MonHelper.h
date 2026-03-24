@@ -15,8 +15,8 @@ public:
 	map<WORD, short> senValues, maxTemps;
 	map<byte,map<WORD, byte>> senBoosts;
 	WORD powerMode = 0;
-	WORD fansize, powerSize, sensorSize;
-	bool modified;
+	WORD fansize = 0, powerSize = 0, sensorSize = 0;
+	bool modified = true;
 
 	MonHelper();
 	~MonHelper();

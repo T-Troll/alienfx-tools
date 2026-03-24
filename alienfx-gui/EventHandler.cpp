@@ -131,7 +131,7 @@ void EventHandler::SwitchActiveProfile(profile* newID, bool force)
 }
 
 void EventHandler::ToggleFans() {
-	if (mon) {
+	if (conf->fanControl) {
 		if (conf->fansOnBattery || conf->statePower)
 			mon->Start();
 		else
@@ -199,6 +199,17 @@ void EventHandler::CheckProfileChange() {
 	DebugPrint("Profile: looking for " + procName.appName + "(" + to_string(prcId) + ")\n");
 
 	profile* newProf = conf->FindProfileByApp(prcId);
+
+	bool forbiddenapp = false;
+	if (conf->noDesktop) {
+		processdata app = conf->GetProcessData(prcId);
+		for (int i = 0; forbiddenApps[i][0]; i++)
+			if (forbiddenApps[i] == app.appName) {
+				DebugPrint("Profile: Forbidden!\n");
+				forbiddenapp = true;
+				break;
+			}
+	}
 	
 	//if (newProf && (conf->IsPriorityProfile(newProf) || !conf->IsPriorityProfile(conf->activeProfile))) {
 	//	SwitchActiveProfile(newProf);
@@ -215,16 +226,7 @@ void EventHandler::CheckProfileChange() {
 	}
 	cbNeeded = cbNeeded >> 2;
 	profile* cProf;
-	bool forbiddenapp = false;
-	if (conf->noDesktop) {
-		processdata app = conf->GetProcessData(prcId);
-		for (int i = 0; forbiddenApps[i][0]; i++)
-			if (forbiddenApps[i] == app.appName) {
-				DebugPrint("Profile: Forbidden!\n");
-				forbiddenapp = true;
-				break;
-			}
-	}
+
 	for (UINT i = 0; i < cbNeeded; i++) {
 		if (aProcesses[i] && (cProf = conf->FindProfileByApp(aProcesses[i]))) {
 			if (conf->IsPriorityProfile(cProf)) {

@@ -73,9 +73,11 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 		{
 		case IDC_EDIT_POLLING:
 			if (HIWORD(wParam) == EN_KILLFOCUS) {
-				if (mon) mon->Stop();
 				fan_conf->pollingRate = GetDlgItemInt(hDlg, IDC_EDIT_POLLING, NULL, false);
-				if (mon) mon->Start();
+				if (conf->fanControl) {
+					mon->Stop();
+					mon->Start();
+				}
 			}
 			break;
 		case IDC_EDIT_ACTION:
@@ -162,14 +164,11 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			break;
 		case IDC_FANCONTROL:
 			conf->fanControl = state;
+			conf->Save();
 			if (state) {
-				conf->Save();
 				if (!(conf->fanControl = DetectFans())) {
-					if (mDlg) {
-						CheckDlgButton(hDlg, IDC_FANCONTROL, BST_UNCHECKED);
-						ShowNotification(&conf->niData, "Error", "Fan control not available.");
-					}
-					break;
+					CheckDlgButton(hDlg, IDC_FANCONTROL, BST_UNCHECKED);
+					ShowNotification(&conf->niData, "Error", "Fan control not available.");
 				}
 			}
 			else {

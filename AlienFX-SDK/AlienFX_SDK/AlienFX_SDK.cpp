@@ -869,9 +869,9 @@ namespace AlienFX_SDK {
 			devInfo->present = true;
 			activeLights += (unsigned)devInfo->lights.size();
 			if (devInfo->dev) {
-				delete dev;
 				DebugPrint("Scan: VID: " + to_string(devInfo->vid) + ", PID: " + to_string(devInfo->pid) + ", Version: "
 					+ to_string(dev->version) + " - present already\n");
+				delete dev;
 			}
 			else {
 				devInfo->dev = dev;

@@ -126,6 +126,10 @@ namespace AlienFan_SDK {
 
 	bool Control::Probe(bool diskSensors) {
 		IEnumWbemClassObject* enum_obj;
+#ifdef _TRACE_
+		if (m_WbemServices)
+			printf("WMI connect succesful!\n");
+#endif
 		if (m_WbemServices && (isAlienware = SUCCEEDED(m_WbemServices->GetObject((BSTR)L"AWCCWmiMethodFunction", NULL, nullptr, &m_AWCCGetObj, nullptr)))) {
 #ifdef _TRACE_
 			printf("AWCC section detected!\n");
@@ -221,6 +225,10 @@ namespace AlienFan_SDK {
 				enum_obj->Release();
 			}
 		}
+#ifdef _TRACE_
+		else
+			printf("AWCC section NOT detected!\n");
+#endif
 		return false;
 	}
 
