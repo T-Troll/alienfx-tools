@@ -45,6 +45,14 @@ void SetEllipse(HDC hdc, COLORREF color, POINT mark, int size = 3) {
     Ellipse(hdc, mark.x - size, mark.y - size, mark.x + size, mark.y + size);
 }
 
+void SetLineEllipse(HDC hdc, HGDIOBJ pen, COLORREF color, POINT mark, int size = 3) {
+    SetDCBrushColor(hdc, color);
+    SelectObject(hdc, pen);
+    SelectObject(hdc, GetStockObject(DC_BRUSH));
+    LineTo(hdc, mark.x, mark.y);
+    Ellipse(hdc, mark.x - size, mark.y - size, mark.x + size, mark.y + size);
+}
+
 void DrawFan()
 {
     if (fanWindow) {
@@ -69,81 +77,55 @@ void DrawFan()
                 MoveToEx(hdc, cArea.left, cy, NULL);
                 LineTo(hdc, cArea.right, cy);
             }
-
         if (mon->inControl) {
             // curve...
-            HPEN linePen;
-            SelectObject(hdc, GetStockObject(DC_BRUSH));
             for (auto& senI : fan_conf->lastProf->fanControls[fan_conf->lastSelectedFan]) {
                 sen_block* sen = &senI.second;
                 if (sen->active) {
                     // Select line style
-                    if (senI.first == fan_conf->lastSelectedSensor) {
-                        linePen = CreatePen(PS_SOLID, 2, RGB(0, 255, 0));
-                        SetDCBrushColor(hdc, RGB(0, 255, 0));
-                    }
-                    else {
-                        linePen = CreatePen(PS_DOT, 0, RGB(255, 255, 0));
-                        SetDCBrushColor(hdc, RGB(255, 255, 0));
-                    }
-                    SelectObject(hdc, linePen);
+                    HPEN linePen = senI.first == fan_conf->lastSelectedSensor ?
+                        linePen = CreatePen(PS_SOLID, 2, RGB(0, 255, 0))
+                        : CreatePen(PS_DOT, 0, RGB(255, 255, 0));
                     // Draw curve
                     MoveToEx(hdc, cArea.left, cArea.bottom, NULL);
                     for (auto i = sen->points.begin(); i != sen->points.end(); i++) {
-                        mark = Fan2Screen(i->temp, i->boost);
-                        LineTo(hdc, mark.x, mark.y);
-                        Ellipse(hdc, mark.x - 2, mark.y - 2, mark.x + 2, mark.y + 2);
+                        SetLineEllipse(hdc, linePen, senI.first == fan_conf->lastSelectedSensor ? RGB(0, 255, 0) : RGB(255, 255, 0),
+                            Fan2Screen(i->temp, i->boost), 2);
                     }
+                    DeleteObject(linePen);
                     // Dots
                     if (!mon->powerMode) {
-                        if (mon->lastBoost[fan_conf->lastSelectedFan] == senI.first) {
-                            SetDCPenColor(hdc, RGB(255, 0, 0));
-                            SetDCBrushColor(hdc, RGB(255, 0, 0));
-                            SelectObject(hdc, GetStockObject(DC_PEN));
-                        }
-                        mark = Fan2Screen(mon->senValues[senI.first], mon->senBoosts[fan_conf->lastSelectedFan][senI.first]);
-                        Ellipse(hdc, mark.x - 4, mark.y - 4, mark.x + 4, mark.y + 4);
-                        DeleteObject(linePen);
+                        SetEllipse(hdc, mon->lastBoost[fan_conf->lastSelectedFan] == senI.first ? RGB(255, 0, 0) : RGB(0, 255, 0),
+                            Fan2Screen(mon->senValues[senI.first], mon->senBoosts[fan_conf->lastSelectedFan][senI.first]), 4);
                     }
                 }
             }
             // Fan dots
-            linePen = CreatePen(PS_SOLID, 2, RGB(0, 0, 255));
-            SelectObject(hdc, linePen);
             for (int i = 0; i < mon->fansize; i++) {
-                SetDCBrushColor(hdc, i == fan_conf->lastSelectedFan ? RGB(0, 255, 0) : RGB(255, 255, 0));
                 byte fanType = mon->acpi->fans[i].type;
-                mark = Fan2Screen(fanType == 255 ? 50 :
-                    mon->senValues[fanType | 0x100],
-                    mon->GetFanPercent(i));
-                Ellipse(hdc, mark.x - 4, mark.y - 4, mark.x + 4, mark.y + 4);
+                SetEllipse(hdc, i == fan_conf->lastSelectedFan ? RGB(0, 255, 255) : RGB(0, 0, 255),
+                    Fan2Screen(fanType == 255 ? 50 : mon->senValues[fanType | 0x100], mon->GetFanPercent(i)), 4);
             }
-            DeleteObject(linePen);
             SetWindowText(tipWindow, ("Fan curve (scale " + to_string(fan_conf->GetFanScale(fan_conf->lastSelectedFan))
                 + ", boost " + /*to_string(mon->boostRaw[fan_conf->lastSelectedFan]) + " (" + */to_string(mon->acpi->GetFanBoost(fan_conf->lastSelectedFan))/* + ")"*/ + ", " +
                 to_string(mon->GetFanPercent(fan_conf->lastSelectedFan)) + "%)").c_str());
         }
         else {
             SetDCPenColor(hdc, RGB(0, 255, 0));
-            SelectObject(hdc, GetStockObject(DC_PEN));
+            //SelectObject(hdc, GetStockObject(DC_PEN));
             MoveToEx(hdc, cArea.left, cArea.bottom, NULL);
             for (auto iter = boostCheck.begin(); iter < boostCheck.end(); iter++) {
-                mark = Boost2Screen(iter->maxBoost, iter->maxRPM);
-                LineTo(hdc, mark.x, mark.y);
-                Ellipse(hdc, mark.x - 2, mark.y - 2, mark.x + 2, mark.y + 2);
+                SetLineEllipse(hdc, GetStockObject(DC_PEN), RGB(0, 255, 0), Boost2Screen(iter->maxBoost, iter->maxRPM), 2);
             }
             if (lastBoostPoint) {
-                mark = Boost2Screen(lastBoostPoint->maxBoost, lastBoostPoint->maxRPM);
-                SetEllipse(hdc, RGB(255, 255, 0), mark);
-                Ellipse(hdc, mark.x - 3, mark.y - 3, mark.x + 3, mark.y + 3);
+                SetEllipse(hdc, RGB(255, 255, 0), Boost2Screen(lastBoostPoint->maxBoost, lastBoostPoint->maxRPM));
                 string rpmText = "Last " + to_string(lastBoostPoint->maxBoost) + " @ " + to_string(lastBoostPoint->maxRPM)
                     + " RPM (Max. " + to_string(bestBoostPoint.maxBoost) + " @ " + to_string(bestBoostPoint.maxRPM) + " RPM)";
                 SetWindowText(tipWindow, rpmText.c_str());
             }
-            mark = Boost2Screen(bestBoostPoint.maxBoost, bestBoostPoint.maxRPM);
-            SetEllipse(hdc, RGB(255, 0, 0), mark);
-            mark = Boost2Screen(105, mon->acpi->GetMaxRPM(fan_conf->lastSelectedFan));
-            SetEllipse(hdc, RGB(0, 0, 255), mark);
+            SetEllipse(hdc, RGB(255, 0, 0), Boost2Screen(bestBoostPoint.maxBoost, bestBoostPoint.maxRPM));
+            //mark = Boost2Screen(105, mon->acpi->GetMaxRPM(fan_conf->lastSelectedFan));
+            //SetEllipse(hdc, RGB(0, 0, 255), mark);
         }
 
         BitBlt(hdc_r, 0, 0, cArea.right + 1, cArea.bottom + 1, hdc, 0, 0, SRCCOPY);
