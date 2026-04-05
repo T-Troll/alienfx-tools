@@ -56,7 +56,6 @@ void SetLineEllipse(HDC hdc, HGDIOBJ pen, COLORREF color, POINT mark, int size =
 void DrawFan()
 {
     if (fanWindow) {
-        POINT mark;
         HDC hdc_r = GetDC(fanWindow);
         // Double buff...
         HDC hdc = CreateCompatibleDC(hdc_r);
