@@ -563,7 +563,7 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 					+ (eve->grid ? "G" : "g"));
 			}
 			if (mon) {
-				name.append(string("\n") + (fan_conf->lastProf->gmodeStage ? "G-mode" : *fan_conf->GetPowerName(mon->acpi->powers[fan_conf->lastProf->powerStage])));
+				name.append(string("\n") + (fan_conf->lastProf->gmodeStage ? "G-mode" : *fan_conf->GetPowerName(mon->acpi->powers[mon->powerMode])));
 				for (int i = 0; i < mon->fansize; i++) {
 					name.append("\n" + GetFanName(i, true));
 				}

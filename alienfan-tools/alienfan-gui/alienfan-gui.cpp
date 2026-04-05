@@ -442,7 +442,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             }
         } break;
         case WM_MOUSEMOVE: {
-            string tooltip = string("Power: ") + (fan_conf->lastProf->gmodeStage ? "G-mode" : *fan_conf->GetPowerName(mon->acpi->powers[fan_conf->lastProf->powerStage]));
+            string tooltip = string("Power: ") + (fan_conf->lastProf->gmodeStage ? "G-mode" : *fan_conf->GetPowerName(mon->acpi->powers[mon->powerMode]));
             for (int i = 0; i < mon->fansize; i++) {
                 tooltip.append("\n" + GetFanName(i, true));
             }

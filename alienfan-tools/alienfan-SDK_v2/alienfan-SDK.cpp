@@ -232,18 +232,22 @@ namespace AlienFan_SDK {
 		return false;
 	}
 
+	int Control::OperateFan(int function, int fanID) {
+		return fanID < fans.size() ? CallWMIMethod(function, (byte)fans[fanID].id) : -1;
+	}
+
 	int Control::GetFanRPM(int fanID) {
-		return fanID < fans.size() ? CallWMIMethod(getFanRPM, (byte)fans[fanID].id) : -1;
+		return OperateFan(getFanRPM, fanID);
 	}
 	int Control::GetMaxRPM(int fanID)
 	{
-		return fanID < fans.size() ? CallWMIMethod(getMaxRPM, (byte)fans[fanID].id) : -1;
+		return OperateFan(getMaxRPM, fanID);
 	}
 	int Control::GetFanPercent(int fanID) {
-		return fanID < fans.size() ? CallWMIMethod(getFanPercent, (byte)fans[fanID].id) : -1;
+		return OperateFan(getFanPercent, fanID);
 	}
 	int Control::GetFanBoost(int fanID) {
-		return fanID < fans.size() ? CallWMIMethod(getFanBoost, (byte)fans[fanID].id) : -1;
+		return OperateFan(getFanBoost, fanID);
 	}
 	int Control::SetFanBoost(int fanID, byte value) {
 		return fanID < fans.size() ? CallWMIMethod(setFanBoost, (byte)fans[fanID].id, value) : -1;

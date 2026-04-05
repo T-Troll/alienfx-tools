@@ -11,7 +11,7 @@ void CMonProc(LPVOID);
 
 extern ConfigFan* fan_conf;
 
-fan_profile* active = NULL;
+//fan_profile* active = NULL;
 
 MonHelper::MonHelper() {
 	acpi = new AlienFan_SDK::Control();
@@ -49,7 +49,7 @@ void MonHelper::ResetBoost() {
 
 void MonHelper::Start() {
 	// Set profile and initial modes
-	active = fan_conf->lastProf;
+	//active = fan_conf->lastProf;
 	SetOC();
 	// start thread...
 	if (!monThread) {
@@ -134,15 +134,19 @@ void MonHelper::SetPowerMode(byte newMode) {
 // I need this wrapper for buggy G-series BIOS which return error from time to time
 int MonHelper::GetFanRPM(int fanID) {
 	int res;
-	if ((res = acpi->GetFanRPM(fanID)) < 0)
-		res = 0;
-	return res;
+	return (res = acpi->GetFanRPM(fanID)) < 0 ? fanRpm[fanID] : res;
 }
 
 void CMonProc(LPVOID param) {
 	MonHelper* src = (MonHelper*)param;
 	AlienFan_SDK::Control* acpi = src->acpi;
+	fan_profile* active = fan_conf->lastProf;
 	src->modified = false;
+
+#ifdef _DEBUG
+	if (!active)
+		DebugPrint("Mon: Zero fan profile!");
+#endif
 
 	//DebugPrint("Mon: Poll started\n");
 	// update values:
@@ -160,11 +164,6 @@ void CMonProc(LPVOID param) {
 	for (byte i = 0; i < src->fansize; i++) {
 		src->fanRpm[i] = src->GetFanRPM(i);
 	}
-
-#ifdef _DEBUG
-	if (!active)
-		DebugPrint("Mon: Zero fan profile!");
-#endif
 
 	if (src->inControl && active) {
 		// check power mode
