@@ -34,6 +34,7 @@ void ConfigFan::AddSensorCurve(fan_profile *prof, byte fid, WORD sid, byte* data
 	auto cp = &prof->fanControls[fid][sid].points;
 	cp->resize(lend >> 1);
 	memcpy(cp->data(), data, lend);
+	prof->fanControls[fid][sid].active = true;
 }
 
 void ConfigFan::Load() {
@@ -151,6 +152,14 @@ int ConfigFan::GetFanScale(byte fanID) {
 
 string ConfigFan::GetSensorName(AlienFan_SDK::ALIENFAN_SEN_INFO* acpi) {
 	return sensors.count(acpi->sid) ? sensors[acpi->sid] : acpi->name;
+}
+
+map<WORD, sen_block>* ConfigFan::GetFanBlocks() {
+	return &lastProf->fanControls[lastSelectedFan];
+}
+
+sen_block* ConfigFan::GetSenBlock() {
+	return &lastProf->fanControls[lastSelectedFan][lastSelectedSensor];
 }
 
 //string GetTag(string xml, string tag, size_t& pos) {

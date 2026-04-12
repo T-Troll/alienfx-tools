@@ -5,6 +5,13 @@
 
 #define DRAG_ZONE 2
 
+// debug print
+#ifdef _DEBUG
+#define DebugPrint(_x_) OutputDebugString(string(_x_).c_str());
+#else
+#define DebugPrint(_x_)
+#endif
+
 extern ConfigFan* fan_conf;
 extern MonHelper* mon;
 extern HWND fanWindow, tipWindow;
@@ -78,7 +85,7 @@ void DrawFan()
             }
         if (mon->inControl) {
             // curve...
-            for (auto& senI : fan_conf->lastProf->fanControls[fan_conf->lastSelectedFan]) {
+            for (auto& senI : *fan_conf->GetFanBlocks()) {
                 sen_block* sen = &senI.second;
                 if (sen->active) {
                     // Select line style
@@ -108,6 +115,7 @@ void DrawFan()
             SetWindowText(tipWindow, ("Fan curve (scale " + to_string(fan_conf->GetFanScale(fan_conf->lastSelectedFan))
                 + ", boost " + /*to_string(mon->boostRaw[fan_conf->lastSelectedFan]) + " (" + */to_string(mon->acpi->GetFanBoost(fan_conf->lastSelectedFan))/* + ")"*/ + ", " +
                 to_string(mon->GetFanPercent(fan_conf->lastSelectedFan)) + "%)").c_str());
+
         }
         else {
             SetDCPenColor(hdc, RGB(0, 255, 0));
@@ -221,7 +229,7 @@ INT_PTR CALLBACK FanCurve(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         GetClientRect(fanWindow, &cArea);
         cArea.right--; cArea.bottom--;
         if (mon->inControl) {
-            sen_block* cFan = &(fan_conf->lastProf->fanControls[fan_conf->lastSelectedFan])[fan_conf->lastSelectedSensor];
+            auto cFan = fan_conf->GetSenBlock();
             fan_point clk{ (byte)max(0, min(100, (100 * (GET_X_LPARAM(lParam))) / cArea.right)), 
                 (byte)max(0, min(100, (100 * (cArea.bottom - GET_Y_LPARAM(lParam))) / cArea.bottom)) };
             switch (message) {
@@ -235,36 +243,40 @@ INT_PTR CALLBACK FanCurve(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
             case WM_LBUTTONDOWN:
                 SetCapture(hDlg);
                 // check and add point
-                for (auto fp = cFan->points.begin(); fp != cFan->points.end(); fp++) {
-                    if (abs(fp->temp - clk.temp) <= DRAG_ZONE && abs(fp->boost - clk.boost) <= DRAG_ZONE) {
-                        lastFanPoint = fp;
-                        break;
-                    }
-                    if (fp->temp > clk.temp) {
-                        lastFanPoint = cFan->points.insert(fp, clk);
-                        break;
+                if (cFan->active) {
+                    for (auto fp = cFan->points.begin(); fp != cFan->points.end(); fp++) {
+                        if (abs(fp->temp - clk.temp) <= DRAG_ZONE && abs(fp->boost - clk.boost) <= DRAG_ZONE) {
+                            lastFanPoint = fp;
+                            break;
+                        }
+                        if (fp->temp > clk.temp) {
+                            lastFanPoint = cFan->points.insert(fp, clk);
+                            break;
+                        }
                     }
                 }
                 break;
             case WM_LBUTTONUP:
                 ReleaseCapture();
                 // re-sort and de-duplicate array.
-                for (auto fPi = cFan->points.begin(); fPi < cFan->points.end() - 1; ) {
-                    auto nfPi = fPi + 1;
-                    if (fPi->temp > nfPi->temp)
-                        swap(*fPi, *nfPi);
-                    if (fPi->temp == nfPi->temp && fPi->boost == nfPi->boost && cFan->points.size() > 2)
-                        fPi = cFan->points.erase(nfPi);
-                    else
-                        fPi++;
+                if (cFan->active) {
+                    for (auto fPi = cFan->points.begin(); fPi < cFan->points.end() - 1; ) {
+                        auto nfPi = fPi + 1;
+                        if (fPi->temp > nfPi->temp)
+                            swap(*fPi, *nfPi);
+                        if (fPi->temp == nfPi->temp && fPi->boost == nfPi->boost && cFan->points.size() > 2)
+                            fPi = cFan->points.erase(nfPi);
+                        else
+                            fPi++;
+                    }
+                    cFan->points.front().temp = 0;
+                    cFan->points.back().temp = 100;
                 }
-                cFan->points.front().temp = 0;
-                cFan->points.back().temp = 100;
                 SetFocus(GetParent(hDlg));
                 break;
             case WM_RBUTTONUP:
                 // remove point from curve...
-                if (cFan->points.size() > 2) {
+                if (cFan->active) {
                     // check and remove point
                     for (auto fPi = cFan->points.begin() + 1; fPi < cFan->points.end() - 1; fPi++)
                         if (abs(fPi->temp - clk.temp) <= DRAG_ZONE && abs(fPi->boost - clk.boost) <= DRAG_ZONE) {
@@ -307,6 +319,10 @@ string GetFanName(int ind, bool forTray = false) {
         }
         fname += " " + to_string(ind + 1) + " - " + to_string(mon->fanRpm[ind]);
     }
+#ifdef _DEBUG
+    else
+        DebugPrint("Incorrect fan index" + to_string(ind));
+#endif
     return fname;
 }
 
@@ -319,7 +335,8 @@ void ReloadFanView(HWND list) {
     }
     for (int i = 0; i < mon->fansize; i++) {
         LVITEMA lItem{ LVIF_TEXT | LVIF_STATE, i};
-        lItem.pszText = (LPSTR)GetFanName(i).c_str();
+        string name = GetFanName(i);
+        lItem.pszText = (LPSTR)name.c_str();
         if (i == fan_conf->lastSelectedFan) {
             lItem.state = LVIS_SELECTED | LVIS_FOCUSED;
         }
@@ -350,7 +367,7 @@ void ReloadTempView(HWND list) {
         lCol.iSubItem = 1;
         ListView_InsertColumn(list, 1, &lCol);
     }
-    auto fanControls = &fan_conf->lastProf->fanControls[fan_conf->lastSelectedFan];
+    auto fanControls = fan_conf->GetFanBlocks();
     for (int i = 0; i < mon->sensorSize; i++) {
         WORD sid = mon->acpi->sensors[i].sid;
         LVITEMA lItem{ LVIF_TEXT | LVIF_PARAM | LVIF_STATE, i };
@@ -397,7 +414,7 @@ void TempUIEvent(NMLVDISPINFO* lParam, HWND tempList) {
             fan_conf->sensors[(WORD)lParam->item.lParam] = lParam->item.pszText;
             ReloadTempView(tempList);
         }
-        SetTimer(GetParent(tempList), 0, 500, NULL);
+        SetTimer(GetParent(tempList), 0, fan_conf->pollingRate, NULL);
     } break;
     case LVN_ITEMCHANGED:
     {
@@ -409,7 +426,7 @@ void TempUIEvent(NMLVDISPINFO* lParam, HWND tempList) {
                 DrawFan();
             }
             if (!fanUpdateBlock && item->uNewState & 0x3000) {
-                auto fan = &fan_conf->lastProf->fanControls[fan_conf->lastSelectedFan];
+                auto fan = fan_conf->GetFanBlocks();
                 switch (item->uNewState & 0x3000) {
                 case 0x1000:
                     // Deactivate sensor

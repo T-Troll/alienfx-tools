@@ -12,7 +12,7 @@ struct fan_point {
 };
 
 struct sen_block {
-	bool active = true;
+	bool active = false;
 	vector<fan_point> points;
 };
 
@@ -78,6 +78,8 @@ public:
 	void SaveSensorBlocks(HKEY key, string pname, fan_profile* data);
 	string* GetPowerName(int index);
 	string GetSensorName(AlienFan_SDK::ALIENFAN_SEN_INFO* acpi);
+	map<WORD, sen_block>* GetFanBlocks();
+	sen_block* GetSenBlock();
 	void UpdateBoost(byte fanID, byte boost, WORD rpm);
 	int GetFanScale(byte fanID);
 	void Load();
