@@ -14,7 +14,7 @@
 
 extern ConfigFan* fan_conf;
 extern MonHelper* mon;
-extern HWND fanWindow, tipWindow;
+extern HWND fanWindow, tipWindow, tempList;
 
 HWND toolTip = NULL;
 
@@ -212,6 +212,8 @@ DWORD WINAPI CheckFanOverboost(LPVOID lpParam) {
     return 0;
 }
 
+void ReloadTempView(HWND list);
+
 INT_PTR CALLBACK FanCurve(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
     switch (message) {
@@ -243,16 +245,21 @@ INT_PTR CALLBACK FanCurve(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
             case WM_LBUTTONDOWN:
                 SetCapture(hDlg);
                 // check and add point
-                if (cFan->active) {
-                    for (auto fp = cFan->points.begin(); fp != cFan->points.end(); fp++) {
-                        if (abs(fp->temp - clk.temp) <= DRAG_ZONE && abs(fp->boost - clk.boost) <= DRAG_ZONE) {
-                            lastFanPoint = fp;
-                            break;
-                        }
-                        if (fp->temp > clk.temp) {
-                            lastFanPoint = cFan->points.insert(fp, clk);
-                            break;
-                        }
+                if (!cFan->active) {
+                    if (cFan->points.size() < 2) {
+                        cFan->points = { {0,0},{100,100} };
+                    }
+                    cFan->active = true;
+                    ReloadTempView(tempList);
+                }
+                for (auto fp = cFan->points.begin(); fp != cFan->points.end(); fp++) {
+                    if (abs(fp->temp - clk.temp) <= DRAG_ZONE && abs(fp->boost - clk.boost) <= DRAG_ZONE) {
+                        lastFanPoint = fp;
+                        break;
+                    }
+                    if (fp->temp > clk.temp) {
+                        lastFanPoint = cFan->points.insert(fp, clk);
+                        break;
                     }
                 }
                 break;

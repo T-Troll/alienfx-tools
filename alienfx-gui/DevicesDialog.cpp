@@ -48,8 +48,8 @@ void ResetPower()
 {
 	if (activeDevice->present && activeDevice->dev->version < AlienFX_SDK::API_V5) {
 		ShowNotification(&conf->niData, "Warning", "Reassigning power button, please wait...");
-		vector<AlienFX_SDK::Afx_lightblock> act{ { (byte)(keySetLight->flags & ALIENFX_FLAG_POWER ?
-			 keySetLight->lightid : 127), {{AlienFX_SDK::AlienFX_A_Power, 3, 0x64}, {AlienFX_SDK::AlienFX_A_Power, 3, 0x64}} } };
+		AlienFX_SDK::Afx_lightblock act{ (byte)(keySetLight->flags & ALIENFX_FLAG_POWER ?
+			 keySetLight->lightid : 127), {{AlienFX_SDK::AlienFX_A_Power, 3, 0x64}, {AlienFX_SDK::AlienFX_A_Power, 3, 0x64}} };
 		activeDevice->dev->SetPowerAction(&act);
 		ShowNotification(&conf->niData, "Warning", "You may need to reset light system hardware!");
 	}

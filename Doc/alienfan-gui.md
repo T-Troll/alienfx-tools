@@ -47,9 +47,12 @@ There are some settings into application top menu under "Settings":
 - "Start with windows" - Application will run at system start.
 - "Start minimized" - Application hide into tray icon after start.
 - "Keyboard shortcuts" - Global keyboard hotkeys enabled.
+- "NumLock indicator" - If enabled, tool will blink NumLock button at power mode change.
 - "Check for update" - Application will made online update check at start.
 - "Disable AWCC" - In case AWCC service running, it will be stopped and started back then application quit.
 - "Restore power mode" - System power mode will be stored at application start and restored at quit/sleep/hibernate/restart.
+- "Enable OC" - Turn on overclocking features (XMP profile, TCC offset) if supported.
+- "Enable disk sensors" - Adding S.M.A.R.T. - based disk/SDD temperature sensors if avaliable.
 
 ## Keyboard shortcuts
 
@@ -58,7 +61,6 @@ Global shortcuts (works all time application running):
 - F17 (G-key for Dell G-series laptops) - Enable/disable G-Mode (performance mode)
 
 ## Known issues
-- Application can freeze at first start for some seconds in case you have Intel CPU. It's normal situation, application trying to obtain Intel sensor names. 
 - Fans can only be controlled in "Manual" mode (BIOS limitation), all other modes utilize BIOS-defined control values.
 - Some BIOSes limit fan RPMs to lower values under heavy system load (Power subsystem have not enough reserves for fans).
 - In case BIOS drives mode set to "Raid", SSD temperatures into fan control will be fake (always 60C) at some systems.

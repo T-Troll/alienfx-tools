@@ -7,7 +7,7 @@
 
 extern ConfigFan* fan_conf;
 extern MonHelper* mon;
-HWND fanWindow = NULL, tipWindow = NULL;
+HWND fanWindow = NULL, tipWindow = NULL, tempList = NULL;
 
 GUID* sch_guid, perfset;
 
@@ -29,9 +29,9 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
     HWND power_list = GetDlgItem(hDlg, IDC_COMBO_POWER),
         tcc_slider = GetDlgItem(hDlg, IDC_SLIDER_TCC),
         xmp_slider = GetDlgItem(hDlg, IDC_SLIDER_XMP),
-        tempList = GetDlgItem(hDlg, IDC_TEMP_LIST),
         fanList = GetDlgItem(hDlg, IDC_FAN_LIST),
         tcc_edit = GetDlgItem(hDlg, IDC_EDIT_TCC);
+    tempList = GetDlgItem(hDlg, IDC_TEMP_LIST);
 
     switch (message) {
     case WM_INITDIALOG:

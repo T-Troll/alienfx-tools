@@ -211,9 +211,13 @@ namespace AlienFX_SDK {
 		// act - pointer to light actions vector
 		bool SetAction(Afx_lightblock* act);
 
-		// Set action for Power button and store other light colors as default
-		// act - pointer to vector of light control blocks
-		bool SetPowerAction(vector<Afx_lightblock> *act, bool save = false);
+		// Save lights state as power-on defaults
+		// act - vector of lights to set, including power button (if any)
+		void SaveLightsState(vector<Afx_lightblock>* act);
+
+		// Set action for Power button
+		// act - pointer to light control block
+		bool SetPowerAction(Afx_lightblock *act);
 
 		// Hardware brightness for device, if supported
 		// brightness - desired brightness (0 - off, 255 - full)

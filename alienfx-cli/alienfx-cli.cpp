@@ -230,12 +230,12 @@ int main(int argc, char* argv[])
 			} break;
 			case COMMANDS::setpower:
 				if (devType) {
-					vector<AlienFX_SDK::Afx_lightblock> act{ {(byte)args[1].num,
+					AlienFX_SDK::Afx_lightblock act{ (byte)args[1].num,
 									  {{AlienFX_SDK::AlienFX_A_Power, 3, 0x64,
 									  (byte)args[2].num, (byte)args[3].num, (byte)args[4].num},
 									  {AlienFX_SDK::AlienFX_A_Power, 3, 0x64,
-									  (byte)args[5].num, (byte)args[6].num, (byte)args[7].num}}} };
-					afx_map.fxdevs[args[0].num].dev->SetPowerAction(&act, true);
+									  (byte)args[5].num, (byte)args[6].num, (byte)args[7].num}} };
+					afx_map.fxdevs[args[0].num].dev->SetPowerAction(&act);
 				}
 				break;
 			case COMMANDS::settempo:

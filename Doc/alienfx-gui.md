@@ -1,9 +1,9 @@
 # AlienFX Control application
 
-`AlienFX-GUI` is AWCC in 500kb. Not 500Mb!  
+`AlienFX-GUI` is AWCC in 500kb. Not 1500Mb!  
 
 What it **cannot** do in compare to AWCC?
-- No overclock (but can come soon...) and downvolt. Anyway, ThrottleStop or XTU do the job better.
+- No overclock downvolt. Anyway, ThrottleStop or XTU do the job better.
 - No audio control. Being honest, never use it into AWCC.
 - No huge picture or animations, interface is as minimalistic as possible.
 - No services and drivers which send you usage data in Dell, consume RAM and slow down system.
@@ -73,7 +73,6 @@ Available effect modes are:
 - Breath - Morph light from black to current color. (For devices with APIv4)
 - Spectrum - Like a morph, but up to 9 colors can be defined. (For devices with APIv4)
 - Rainbow - Like a Colour, but can use up to 9 colors. (For devices with APIv4)
-- Power - for hardware power button.
 
 Please keep in mind, mixing different event modes for one light can provide unexpected results, as well as last 2 modes can be unsupported for some lights (will do morph). But you can experiment.
 
@@ -215,7 +214,7 @@ Top-left zone is about devices control - you can select device from list (double
 You can see selected device parameters (IDs, number of assigned lights and API version - or "inactive" if device not connected now).
 
 Pressing "Clear device" button removes all lights from current device, and, in case the device is in "inactive" status, remove it completely.  
-Press "Set white balance" button to change white color correction for selected device (useful for some old 4-bit-per-color devices). White balance will only works if "Gamma correction" setting is enabled.
+Press "Balance and Brightness" button to change white color correction for selected device (useful for some old 4-bit-per-color devices), as well as turn overall device brigtness (to balance it across multiply devices). White balance will only works if "Gamma correction" setting is enabled.
 
 Button block into the center is about settings management - press "Detect devices" to look for your devices into application database, use "Save Grids and Lights" and "Load Grids and Lights" to save/load current settings into .csv file (for backup or sharing).
 
@@ -236,7 +235,7 @@ Both Power button and indicators can be configured in settings to stay on then t
 - "Highlight" button defines the color will be used for currently selected light - both for light grid and for physical light.
 - "Key code" informs about keyboard button assigned to light - it will present button name or "Off" if not assigned. This key code used for grid effects trigger.
 
-Other assigned lights will have random colors at grid and black color for physical lights.
+Other assigned lights will have random colors at grid and black color for physical lights. You can also enable/disable light names print at grid buttons in Settings tab.
 
 Then you find light position at you physical device (it's highlighted), assign it to the grid - click or click-and drag at grid zone to do it.  
 Click again to remove grid sell from current light, right-click (or click-and-drag) to clear grid cell(s).  
@@ -272,6 +271,7 @@ Press "Default boost" button at right to reset fan boost to BIOS default values.
 There are "Fan curve" graph at the right. It shows currently selected fan temperature/boost curve, as well as current boost.  
 You will see current fan boost at the top if it, and the active fan control curve (green line). The rest of the sensors controlling the same fan marked as yellow dotted lines.  
 Big green and yellow dots present temperature and proposed boost set for every sensor controlling this fan, red one show current hardware boost settings an selected sensor temperature.  
+Blue dots present fan RPMs in percent and ajastment temperature sensor. Cyan dot provides selected fan RPMs.
 
 ```
 How to use it
@@ -311,6 +311,7 @@ The settings are:
 - "Dim lights" - Then profile activated, all lights will be dimmed.
 - "Fan settings" - If selected, profile also keep fan control settings and restore it then activated.
 - "Software effects" - Enables or disables software effects for selected profile.
+- "Run action" - You can select script/application which will be started after this profile activation.
 
 "Device effects" button open profile settings for device effect (supported for some devices like RGB keyboards):  
 ![Device Effects](https://github.com/T-Troll/alienfx-tools/blob/master/Doc/img/gui_deviceeffect.png?raw=true)  
@@ -320,8 +321,9 @@ APIv5 (per-key RGB notebook keyboards) support hardware effect, APIv8 (external 
 The next block is "Triggers" - it define cases app should switch to this profile if "Profile auto switch" turned on at "Settings".
 - "Keyboard" check box define this profile can be switched by pressing keyboard key. Upon selected, it will provide key selection dialog to choose the key.
 - "Power" block - if checked, profile will be activated if power source changed to checked state.
-- "Trigger applications" list define applications executable, which will activate selected profile. Press "+" button to select new application, or select one from the list and press "-" button to delete it.
+- "Trigger applications" list define applications executable, which will activate selected profile. Press "+" button to select new application, or select one from the list and press "-" button to delete it. You can not only select one application file, but folder. In this case, profile will be triggered if any application from this folder started.
 - "Only then active" - profile will be activated in case of any application running and foreground (active) and have focus only.
+- "Add lock" button adds Lockscreen application into the list, so profile will be triggered at system lock screen activation.
 
 The block operated by "Reset" and "Copy active" buttons used to clear or copy selected profile settings.  
 Check all types of information you need to operate (colors, effects or fan settings), then press "Reset" button to remove it from selected profile, or "Copy active" button to copy it from active (selected in top drop down box) profile.
@@ -346,9 +348,9 @@ Application behavior control block at right:
 - "Keyboard shortcuts" - Enables global keyboard hotkeys (default - on).
 - "Disable AWCC" - Application will check active Alienware Control Center service at the each start and will try to stop it (and start back upon exit). It will require "Run as administrator" privilege (default - off).
 - "Use BIOS sensors" - Read additional hardware data from Windows WMI and Alienware BIOS (if fan control enabled). It will require "Run as administrator" privilege (default - off).
-- "Enable fan control" - Enables fan and power control functionality, as well as some additional (Alienware BIOS) temperature sensors. It will require "Run as administrator" privilege (default - off).
-  - "Restore power mode" - System power mode will be stored at application start and restored at quit/sleep/hibernate/restart.
 - "Light names on grid" - Shows/hide light names at grid buttons (default - off).
+- "Profile auto switch" - Switch between profiles according of their trigger applications start and finish (default - off).
+  - "Do not switch for desktop" - Profile will not be changed in case start menu/tray/desktop activated by user (default - off).
 
 Light system control options at the left:
 - "Turn on lights" - Global light control system switch. All lights will be off and black if disabled (default - on).
@@ -356,12 +358,15 @@ Light system control options at the left:
 - "Lights follow screen state" - Dim/Fade to black lights then system screen dimmed/off (default - off).
 - "Colour Gamma correction" - Enables colour correction to make them looks close to screen one. It keeps original LED colours if disabled (default - on).
 - "Enable software effects" - Global software effect switch. If it's off, effects always disabled, otherwise effect mode defined by current profile (default - on).
-- "Profile auto switch" - Switch between profiles according of their trigger applications start and finish (default - off).
-  - "Do not switch for desktop" - Profile will not be changed in case start menu/tray/desktop activated by user (default - off).
-
-Light dimming control at left-bottom:
 - "Dim lights" - Dim system lights brightness to desired level (default - off). Slider at the right select desired dimming level (left - high dimming, right - low dimming).
   - "Dim Power/Indicator lights" - Power Button and Indicator lights will be dimmed as well - and have full brightness otherwise (default - off).
+
+Fan and Power control options at the left-bottom:
+- "Enable fan control" - Enables fan and power control functionality, as well as some additional (Alienware BIOS) temperature sensors. It will require "Run as administrator" privilege (default - on). "Polling" field define how frequantly temperatures and fan parameters readed and controlled (in milliseconds).
+  - "Restore power mode" - System power mode will be stored at application start and restored at quit/sleep/hibernate/restart.
+  - "Enable disk sensors" - This option added S.M.A.R.T. disk/SSD temperature sensors into sensor list (if supported).
+  - "Enable OC" - Turns on oerclocking features if supported.
+  - "Numlock indicator" - Enables NumLock blink at power mode change (useful for full-screen apps active).
 
 Battery operations (power save options) at right-bottom:
 - "Turn off lights" - Lights will turned off at battery power (default - off).
