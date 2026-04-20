@@ -74,6 +74,8 @@ Available effect modes are:
 - Spectrum - Like a morph, but up to 9 colors can be defined. (For devices with APIv4)
 - Rainbow - Like a Colour, but can use up to 9 colors. (For devices with APIv4)
 
+"Accent color" checkbox will set zone color/effect phase to the same value as current system Accent color. It will try to follow it if changed, but after some delay (you may need to restart tool).
+
 Please keep in mind, mixing different event modes for one light can provide unexpected results, as well as last 2 modes can be unsupported for some lights (will do morph). But you can experiment.
 
 ### Events Monitoring tab
