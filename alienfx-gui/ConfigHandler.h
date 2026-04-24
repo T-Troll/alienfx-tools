@@ -154,9 +154,12 @@ union ambgrid {
 	DWORD ag;
 };
 
+#ifndef PROCESS_DATA
+#define PROCESS_DATA
 struct processdata {
 	string appName,	appPath;
 };
+#endif
 
 class ConfigHandler
 {
@@ -252,11 +255,11 @@ public:
 	zonemap* FindZoneMap(int gid, bool reset=false);
 	profile* FindProfile(int id);
 	profile* FindDefaultProfile();
-	profile* FindProfileByApp(DWORD proc);
+	profile* FindProfileByApp(processdata proc);
 	groupset* FindCreateMapping(int groupID, profile* prof = NULL);
 	AlienFX_SDK::Afx_group* FindCreateGroup(int groupID);
 	bool IsPriorityProfile(profile* prof);
 	bool SetIconState(bool needCheck = false);
 	DWORD GetAccentColor();
-	processdata GetProcessData(DWORD proc);
+	//processdata GetProcessData(DWORD proc);
 };

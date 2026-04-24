@@ -375,7 +375,7 @@ BOOL CALLBACK DialogMain(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 		case IDC_STARTW:
 		{
 			conf->startWindows = state;
-			if (WindowsStartSet(state, "AlienFX-Mon"))
+			if (WindowsStartSet(state))
 				conf->Save();
 		} break;
 		case IDC_CHECK_UPDATE:

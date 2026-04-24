@@ -100,9 +100,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
     fan_conf->niData = &niDataFC;
 
-    if (mon->acpi->isSupported) {
-        if (mDlg = CreateDialog(hInst, MAKEINTRESOURCE(IDD_MAIN_VIEW), NULL, (DLGPROC)FanDialog)) {
-
+    if (mDlg = CreateDialog(hInst, MAKEINTRESOURCE(IDD_MAIN_VIEW), NULL, (DLGPROC)FanDialog)) {
+        if (mon->acpi->isSupported) {
             SendMessage(mDlg, WM_SETICON, ICON_BIG, (LPARAM)LoadIcon(hInst, MAKEINTRESOURCE(IDI_ALIENFANGUI)));
             SendMessage(mDlg, WM_SETICON, ICON_SMALL, (LPARAM)LoadImage(hInst, MAKEINTRESOURCE(IDI_ALIENFANGUI), IMAGE_ICON, 16, 16, 0));
 
@@ -117,14 +116,15 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
                 DispatchMessage(&msg);
             }
         }
-    }
-    else {
-        if (AddTrayIcon(&niDataFC, false)) {
-            ShowNotification(&niDataFC, "Error", "Compatible hardware not found!");
-            Sleep(5000);
+        else {
+            if (AddTrayIcon(&niDataFC, false)) {
+                ShowNotification(&niDataFC, "Error", "Compatible hardware not found!");
+                Sleep(5000);
+                DestroyWindow(mDlg);
+            }
         }
-        WindowsStartSet(fan_conf->startWithWindows = false, "AlienFan-GUI");
     }
+
     delete mon;
     DoStopAWCC(wasAWCC, false);
     Shell_NotifyIcon(NIM_DELETE, &niDataFC);
@@ -294,7 +294,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             break;
         case IDM_SETTINGS_STARTWITHWINDOWS:
             ToggleValue(fan_conf->startWithWindows, wmId);
-            WindowsStartSet(fan_conf->startWithWindows, "AlienFan-GUI");
+            WindowsStartSet(fan_conf->startWithWindows);
             break;
         case IDM_SETTINGS_STARTMINIMIZED:
             ToggleValue(fan_conf->startMinimized, wmId);

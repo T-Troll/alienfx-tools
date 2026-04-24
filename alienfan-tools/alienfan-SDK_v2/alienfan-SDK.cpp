@@ -142,6 +142,7 @@ namespace AlienFan_SDK {
 				if (SUCCEEDED(enum_obj->Next(10000, 1, &spInstance, &uNumOfInstances))) {
 					spInstance->Get((BSTR)L"__Path", 0, &m_instancePath, 0, 0);
 					spInstance->Release();
+					enum_obj->Release();
 
 					// check system type and fill inParams
 					for (sysType = 0; sysType < 2; sysType++)

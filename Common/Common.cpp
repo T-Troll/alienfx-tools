@@ -1,6 +1,7 @@
 #include "Common.h"
 #include <windowsx.h>
 #include <WinInet.h>
+//#include <Psapi.h>
 
 using namespace std;
 
@@ -181,17 +182,21 @@ DWORD WINAPI CUpdateCheck(LPVOID lparam) {
 	return 0;
 }
 
-bool WindowsStartSet(bool kind, string name) {
+bool WindowsStartSet(bool kind) {
+	char szProcessName[MAX_PATH]{ 0 };
+	GetModuleFileName(NULL, szProcessName, MAX_PATH);
+	//processdata procName = GetProcessData(GetCurrentProcessId());// ParseFileName(szProcessName);
+	string procName = string(szProcessName);
+	string appPath = procName.substr(0, procName.find_last_of('\\') + 1);
+	string taskName = procName.substr(appPath.length(), procName.find_last_of('.') - appPath.length());
 	if (kind) {
-		char* pathBuffer = new char[2048];
-		GetModuleFileName(NULL, pathBuffer, 2047);
-		bool res = ShellExecute(NULL, "runas", "powershell.exe", ("Register-ScheduledTask -TaskName \"" + name + "\" -trigger $(New-ScheduledTaskTrigger -Atlogon) -settings $(New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -ExecutionTimeLimit 0) -action $(New-ScheduledTaskAction -Execute '"
-			+ string(pathBuffer) + /*"' -Argument '-d'*/"') -force -RunLevel Highest").c_str(), NULL, SW_HIDE) > (HINSTANCE)32;
-		delete[] pathBuffer;
-		return res;
+		return ShellExecute(NULL, "runas", "powershell.exe", ("Register-ScheduledTask -TaskName \"" + taskName +
+			"\" -trigger $(New-ScheduledTaskTrigger -Atlogon) -settings $(New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -ExecutionTimeLimit 0) -action $(New-ScheduledTaskAction -Execute '"
+			+ procName + "' -WorkingDirectory '" + appPath +
+			"') -force -RunLevel Highest").c_str(), NULL, SW_HIDE) > (HINSTANCE)32;
 	}
 	else {
-		return ShellExecute(NULL, "runas", "schtasks.exe", ("/delete /F /TN \"" + name + "\"").c_str(), NULL, SW_HIDE) > (HINSTANCE)32;
+		return ShellExecute(NULL, "runas", "schtasks.exe", ("/delete /F /TN \"" + taskName + "\"").c_str(), NULL, SW_HIDE) > (HINSTANCE)32;
 	}
 }
 

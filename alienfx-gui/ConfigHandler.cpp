@@ -3,7 +3,7 @@
 #include "RegHelperLib.h"
 #include "Common.h"
 #include "resource.h"
-#include <Psapi.h>
+//#include <Psapi.h>
 
 // debug print
 #ifdef _DEBUG
@@ -93,32 +93,31 @@ profile* ConfigHandler::FindProfile(int id) {
 	return NULL;
 }
 
-processdata ConfigHandler::GetProcessData(DWORD proc) {
-	char szProcessName[MAX_PATH]{ 0 };
-	HANDLE hProcess;
-	processdata res;
-	if (hProcess = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION | PROCESS_VM_READ, FALSE, proc)) {
-		if (GetModuleFileNameEx(hProcess, NULL, szProcessName, MAX_PATH)) {
-			string procName = string(szProcessName);
-			res.appName = procName.substr(procName.find_last_of('\\') + 1),
-			res.appPath = procName.substr(0, procName.length() - res.appName.length());
-		}
-		CloseHandle(hProcess);
-	}
-	return res;
-}
+//processdata ConfigHandler::GetProcessData(DWORD proc) {
+//	char szProcessName[MAX_PATH]{ 0 };
+//	HANDLE hProcess;
+//	processdata res;
+//	if (hProcess = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION | PROCESS_VM_READ, FALSE, proc)) {
+//		if (GetModuleFileNameEx(hProcess, NULL, szProcessName, MAX_PATH)) {
+//			string procName = string(szProcessName);
+//			res.appName = procName.substr(procName.find_last_of('\\') + 1),
+//			res.appPath = procName.substr(0, procName.length() - res.appName.length());
+//		}
+//		CloseHandle(hProcess);
+//	}
+//	return res;
+//}
 
-profile* ConfigHandler::FindProfileByApp(DWORD proc)
+profile* ConfigHandler::FindProfileByApp(processdata proc)
 {
 	profile* fprof = NULL;
-	processdata procName = GetProcessData(proc);
 
 	//DebugPrint("Profile: looking for " + procName.appName + "\n");
 
 	for (profile* prof : profiles)
 		if (SamePower(prof)) {
 			for (auto name : prof->triggerapp) {
-				if (name.back() == '\\' ? procName.appPath.find(name) == 0 : name == procName.appName) {
+				if (name.back() == '\\' ? proc.appPath.find(name) == 0 : name == proc.appName) {
 					//DebugPrint("Profile: " + procName + " found in " + prof->name + "\n");
 					if (IsPriorityProfile(prof)) {
 						//DebugPrint(" Priority, selected!\n");

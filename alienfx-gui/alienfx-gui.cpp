@@ -5,6 +5,7 @@
 #include "FXHelper.h"
 #include "MonHelper.h"
 #include "common.h"
+#include <Psapi.h>
 
 #pragma comment(linker,"\"/manifestdependency:type='win32' \
 name='Microsoft.Windows.Common-Controls' version='6.0.0.0' \
@@ -80,13 +81,22 @@ bool DetectFans() {
 }
 
 void SetHotkeys() {
+	//unregister global hotkeys...
+	for (int i = 1; i < 9; i++)
+		UnregisterHotKey(mDlg, i);
+	for (int i = 0; i < 10; i++) {
+		UnregisterHotKey(mDlg, 10 + i);
+		UnregisterHotKey(mDlg, 30 + i);
+	}
 	if (conf->keyShortcuts) {
 		//register global hotkeys...
 		RegisterHotKey(mDlg, 1, 0, VK_F18);
-		if (conf->fanControl)
+		if (conf->fanControl && mon->acpi->isGmode) {
 			RegisterHotKey(mDlg, 2, 0, VK_F17);
-		else
-			UnregisterHotKey(mDlg, 2);
+		}
+		//else {
+		//	UnregisterHotKey(mDlg, 2);
+		//}
 		RegisterHotKey(mDlg, 3, MOD_CONTROL | MOD_SHIFT, VK_F12);
 		RegisterHotKey(mDlg, 4, MOD_CONTROL | MOD_SHIFT, VK_F11);
 		RegisterHotKey(mDlg, 5, MOD_CONTROL | MOD_SHIFT, VK_F10);
@@ -94,24 +104,23 @@ void SetHotkeys() {
 		// brightness
 		RegisterHotKey(mDlg, 7, MOD_CONTROL | MOD_SHIFT, VK_OEM_PLUS);
 		RegisterHotKey(mDlg, 8, MOD_CONTROL | MOD_SHIFT, VK_OEM_MINUS);
-		for (int i = 0; i < 10; i++)
-			RegisterHotKey(mDlg, 10 + i, MOD_CONTROL | MOD_SHIFT, 0x30 + i); // 1,2,3...
-		int monCount = mon ? mon->powerSize : 10;
-		for (int i = 0; i < mon->powerSize; i++)
-			if (mon)
-				RegisterHotKey(mDlg, 30 + i, MOD_CONTROL | MOD_ALT, 0x30 + i); // 0,1,2...
-			else
-				UnregisterHotKey(mDlg, 30 + i);
-	}
-	else {
-		//unregister global hotkeys...
-		for (int i = 1; i < 9; i++)
-			UnregisterHotKey(mDlg, i);
 		for (int i = 0; i < 10; i++) {
-			UnregisterHotKey(mDlg, 10 + i);
-			UnregisterHotKey(mDlg, 30 + i);
+			RegisterHotKey(mDlg, 10 + i, MOD_CONTROL | MOD_SHIFT, 0x30 + i); // 1,2,3...
+			if (conf->fanControl)
+				RegisterHotKey(mDlg, 30 + i, MOD_CONTROL | MOD_ALT, 0x30 + i); // 0,1,2...
+			//else
+			//	UnregisterHotKey(mDlg, 30 + i);
 		}
 	}
+	//else {
+	//	//unregister global hotkeys...
+	//	for (int i = 1; i < 9; i++)
+	//		UnregisterHotKey(mDlg, i);
+	//	for (int i = 0; i < 10; i++) {
+	//		UnregisterHotKey(mDlg, 10 + i);
+	//		UnregisterHotKey(mDlg, 30 + i);
+	//	}
+	//}
 }
 
 void OnSelChanged();
@@ -836,7 +845,4 @@ bool OpenFileOrDir(string& resname, bool doNotStrip) {
 	CoUninitialize();
 	return isOk;
 }
-
-
-
 

@@ -5,6 +5,7 @@
 #include "GridHelper.h"
 #include "WSAudioIn.h"
 #include "FXHelper.h"
+#include "common.h"
 #include <Psapi.h>
 
 // debug print
@@ -39,6 +40,22 @@ const char* forbiddenApps[] = { "ShellExperienceHost.exe"
 #endif
 								, ""
 };
+
+processdata GetProcessData(DWORD proc) {
+	char szProcessName[MAX_PATH]{ 0 };
+	HANDLE hProcess;
+	processdata res;
+	if (hProcess = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, proc)) {
+		if (GetModuleFileNameEx(hProcess, NULL, szProcessName, MAX_PATH)) {
+			//res = ParseFileName(szProcessName);
+			string procName = string(szProcessName);
+			res.appName = procName.substr(procName.find_last_of('\\') + 1);
+			res.appPath = procName.substr(0, procName.length() - res.appName.length());
+		}
+		CloseHandle(hProcess);
+	}
+	return res;
+}
 
 EventHandler::EventHandler()
 {
@@ -192,33 +209,27 @@ void EventHandler::ChangeEffects(bool stop) {
 
 void EventHandler::CheckProfileChange() {
 	DWORD prcId;
+	bool forbiddenapp = false;
+	profile* newProf = NULL;
+	DWORD cbNeeded;
 	GetWindowThreadProcessId(GetForegroundWindow(), &prcId);
 
-	// Debug
-	processdata procName = conf->GetProcessData(prcId);
+	processdata procName = GetProcessData(prcId);
 	DebugPrint("Profile: looking for " + procName.appName + "(" + to_string(prcId) + ")\n");
 
-	profile* newProf = conf->FindProfileByApp(prcId);
 
-	bool forbiddenapp = false;
 	if (conf->noDesktop) {
-		processdata app = conf->GetProcessData(prcId);
+		//processdata app = GetProcessData(prcId);
 		for (int i = 0; forbiddenApps[i][0]; i++)
-			if (forbiddenApps[i] == app.appName) {
+			if (forbiddenApps[i] == procName.appName) {
 				DebugPrint("Profile: Forbidden!\n");
 				forbiddenapp = true;
 				break;
 			}
 	}
 	
-	//if (newProf && (conf->IsPriorityProfile(newProf) || !conf->IsPriorityProfile(conf->activeProfile))) {
-	//	SwitchActiveProfile(newProf);
-	//	return;
-	//}
+	newProf = conf->FindProfileByApp(procName);
 
-	//DebugPrint("Profile: FP suggest " + (newProf ? newProf->name : "none") + ", TaskScan initiated.\n");
-
-	DWORD cbNeeded;
 	while (EnumProcesses(aProcesses, maxProcess, &cbNeeded) && cbNeeded == maxProcess) {
 		maxProcess = maxProcess << 1;
 		delete[] aProcesses;
@@ -228,7 +239,7 @@ void EventHandler::CheckProfileChange() {
 	profile* cProf;
 
 	for (UINT i = 0; i < cbNeeded; i++) {
-		if (aProcesses[i] && (cProf = conf->FindProfileByApp(aProcesses[i]))) {
+		if (aProcesses[i] && (cProf = conf->FindProfileByApp(GetProcessData(aProcesses[i])))) {
 			if (conf->IsPriorityProfile(cProf)) {
 				newProf = cProf;
 				break;
@@ -342,7 +353,7 @@ static VOID CALLBACK CCreateProc(HWINEVENTHOOK hWinEventHook, DWORD dwEvent, HWN
 		//processdata app = conf->GetProcessData(prcId);
 		//DebugPrint(string("Eve: Process ") + app.appName + (dwEvent == EVENT_OBJECT_DESTROY ? " destroyed" : " started") + ".\n");
 #endif
-		if (/*prof = */conf->FindProfileByApp(prcId)) {
+		if (/*prof = */conf->FindProfileByApp(GetProcessData(prcId))) {
 			//if (dwEvent == EVENT_OBJECT_DESTROY && prof->id == conf->activeProfile->id)
 			//	conf->activeProfile = NULL;
 			//bool activeDestroy = dwEvent == EVENT_OBJECT_DESTROY && prof->id == conf->activeProfile->id;

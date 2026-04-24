@@ -1,15 +1,22 @@
 #pragma once
-#include <ShlObj.h>
 #include <string>
 #include <vector>
+#include <ShlObj_core.h>
 
 using namespace std;
+
+//#ifndef PROCESS_DATA
+//#define PROCESS_DATA
+//struct processdata {
+//	string appName, appPath;
+//};
+//#endif
 
 bool EvaluteToAdmin(HWND dlg = NULL);
 bool DoStopAWCC(bool flag, bool kind);
 void ResetDPIScale(LPWSTR cmdLine);
 DWORD WINAPI CUpdateCheck(LPVOID);
-bool WindowsStartSet(bool, string);
+bool WindowsStartSet(bool);
 string GetAppVersion(bool isFile = true);
 void CreateToolTip(HWND, HWND&);
 void CreateToolTip(HWND, HWND&, int);
@@ -23,5 +30,7 @@ bool AddTrayIcon(NOTIFYICONDATA* iconData, bool needCheck);
 INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 void BlinkNumLock(int howmany);
 bool WarningBox(HWND hDlg, const char* msg);
+//processdata GetProcessData(DWORD proc);
+
 
 

@@ -92,7 +92,7 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 		case IDC_STARTW:
 		{
 			conf->startWindows = state;
-			WindowsStartSet(state, "AlienFX-GUI");
+			WindowsStartSet(state);
 		} break;
 		case IDC_CHECK_UPDATE:
 			conf->updateCheck = state;
