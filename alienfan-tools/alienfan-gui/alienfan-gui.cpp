@@ -34,6 +34,7 @@ NOTIFYICONDATA niDataFC;
 bool isNewVersion = false;
 bool needUpdateFeedback = false;
 bool wasAWCC = false;
+bool toolTipShown = false;
 
 // Forward declarations of functions included in this code module:
 LRESULT CALLBACK    FanDialog(HWND, UINT, WPARAM, LPARAM);
@@ -442,13 +443,18 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             }
         } break;
         case WM_MOUSEMOVE: {
-            string tooltip = string("Power: ") + (fan_conf->lastProf->gmodeStage ? "G-mode" : *fan_conf->GetPowerName(mon->acpi->powers[mon->powerMode]));
-            for (int i = 0; i < mon->fansize; i++) {
-                tooltip.append("\n" + GetFanName(i, true));
+            if (!toolTipShown) {
+                WORD powerMode = mon->GetSensorData();
+                string tooltip = string("Power: ") + (powerMode < mon->powerSize ? *fan_conf->GetPowerName(mon->acpi->powers[powerMode]) : "G-Mode");
+                for (int i = 0; i < mon->fansize; i++) {
+                    tooltip.append("\n" + GetFanName(i, true));
+                }
+                niDataFC.szTip[127] = 0;
+                strcpy_s(niDataFC.szTip, min(127, tooltip.length() + 1), tooltip.c_str());
+                Shell_NotifyIcon(NIM_MODIFY, &niDataFC);
+                toolTipShown = true;
+                SetTimer(hDlg, 1, 500, NULL);
             }
-            niDataFC.szTip[127] = 0;
-            strcpy_s(niDataFC.szTip, min(127, tooltip.length() + 1), tooltip.c_str());
-            Shell_NotifyIcon(NIM_MODIFY, &niDataFC);
         } break;
         }
         break;
@@ -544,6 +550,12 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         break;
     case WM_TIMER:
         //DebugPrint("Fans UI update...\n");
+        if (wParam == 1) {
+            toolTipShown = false;
+            KillTimer(hDlg, 1);
+            break;
+        }
+        mon->GetSensorData();
         if (mon->modified) {
             for (int i = 0; i < mon->sensorSize; i++) {
                 string name = to_string(mon->senValues[mon->acpi->sensors[i].sid]) + " (" + to_string(mon->maxTemps[mon->acpi->sensors[i].sid]) + ")";

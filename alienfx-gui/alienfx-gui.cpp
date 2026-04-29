@@ -19,6 +19,7 @@ bool isNewVersion = false;
 bool needUpdateFeedback = false;
 bool wasAWCC = false;
 int idc_version = IDC_STATIC_VERSION, idc_homepage = IDC_SYSLINK_HOMEPAGE; // for About
+bool toolTipShown = false;
 
 extern void dxgi_Restart();
 
@@ -564,26 +565,35 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 			}
 			break;
 		case WM_MOUSEMOVE: {
-			string name = conf->activeProfile->name;
-			if (conf->stateEffects) {
-				name.append(string("\nEffects: ") + (eve->sysmon ? "M" : "m")
-					+ (eve->capt ? "A" : "a")
-					+ (eve->audio ? "H" : "h")
-					+ (eve->grid ? "G" : "g"));
-			}
-			if (mon) {
-				name.append(string("\n") + (fan_conf->lastProf->gmodeStage ? "G-mode" : *fan_conf->GetPowerName(mon->acpi->powers[mon->powerMode])));
-				for (int i = 0; i < mon->fansize; i++) {
-					name.append("\n" + GetFanName(i, true));
+			if (!toolTipShown) {
+				string name = conf->activeProfile->name;
+				if (conf->stateEffects) {
+					name.append(string("\nEffects: ") + (eve->sysmon ? "M" : "m")
+						+ (eve->capt ? "A" : "a")
+						+ (eve->audio ? "H" : "h")
+						+ (eve->grid ? "G" : "g"));
 				}
+				if (mon) {
+					WORD powerMode = mon->GetSensorData();
+					name.append(string("\n") + (powerMode < mon->powerSize ? *fan_conf->GetPowerName(mon->acpi->powers[powerMode]) : "G-Mode"));
+					for (int i = 0; i < mon->fansize; i++) {
+						name.append("\n" + GetFanName(i, true));
+					}
+				}
+				//conf->niData.szTip[127] = 0;
+				strcpy_s(conf->niData.szTip, min(128, name.length() + 1), name.c_str());
+				//conf->niData.uFlags = NIF_TIP | NIF_SHOWTIP;
+				Shell_NotifyIcon(NIM_MODIFY, &conf->niData);
+				toolTipShown = true;
+				SetTimer(hDlg, 1, 500, NULL);
 			}
-			//conf->niData.szTip[127] = 0;
-			strcpy_s(conf->niData.szTip, min(128, name.length() + 1), name.c_str());
-			//conf->niData.uFlags = NIF_TIP | NIF_SHOWTIP;
-			Shell_NotifyIcon(NIM_MODIFY, &conf->niData);
 		} break;
 		}
 	} break;
+	case WM_TIMER:
+		toolTipShown = false;
+		KillTimer(hDlg, 1);
+		break;
 	case WM_MENUCOMMAND: {
 		int idx = GetMenuItemID((HMENU)lParam, LOWORD(wParam));
 		switch (idx) {

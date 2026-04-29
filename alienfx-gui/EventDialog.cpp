@@ -232,6 +232,7 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 		//DebugPrint("Events UI update...\n");
 		int maxFans = 0;
 		if (mon) {
+			mon->GetSensorData();
 			for (int i = 0; i < mon->fansize; i++)
 				maxFans = max(maxFans, mon->fanRpm[i]);
 		}

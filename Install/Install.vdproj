@@ -28,13 +28,13 @@
         "Entry"
         {
         "MsmKey" = "8:_055E075BF224A12F432351DF93952E0E"
-        "OwnerKey" = "8:_4B7975803E6C492C8F7D8B599766674C"
+        "OwnerKey" = "8:_B829425435A04EFB81D071102204D8B4"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
         "MsmKey" = "8:_055E075BF224A12F432351DF93952E0E"
-        "OwnerKey" = "8:_B829425435A04EFB81D071102204D8B4"
+        "OwnerKey" = "8:_4B7975803E6C492C8F7D8B599766674C"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -112,13 +112,13 @@
         "Entry"
         {
         "MsmKey" = "8:_83763AF12CFE41FE16B491DE99592F8F"
-        "OwnerKey" = "8:_4B7975803E6C492C8F7D8B599766674C"
+        "OwnerKey" = "8:_FA7989C51ECD437AB3316446FB849F60"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
         "MsmKey" = "8:_83763AF12CFE41FE16B491DE99592F8F"
-        "OwnerKey" = "8:_FA7989C51ECD437AB3316446FB849F60"
+        "OwnerKey" = "8:_4B7975803E6C492C8F7D8B599766674C"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -130,13 +130,13 @@
         "Entry"
         {
         "MsmKey" = "8:_8F3090BEFD2084C54DFF0BFAD98DA84F"
-        "OwnerKey" = "8:_AB07B12C770D4D4A9DE7E3A7F6280FFF"
+        "OwnerKey" = "8:_E287D1712A1A426DA4A815104949F017"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
         "MsmKey" = "8:_8F3090BEFD2084C54DFF0BFAD98DA84F"
-        "OwnerKey" = "8:_E287D1712A1A426DA4A815104949F017"
+        "OwnerKey" = "8:_AB07B12C770D4D4A9DE7E3A7F6280FFF"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -184,13 +184,13 @@
         "Entry"
         {
         "MsmKey" = "8:_E57C9B0CB5862DCB6BAC31D289B34509"
-        "OwnerKey" = "8:_4B7975803E6C492C8F7D8B599766674C"
+        "OwnerKey" = "8:_FA7989C51ECD437AB3316446FB849F60"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
         "MsmKey" = "8:_E57C9B0CB5862DCB6BAC31D289B34509"
-        "OwnerKey" = "8:_FA7989C51ECD437AB3316446FB849F60"
+        "OwnerKey" = "8:_4B7975803E6C492C8F7D8B599766674C"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -209,18 +209,18 @@
         {
         "MsmKey" = "8:_ECA7B10455E9FEA298D65C36BC39D1CE"
         "OwnerKey" = "8:_1924518F6EA84AD696BCCE8E589E25C7"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_ECA7B10455E9FEA298D65C36BC39D1CE"
-        "OwnerKey" = "8:_AB07B12C770D4D4A9DE7E3A7F6280FFF"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
         "MsmKey" = "8:_ECA7B10455E9FEA298D65C36BC39D1CE"
         "OwnerKey" = "8:_E287D1712A1A426DA4A815104949F017"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_ECA7B10455E9FEA298D65C36BC39D1CE"
+        "OwnerKey" = "8:_AB07B12C770D4D4A9DE7E3A7F6280FFF"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -786,15 +786,15 @@
         {
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:AlienFX Tools"
-        "ProductCode" = "8:{305D0B10-D904-40AF-95DB-5028E76BF7A4}"
-        "PackageCode" = "8:{F1BC963B-4803-4AC8-8EE5-0747B0D3BD7F}"
+        "ProductCode" = "8:{B40BA709-96D9-4860-BF05-82AA315EC3D0}"
+        "PackageCode" = "8:{E392A626-5A11-4217-BBBF-9823D5F1D078}"
         "UpgradeCode" = "8:{EFC2D182-AE5E-4585-92D3-0759F77F59AA}"
         "AspNetVersion" = "8:4.0.30319.0"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:TRUE"
         "DetectNewerInstalledVersion" = "11:FALSE"
         "InstallAllUsers" = "11:FALSE"
-        "ProductVersion" = "8:9.4.105"
+        "ProductVersion" = "8:9.5.0"
         "Manufacturer" = "8:T-Troll"
         "ARPHELPTELEPHONE" = "8:"
         "ARPHELPLINK" = "8:https://github.com/T-Troll/alienfx-tools/discussions"

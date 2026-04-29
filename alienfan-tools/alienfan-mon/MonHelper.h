@@ -7,6 +7,10 @@ class MonHelper {
 private:
 	ThreadHelper* monThread = NULL;
 	short oldPower = 0;
+	bool stopped = true;
+	void Run();
+	void Finish();
+	void ToggleMode();
 public:
 	AlienFan_SDK::Control* acpi;
 	bool inControl = true;
@@ -27,6 +31,7 @@ public:
 	int GetPowerMode();
 	void SetPowerMode(byte newMode);
 	int GetFanRPM(int fanID);
+	WORD GetSensorData(bool withRPM = true);
 	void ResetBoost();
 	void SetOC();
 };

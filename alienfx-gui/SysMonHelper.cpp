@@ -134,6 +134,7 @@ void CEventProc(LPVOID param)
 	}
 
 	if (mon) {
+		mon->GetSensorData();
 		// Check fan RPMs
 		for (unsigned i = 0; i < mon->fansize; i++) {
 			sData->Fan = max(sData->Fan, mon->GetFanPercent(i));

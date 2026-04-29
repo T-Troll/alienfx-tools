@@ -190,6 +190,7 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         } break;
         } break;
     case WM_TIMER:
+        mon->GetSensorData();
         if (mon->modified) {
             for (int i = 0; i < mon->sensorSize; i++) {
                 WORD sid = mon->acpi->sensors[i].sid;
