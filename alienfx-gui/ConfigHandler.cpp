@@ -43,7 +43,7 @@ ConfigHandler::~ConfigHandler() {
 profile* ConfigHandler::FindCreateProfile(unsigned id) {
 	profile* prof = FindProfile(id);
 	if (!prof) {
-		prof = new profile{ id };
+		prof = new profile{ id, "New Profile"};
 		profiles.push_back(prof);
 	}
 	return prof;
@@ -334,7 +334,7 @@ void ConfigHandler::Load() {
 		activeProfileID = 0;
 	}
 
-	activeProfile = FindProfile(activeProfileID);
+	activeProfile = FindCreateProfile(activeProfileID);
 
 }
 

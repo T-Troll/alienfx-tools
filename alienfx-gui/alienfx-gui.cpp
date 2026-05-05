@@ -580,9 +580,8 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 						name.append("\n" + GetFanName(i, true));
 					}
 				}
-				//conf->niData.szTip[127] = 0;
-				strcpy_s(conf->niData.szTip, min(128, name.length() + 1), name.c_str());
-				//conf->niData.uFlags = NIF_TIP | NIF_SHOWTIP;
+				conf->niData.szTip[127] = 0;
+				strcpy_s(conf->niData.szTip, min(127, name.length() + 1), name.c_str());
 				Shell_NotifyIcon(NIM_MODIFY, &conf->niData);
 				toolTipShown = true;
 				SetTimer(hDlg, 1, 500, NULL);

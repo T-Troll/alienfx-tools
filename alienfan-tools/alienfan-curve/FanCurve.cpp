@@ -316,15 +316,11 @@ string GetFanName(int ind, bool forTray = false) {
         case 6: fname = "GPU"; break;
         default: fname = "Fan";
         }
+        fname += ' ' + to_string(ind + 1);
         if (forTray) {
-            fname += " (";
-            if (fan_conf->lastProf->powerStage)
-                fname += to_string(mon->senValues[0x100 + mon->acpi->fans[ind].type]);
-            else
-                fname += to_string(mon->senValues[mon->lastBoost[ind]]);
-            fname += ")";
-        }
-        fname += " " + to_string(ind + 1) + " - " + to_string(mon->fanRpm[ind]);
+            fname += " (" + to_string(mon->senValues[0x100 + mon->acpi->fans[ind].type]) + ") - " + to_string(mon->GetFanPercent(ind)) + '%';
+        } else
+            fname += " - " + to_string(mon->fanRpm[ind]);
     }
 #ifdef _DEBUG
     else

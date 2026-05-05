@@ -328,11 +328,11 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 				if (WarningBox(hDlg, "Do you really want to remove selected profile and all settings for it?")) {
 					for (auto pf = conf->profiles.begin(); pf != conf->profiles.end(); pf++)
 						if (*pf == prof) {
+							auto newCid = conf->profiles.erase(pf);
 							if (conf->activeProfile == prof) {
 								// switch to default profile..
 								eve->SwitchActiveProfile(NULL);
 							}
-							auto newCid = conf->profiles.erase(pf);
 							delete prof;
 							prof = newCid == conf->profiles.end() ? *(newCid - 1) : *newCid;
 							conf->RemoveUnusedGroups();
@@ -489,8 +489,10 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 		{
 			if (state) {
 				for (auto& op : conf->profiles)
-					if (op->flags & PROF_DEFAULT && conf->SamePower(op, prof))
+					if (op->flags & PROF_DEFAULT && conf->SamePower(op, prof)) {
 						op->flags &= ~PROF_DEFAULT;
+						break;
+					}
 				prof->flags |= PROF_DEFAULT;
 			} else
 				CheckDlgButton(hDlg, IDC_CHECK_DEFPROFILE, BST_CHECKED);
