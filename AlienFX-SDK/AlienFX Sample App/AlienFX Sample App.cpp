@@ -10,15 +10,15 @@ int main()
 	AlienFX_SDK::Mappings afx_map;
 	// Loading stored devices and maps (optional, in case you need to know which lights every device has)
 	afx_map.LoadMappings();
-	for (auto it = afx_map.fxdevs.begin(); it != afx_map.fxdevs.end(); it++)
-		cout << "Stored device " << it->name << ", " << it->lights.size() << " lights\n";
 	// Now detect active devices...
 	afx_map.AlienFXEnumDevices();
-	cout << afx_map.fxdevs.size() << " device(s) detected." << endl;
+	cout << afx_map.fxdevs.size() << " device(s) found." << endl;
 	// And try to set it lights...
 	for (int i = 0; i < afx_map.fxdevs.size(); i++) {
-		cout << hex << "VID: 0x" << afx_map.fxdevs[i].vid << ", PID: 0x" << afx_map.fxdevs[i].pid << ", API v" << afx_map.fxdevs[i].version << endl;
-		if (afx_map.fxdevs[i].dev) {
+		cout << hex << "VID: 0x" << afx_map.fxdevs[i].vid << ", PID: 0x" << afx_map.fxdevs[i].pid << ", " << 
+			(afx_map.fxdevs[i].present ? 
+				"API v" + to_string(afx_map.fxdevs[i].dev->version) : "Inactive") << ", " << afx_map.fxdevs[i].lights.size() << " lights" << endl;
+		if (afx_map.fxdevs[i].present) {
 			cout << "Now trying light 2 to blue... ";
 			afx_map.fxdevs[i].dev->SetColor(2, { 255 });
 			afx_map.fxdevs[i].dev->UpdateColors();
@@ -27,9 +27,6 @@ int main()
 			afx_map.fxdevs[i].dev->SetColor(3, { 255, 255 });
 			afx_map.fxdevs[i].dev->UpdateColors();
 			cin.get();
-		}
-		else {
-			cout << "Device inactive, going next one." << endl;
 		}
 	}
 	return 0;
