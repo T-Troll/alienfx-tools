@@ -55,6 +55,7 @@
     <CharacterSet>NotSet</CharacterSet>
     <Driver_SpectreMitigation>false</Driver_SpectreMitigation>
     <PlatformToolset>WindowsApplicationForDrivers10.0</PlatformToolset>
+    <VCToolsVersion>14.50.35717</VCToolsVersion>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_V1|x64'" Label="Configuration">
     <TargetVersion>Windows10</TargetVersion>
