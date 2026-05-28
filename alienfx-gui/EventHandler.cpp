@@ -47,7 +47,6 @@ processdata GetProcessData(DWORD proc) {
 	processdata res;
 	if (hProcess = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, proc)) {
 		if (GetModuleFileNameEx(hProcess, NULL, szProcessName, MAX_PATH)) {
-			//res = ParseFileName(szProcessName);
 			string procName = string(szProcessName);
 			res.appName = procName.substr(procName.find_last_of('\\') + 1);
 			res.appPath = procName.substr(0, procName.length() - res.appName.length());
@@ -55,6 +54,12 @@ processdata GetProcessData(DWORD proc) {
 		CloseHandle(hProcess);
 	}
 	return res;
+}
+
+processdata GetProcessData(HWND hwnd) {
+	DWORD prcId;
+	GetWindowThreadProcessId(hwnd, &prcId);
+	return GetProcessData(prcId);
 }
 
 EventHandler::EventHandler()
@@ -208,13 +213,13 @@ void EventHandler::ChangeEffects(bool stop) {
 }
 
 void EventHandler::CheckProfileChange() {
-	DWORD prcId;
+	//DWORD prcId;
 	bool forbiddenapp = false;
 	profile* newProf = NULL;
 	DWORD cbNeeded;
-	GetWindowThreadProcessId(GetForegroundWindow(), &prcId);
+	//GetWindowThreadProcessId(GetForegroundWindow(), &prcId);
 
-	processdata procName = GetProcessData(prcId);
+	processdata procName = GetProcessData(GetForegroundWindow());
 	DebugPrint("Profile: looking for " + procName.appName + "(" + to_string(prcId) + ")\n");
 
 
@@ -343,17 +348,12 @@ LRESULT CALLBACK acProc(int nCode, WPARAM wParam, LPARAM lParam) {
 // Create/destroy callback - switch profile if new/closed process in app list
 static VOID CALLBACK CCreateProc(HWINEVENTHOOK hWinEventHook, DWORD dwEvent, HWND hwnd, LONG idObject, LONG idChild, DWORD dwEventThread, DWORD dwmsEventTime) {
 
-	if (idObject == OBJID_WINDOW && idChild == CHILDID_SELF) {
-		DWORD prcId;
-		//profile* prof = NULL;
-		//bool activeDestroy = false;
-
-		GetWindowThreadProcessId(hwnd, &prcId);
+	if (idObject == OBJID_WINDOW /*&& idChild == CHILDID_SELF*/) {
 #ifdef _DEBUG
-		//processdata app = conf->GetProcessData(prcId);
+		//processdata app = conf->GetProcessData(hwnd);
 		//DebugPrint(string("Eve: Process ") + app.appName + (dwEvent == EVENT_OBJECT_DESTROY ? " destroyed" : " started") + ".\n");
 #endif
-		if (/*prof = */conf->FindProfileByApp(GetProcessData(prcId))) {
+		if (/*prof = */conf->FindProfileByApp(GetProcessData(hwnd))) {
 			//if (dwEvent == EVENT_OBJECT_DESTROY && prof->id == conf->activeProfile->id)
 			//	conf->activeProfile = NULL;
 			//bool activeDestroy = dwEvent == EVENT_OBJECT_DESTROY && prof->id == conf->activeProfile->id;
