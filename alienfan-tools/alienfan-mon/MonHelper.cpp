@@ -20,6 +20,7 @@ MonHelper::MonHelper() {
 		fansize = (WORD)acpi->fans.size();
 		powerSize = (WORD)acpi->powers.size();
 		sensorSize = (WORD)acpi->sensors.size();
+		oldPower = GetPowerMode();
 		Start();
 	}
 }
@@ -55,14 +56,16 @@ void MonHelper::Run() {
 }
 
 void MonHelper::Finish() {
-	delete monThread;
-	monThread = NULL;
-	DebugPrint("Mon thread stop.\n");
-	ResetBoost();
+	if (monThread) {
+		delete monThread;
+		monThread = NULL;
+		DebugPrint("Mon thread stop.\n");
+		ResetBoost();
+	}
 }
 
 void MonHelper::ToggleMode() {
-	if (powerMode && monThread) {
+	if (powerMode) {
 		Finish();
 		return;
 	}
@@ -72,18 +75,14 @@ void MonHelper::ToggleMode() {
 
 void MonHelper::Start() {
 	SetOC();
-	oldPower = GetPowerMode();
 	SetCurrentMode();
 	// start thread...
 	Run();
 	stopped = false;
-	//SetCurrentMode();
 }
 
 void MonHelper::Stop() {
-	if (monThread) {
-		Finish();
-	}
+	Finish();
 	if (fan_conf->keepSystem)
 		SetCurrentMode(oldPower);
 	stopped = true;
