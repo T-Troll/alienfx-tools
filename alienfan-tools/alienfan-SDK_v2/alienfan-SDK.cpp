@@ -37,6 +37,10 @@ namespace AlienFan_SDK {
 	}
 
 	Control::~Control() {
+		for (auto i = sensors.begin(); i != sensors.end(); i++) {
+			if (i->instance)
+				i->instance->Release();
+		}
 		if (m_DiskService)
 			m_DiskService->Release();
 		if (m_OHMService)
@@ -67,54 +71,60 @@ namespace AlienFan_SDK {
 		return result.intVal;
 	}
 
-	void Control::EnumSensors(IWbemServices* srv, const wchar_t* s_name, byte type) {
+	void Control::EnumSensors(IWbemServices* srv, const wchar_t* s_name, /*const LPCWSTR instansePath,*/ const LPCWSTR valuePath, string name, byte type) {
 		IEnumWbemClassObject* enum_obj;
 		if (srv && SUCCEEDED(srv->CreateInstanceEnum((BSTR)s_name, WBEM_FLAG_SHALLOW | WBEM_FLAG_FORWARD_ONLY, NULL, &enum_obj))) {
 			IWbemClassObject* spInstance[32];
 			ULONG uNumOfInstances;
-			LPCWSTR instansePath = L"__Path", valuePath = L"Temperature";
+			//LPCWSTR instansePath = L"__Path", valuePath = L"Temperature";
 			VARIANT cTemp{ VT_I4 }, instPath{ VT_BSTR };
-			string name;
+			//string lname = name;
 
-			switch (type) {
-			case 0:
-				name = "ESIF";
-				break;
-			case 2:
-				name = "SSD";
-				instansePath = L"StorageReliabilityCounter";
-				break;
-			case 4:
-				valuePath = L"Value";
-			}
-			name += " sensor ";
+			//switch (type) {
+			//case 0:
+			//	name = "ESIF";
+			//	break;
+			//case 2:
+			//	name = "SSD";
+			//	instansePath = L"StorageReliabilityCounter";
+			//	break;
+			//case 4:
+			//	valuePath = L"Value";
+			//}
+			//lname += " sensor ";
 
 			byte senID = 0;
 
 			HRESULT res = WBEM_S_NO_ERROR;
 			while (res == WBEM_S_NO_ERROR && SUCCEEDED(res = enum_obj->Next(3000, 32, spInstance, &uNumOfInstances)) && uNumOfInstances) {
+				string lname = name;
 				for (byte ind = 0; ind < uNumOfInstances; ind++) {
 					if (type == 4) { // OHM sensors
-						VARIANT type{ 0 };
+						VARIANT type{ VT_BSTR };
 						spInstance[ind]->Get(L"SensorType", 0, &type, 0, 0);
 						if (!wcscmp(type.bstrVal, L"Temperature")) {
 							VARIANT vname{ 0 };
 							spInstance[ind]->Get(L"Name", 0, &vname, 0, 0);
-							name.clear();
+							lname.clear();
 							for (int i = 0; i < wcslen(vname.bstrVal); i++)
-								name += vname.bstrVal[i];
+								lname += vname.bstrVal[i];
 						}
 						else {
+							spInstance[ind]->Release();
 							continue;
 						}
 					}
-					;
-					if (SUCCEEDED(spInstance[ind]->Get(instansePath, 0, &instPath, 0, 0)) && instPath.bstrVal) {
-						spInstance[ind]->Get(valuePath, 0, &cTemp, 0, 0);
-						spInstance[ind]->Release();
-						if (type == 2 || cTemp.intVal > 0 || cTemp.fltVal > 0)
-							sensors.push_back({ { senID++,type }, name + (type != 4 ? to_string(senID) : ""), instPath.bstrVal, (BSTR)valuePath });
+					else {
+						lname += " sensor " + to_string(senID);
 					}
+					//if (SUCCEEDED(spInstance[ind]->Get(instansePath, 0, &instPath, 0, 0)) && instPath.bstrVal) {
+						spInstance[ind]->Get(valuePath, 0, &cTemp, 0, 0);
+						//spInstance[ind]->Release();
+						if (type == 2 || cTemp.intVal > 0 || cTemp.fltVal > 0)
+							sensors.push_back({ { senID++,type }, lname, spInstance[ind], (BSTR)valuePath });
+						else
+							spInstance[ind]->Release();
+					//}
 				}
 			}
 			enum_obj->Release();
@@ -214,12 +224,12 @@ namespace AlienFan_SDK {
 							}
 
 							// ESIF sensors
-							EnumSensors(m_WbemServices, L"EsifDeviceInformation", 0);
+							EnumSensors(m_WbemServices, L"EsifDeviceInformation",/* L"__Path",*/ L"Temperature", "ESIF", 0);
 							// SSD sensors
 							if (diskSensors)
-								EnumSensors(m_DiskService, L"MSFT_PhysicalDiskToStorageReliabilityCounter", 2);
+								EnumSensors(m_DiskService, L"MSFT_PhysicalDiskToStorageReliabilityCounter",/* L"StorageReliabilityCounter",*/ L"Temperature", "SSD", 2);
 							// OHM sensors
-							EnumSensors(m_OHMService, L"Sensor", 4);
+							EnumSensors(m_OHMService, L"Sensor", /*L"__Path",*/ L"Value", "", 4);
 							return true;
 						}
 				}
@@ -255,27 +265,33 @@ namespace AlienFan_SDK {
 	}
 	int Control::GetTempValue(int TempID) {
 		if (TempID < sensors.size()) {
-			IWbemServices* serviceObject = m_WbemServices;
+			//IWbemServices* serviceObject = m_WbemServices;
 			switch (sensors[TempID].type) {
 			case 1: { // AWCC
 				int awt = CallWMIMethod(getTemp, sensors[TempID].index);
 				// Bugfix for AWCC temp - it can be up to 5000C!
 				return awt > 150 ? -1 : awt;
 			} break;
-			case 2: // SSD
-				serviceObject = m_DiskService;
-				break;
-			case 4: // OHM
-				serviceObject = m_OHMService;
-				break;
-			}
-			IWbemClassObject* sensorObject = NULL;
-			if (SUCCEEDED(serviceObject->GetObject(sensors[TempID].instance, NULL, nullptr, &sensorObject, nullptr))) {
+			default: {
 				VARIANT temp;
-				sensorObject->Get(sensors[TempID].valueName, 0, &temp, 0, 0);
-				sensorObject->Release();
+				sensors[TempID].instance->Get(sensors[TempID].valueName, 0, &temp, 0, 0);
+				//sensorObject->Release();
 				return sensors[TempID].type == 4 ? (int)temp.fltVal : temp.intVal;
 			}
+			//case 2: // SSD
+				//serviceObject = m_DiskService;
+			//	break;
+			//case 4: // OHM
+				//serviceObject = m_OHMService;
+			//	break;
+			}
+			//IWbemClassObject* sensorObject = NULL;
+			//if (SUCCEEDED(serviceObject->GetObject(sensors[TempID].instance, NULL, nullptr, &sensorObject, nullptr))) {
+				//VARIANT temp;
+				//sensors[TempID].instance->Get(sensors[TempID].valueName, 0, &temp, 0, 0);
+				////sensorObject->Release();
+				//return sensors[TempID].type == 4 ? (int)temp.fltVal : temp.intVal;
+			//}
 		}
 		return -1;
 	}

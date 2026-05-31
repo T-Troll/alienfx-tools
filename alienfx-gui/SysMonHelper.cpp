@@ -1,8 +1,8 @@
 #include "SysMonHelper.h"
 #include "MonHelper.h"
-#include <PdhMsg.h>
+//#include <PdhMsg.h>
 
-#pragma comment(lib, "pdh.lib")
+//#pragma comment(lib, "pdh.lib")
 
 #ifdef _DEBUG
 #define DebugPrint(_x_) OutputDebugString(string(_x_).c_str());
@@ -15,16 +15,51 @@ extern MonHelper* mon;
 extern ConfigHandler* conf;
 
 static SYSTEM_POWER_STATUS state;
-static PDH_FMT_COUNTERVALUE cCPUVal, cHDDVal;
+//static PDH_FMT_COUNTERVALUE cCPUVal, cHDDVal;
 static MEMORYSTATUSEX memStat{ sizeof(MEMORYSTATUSEX) };
 static HKL locIDs[10];
 static HKL curLocale;
 
 void CEventProc(LPVOID);
 
-IWbemServices* m_WmiService = NULL, *m_CimService = NULL;
+IWbemServices* m_WmiService = NULL, * m_CimService = NULL;
 
-vector<BSTR> esifSensors;
+vector<IWbemClassObject*> esifSensors, netInst;
+IWbemClassObject* cpuPath, * diskPath;
+
+vector<IWbemClassObject*> GetAllInstances(IWbemServices* srv, const wchar_t* s_name) {
+	vector<IWbemClassObject*> result;
+	IEnumWbemClassObject* enum_obj;
+	if (srv && SUCCEEDED(srv->CreateInstanceEnum((BSTR)s_name, WBEM_FLAG_SHALLOW | WBEM_FLAG_FORWARD_ONLY | WBEM_FLAG_DIRECT_READ, NULL, &enum_obj))) {
+		IWbemClassObject* spInstance[64];
+		ULONG uNumOfInstances;
+		HRESULT res = WBEM_S_NO_ERROR;
+		while (res == WBEM_S_NO_ERROR && SUCCEEDED(res = enum_obj->Next(3000, 64, spInstance, &uNumOfInstances)) && uNumOfInstances) {
+			for (byte ind = 0; ind < uNumOfInstances; ind++) {
+				result.push_back(spInstance[ind]);
+			}
+		}
+		enum_obj->Release();
+	}
+	return result;
+}
+
+IWbemClassObject* FindTotalPath(IWbemServices* srv, const wchar_t* s_name) {
+	//IEnumWbemClassObject* enum_obj;
+	IWbemClassObject* finalPath = NULL;// (BSTR)L"";
+	VARIANT name{ VT_BSTR };// instPath{ VT_BSTR };
+	auto inst = GetAllInstances(srv, s_name);
+	for (auto& i : inst) {
+		if (SUCCEEDED(i->Get((BSTR)L"Name", 0, &name, 0, 0)) && name.bstrVal) {
+			if (name.bstrVal[0] == L'_') {
+				finalPath = i;
+			}
+			else
+				i->Release();
+		}
+	}
+	return finalPath;
+}
 
 SysMonHelper::SysMonHelper() {
 	DebugPrint("Starting Event thread\n");
@@ -34,82 +69,79 @@ SysMonHelper::SysMonHelper() {
 		RPC_C_AUTHN_LEVEL_NONE, //RPC_C_AUTHN_LEVEL_CONNECT,
 		RPC_C_IMP_LEVEL_IMPERSONATE,
 		nullptr, EOAC_NONE, nullptr);
-	IEnumWbemClassObject* enum_obj;
 	CoCreateInstance(CLSID_WbemLocator, nullptr, CLSCTX_INPROC_SERVER, IID_IWbemLocator, (void**)&m_WbemLocator);
 	m_WbemLocator->ConnectServer((BSTR)L"ROOT\\WMI", nullptr, nullptr, nullptr, WBEM_FLAG_CONNECT_USE_MAX_WAIT, nullptr, nullptr, &m_WmiService);
-	if (m_WmiService && SUCCEEDED(m_WmiService->CreateInstanceEnum((BSTR)L"EsifDeviceInformation", WBEM_FLAG_SHALLOW | WBEM_FLAG_FORWARD_ONLY, NULL, &enum_obj))) {
-		IWbemClassObject* spInstance[32];
-		ULONG uNumOfInstances;
-		HRESULT res = WBEM_S_NO_ERROR;
-		VARIANT instPath{ VT_BSTR };
-		while (res == WBEM_S_NO_ERROR && SUCCEEDED(res = enum_obj->Next(3000, 32, spInstance, &uNumOfInstances)) && uNumOfInstances) {
-			for (byte ind = 0; ind < uNumOfInstances; ind++) {
-				if (SUCCEEDED(spInstance[ind]->Get((BSTR)L"__Path", 0, &instPath, 0, 0)) && instPath.bstrVal) {
-					esifSensors.push_back(instPath.bstrVal);
-				}
-				spInstance[ind]->Release();
-			}
-		}
-		enum_obj->Release();
-	}
+	esifSensors = GetAllInstances(m_WmiService, (BSTR)L"EsifDeviceInformation");
 	m_WbemLocator->ConnectServer((BSTR)L"ROOT\\CIMV2", nullptr, nullptr, nullptr, WBEM_FLAG_CONNECT_USE_MAX_WAIT, nullptr, nullptr, &m_CimService);
-
+	cpuPath = FindTotalPath(m_CimService, (BSTR)L"Win32_PerfFormattedData_PerfOS_Processor");
+	diskPath = FindTotalPath(m_CimService, (BSTR)L"Win32_PerfFormattedData_PerfDisk_PhysicalDisk");
+	netInst = GetAllInstances(m_CimService, (BSTR)L"Win32_PerfFormattedData_Tcpip_NetworkAdapter");
 	m_WbemLocator->Release();
 	//PdhSetDefaultRealTimeDataSource(DATA_SOURCE_WBEM);
-	if (PdhOpenQuery(NULL, 0, &hQuery) == ERROR_SUCCESS) {
-		// Set data source...
-		PdhAddEnglishCounter(hQuery, COUNTER_PATH_CPU, 0, &hCPUCounter);
-		PdhAddEnglishCounter(hQuery, COUNTER_PATH_HDD, 0, &hHDDCounter);
-		PdhAddEnglishCounter(hQuery, COUNTER_PATH_NET, 0, &hNETCounter);
-		PdhAddEnglishCounter(hQuery, COUNTER_PATH_NETMAX, 0, &hNETMAXCounter);
-		PdhAddEnglishCounter(hQuery, COUNTER_PATH_GPU, 0, &hGPUCounter);
-		PdhAddEnglishCounter(hQuery, COUNTER_PATH_HOT, 0, &hTempCounter);
+	//if (PdhOpenQuery(NULL, 0, &hQuery) == ERROR_SUCCESS) {
+	//	// Set data source...
+	//	PdhAddEnglishCounter(hQuery, COUNTER_PATH_CPU, 0, &hCPUCounter);
+	//	PdhAddEnglishCounter(hQuery, COUNTER_PATH_HDD, 0, &hHDDCounter);
+	//	PdhAddEnglishCounter(hQuery, COUNTER_PATH_NET, 0, &hNETCounter);
+	//	PdhAddEnglishCounter(hQuery, COUNTER_PATH_NETMAX, 0, &hNETMAXCounter);
+	//	PdhAddEnglishCounter(hQuery, COUNTER_PATH_GPU, 0, &hGPUCounter);
+	//	PdhAddEnglishCounter(hQuery, COUNTER_PATH_HOT, 0, &hTempCounter);
 
-		PdhAddEnglishCounter(hQuery, COUNTER_PATH_HOT2, 0, &hTempCounter2);
-		PdhAddEnglishCounter(hQuery, COUNTER_PATH_PWR, 0, &hPwrCounter);
+	//	PdhAddEnglishCounter(hQuery, COUNTER_PATH_HOT2, 0, &hTempCounter2);
+	//	PdhAddEnglishCounter(hQuery, COUNTER_PATH_PWR, 0, &hPwrCounter);
 
-		PdhCollectQueryData(hQuery);
+	//	PdhCollectQueryData(hQuery);
 		// start thread...
-		eventProc = new ThreadHelper(CEventProc, this, 300);
+		eventProc = new ThreadHelper(CEventProc, this, 00);
 		DebugPrint("Event thread start.\n");
-	}
+	//}
 }
 
 SysMonHelper::~SysMonHelper() {
 	if (eventProc) {
 		delete eventProc;
-		delete[] counterValues;
+		//delete[] counterValues;
 		ZeroMemory(&fxhl->eData, sizeof(LightEventData));
 		DebugPrint("Event thread stop.\n");
-		PdhCloseQuery(hQuery);
-
-
+	//	PdhCloseQuery(hQuery);
 	}
+	if (m_WmiService)
+		m_WmiService->Release();
+	if (m_CimService)
+		m_CimService->Release();
+	CoUninitialize();
 }
 
-int SysMonHelper::GetCounterValues(HCOUNTER counter) {
-	DWORD cs = 0;
-	DWORD count = 0;
+//int SysMonHelper::GetCounterValues(HCOUNTER counter) {
+//	DWORD cs = 0;
+//	DWORD count = 0;
+//
+//	if (PdhGetFormattedCounterArray(counter, PDH_FMT_LONG, &cs, &count, NULL) == PDH_MORE_DATA) {
+//		delete[] counterValues;
+//		counterValues = new byte[cs];
+//		PdhGetFormattedCounterArray(counter, PDH_FMT_LONG, &cs, &count, (PDH_FMT_COUNTERVALUE_ITEM*)counterValues);
+//	}
+//	return count;
+//}
+//
+//int SysMonHelper::GetValuesArray(HCOUNTER counter, int delta = 0, int divider = 1) {
+//	int retVal = 0;
+//	DWORD count = GetCounterValues(counter);
+//
+//	for (DWORD i = 0; i < count; i++) {
+//		retVal = max(retVal, ((PDH_FMT_COUNTERVALUE_ITEM*)counterValues)[i].FmtValue.longValue / divider - delta);
+//	}
+//
+//	//maxVal = max(maxVal, retVal);
+//
+//	return retVal;
+//}
 
-	if (PdhGetFormattedCounterArray(counter, PDH_FMT_LONG, &cs, &count, NULL) == PDH_MORE_DATA) {
-		delete[] counterValues;
-		counterValues = new byte[cs];
-		PdhGetFormattedCounterArray(counter, PDH_FMT_LONG, &cs, &count, (PDH_FMT_COUNTERVALUE_ITEM*)counterValues);
-	}
-	return count;
-}
-
-int SysMonHelper::GetValuesArray(HCOUNTER counter, int delta = 0, int divider = 1) {
-	int retVal = 0;
-	DWORD count = GetCounterValues(counter);
-
-	for (DWORD i = 0; i < count; i++) {
-		retVal = max(retVal, ((PDH_FMT_COUNTERVALUE_ITEM*)counterValues)[i].FmtValue.longValue / divider - delta);
-	}
-
-	//maxVal = max(maxVal, retVal);
-
-	return retVal;
+int GetInstanceValue(IWbemClassObject* i_name, const wchar_t* v_name) {
+	VARIANT value;
+	i_name->Get((BSTR)v_name, 0, &value, 0, 0);
+	//i_name->Release();
+	return _wtoi(value.bstrVal);
 }
 
 void CEventProc(LPVOID param)
@@ -119,33 +151,50 @@ void CEventProc(LPVOID param)
 	LightEventData* sData = &src->sData;
 #define maxData fxhl->maxData
 
-	PdhCollectQueryData(src->hQuery);
+	//PdhCollectQueryData(src->hQuery);
 	ZeroMemory(sData, sizeof(LightEventData));
 
 	// CPU load
-	PdhGetFormattedCounterValue(src->hCPUCounter, PDH_FMT_LONG, NULL, &cCPUVal);
+	//PdhGetFormattedCounterValue(src->hCPUCounter, PDH_FMT_LONG, NULL, &cCPUVal);
+	sData->CPU = GetInstanceValue(cpuPath, (BSTR)L"PercentProcessorTime");
 	// HDD load
-	PdhGetFormattedCounterValue(src->hHDDCounter, PDH_FMT_LONG, NULL, &cHDDVal);
+	//PdhGetFormattedCounterValue(src->hHDDCounter, PDH_FMT_LONG, NULL, &cHDDVal);
+	sData->HDD = GetInstanceValue(diskPath, (BSTR)L"PercentDiskTime");
 	// Network load
-	int maxBand = src->GetValuesArray(src->hNETMAXCounter, 0, 2048),
-		curBand = src->GetValuesArray(src->hNETCounter);
-	if (maxBand) {
-		sData->NET = min(100, curBand / maxBand);
-		maxData.NET = max(sData->NET, maxData.NET);
+	//auto netInst = GetAllInstances(m_CimService, (BSTR)L"Win32_PerfFormattedData_Tcpip_NetworkAdapter");
+	for (auto& i : netInst) {
+		//VARIANT maxBand{ VT_BSTR }, curBand{ VT_BSTR };
+		int mBand = GetInstanceValue(i, (BSTR)L"CurrentBandwidth");
+		if (mBand) {
+			int cBand = GetInstanceValue(i, (BSTR)L"BytesTotalPerSec");
+			if (cBand) {
+				sData->NET = max(sData->NET, (cBand * 100 / mBand) + 1);
+				maxData.NET = max(sData->NET, maxData.NET);
+			}
+		}
+		//i->Release();
 	}
+	//
+	//int maxBand = src->GetValuesArray(src->hNETMAXCounter, 0, 2048),
+	//	curBand = src->GetValuesArray(src->hNETCounter);
+	//if (maxBand) {
+	//	sData->NET = min(100, curBand / maxBand);
+	//	maxData.NET = max(sData->NET, maxData.NET);
+	//}
 	// GPU load
-	DWORD count = src->GetCounterValues(src->hGPUCounter);
+	auto gpus = GetAllInstances(m_CimService, (BSTR)L"Win32_PerfFormattedData_GPUPerformanceCounters_GPUEngine");
+	//DWORD count = src->GetCounterValues(src->hGPUCounter);
 	// now sort...
 	map<string, map<char, int>> gpusubs;
-	PDH_FMT_COUNTERVALUE_ITEM* va = (PDH_FMT_COUNTERVALUE_ITEM*)src->counterValues;
-	for (DWORD i = 0; i < count; i++) {
-		if (va[i].FmtValue.longValue && va[i].FmtValue.CStatus == PDH_CSTATUS_VALID_DATA) {
-			string path = va[i].szName;
-			char physID = path[path.find("phys_") + 5];
-			string type = path.substr(path.find("type_"));
-			gpusubs[type][physID] += va[i].FmtValue.longValue;
-		}
-	}
+	//PDH_FMT_COUNTERVALUE_ITEM* va = (PDH_FMT_COUNTERVALUE_ITEM*)src->counterValues;
+	//for (DWORD i = 0; i < count; i++) {
+	//	if (va[i].FmtValue.longValue && va[i].FmtValue.CStatus == PDH_CSTATUS_VALID_DATA) {
+	//		string path = va[i].szName;
+	//		char physID = path[path.find("phys_") + 5];
+	//		string type = path.substr(path.find("type_"));
+	//		gpusubs[type][physID] += va[i].FmtValue.longValue;
+	//	}
+	//}
 	for (auto it = gpusubs.begin(); it != gpusubs.end(); it++) {
 		// per-adapter
 		for (auto sub = it->second.begin(); sub != it->second.end(); sub++) {
@@ -155,7 +204,7 @@ void CEventProc(LPVOID param)
 		}
 	}
 	// Temperatures
-	sData->Temp = src->GetValuesArray(src->hTempCounter, 273);
+	//sData->Temp = src->GetValuesArray(src->hTempCounter, 273);
 	// RAM load
 	GlobalMemoryStatusEx(&memStat);
 	// Power state
@@ -182,14 +231,22 @@ void CEventProc(LPVOID param)
 
 	// ESIF powers and temps
 	if (conf->esif_temp) {
-		if (!mon) {
-			// ESIF temps (already in fans)
-			sData->Temp = max(sData->Temp, src->GetValuesArray(src->hTempCounter2, maxData.Temp));
+		int cPwr = 0;
+		for (auto& i : esifSensors) {
+			if (!mon)
+				sData->Temp = max(sData->Temp, GetInstanceValue(i, (BSTR)L"Temperature"));
+			cPwr += GetInstanceValue(i, (BSTR)L"Power") / 10;
 		}
+		//if (!mon) {
+		//	// ESIF temps (already in fans)
+		//	sData->Temp = max(sData->Temp, src->GetValuesArray(src->hTempCounter2, maxData.Temp));
+		//}
 		// Powers
-		sData->PWR = src->GetValuesArray(src->hPwrCounter, 0, 10);
-		maxData.PWR = max(sData->PWR, maxData.PWR);
-		sData->PWR = sData->PWR * 100 / maxData.PWR;
+		//sData->PWR = src->GetValuesArray(src->hPwrCounter, 0, 10);
+		maxData.PWR = max(cPwr, maxData.PWR);
+		sData->PWR = cPwr * 100 / maxData.PWR;
+		//maxData.PWR = max(sData->PWR, maxData.PWR);
+		//sData->PWR = sData->PWR * 100 / maxData.PWR;
 	}
 
 	// Leveling...
@@ -197,9 +254,9 @@ void CEventProc(LPVOID param)
 	sData->Batt = state.BatteryLifePercent;
 	sData->ACP = state.ACLineStatus;
 	sData->BST = state.BatteryFlag;
-	sData->HDD = (byte)max(0, 99 - cHDDVal.longValue);
+	//sData->HDD = (byte)max(0, 99 - cHDDVal.longValue);
 	maxData.RAM = max(maxData.RAM, sData->RAM = (byte)memStat.dwMemoryLoad);
-	maxData.CPU = max(maxData.CPU, sData->CPU = (byte)cCPUVal.longValue);
+	maxData.CPU = max(maxData.CPU, sData->CPU);// = (byte)cCPUVal.longValue);
 	maxData.GPU = max(maxData.GPU, sData->GPU);
 	maxData.Temp = max(sData->Temp, maxData.Temp);
 

@@ -20,7 +20,7 @@ namespace AlienFan_SDK {
 			WORD sid; // LOBYTE - index, HIBYTE - type: 0 = ESIF, 1 = AWCC, 2 - Disk, 3 - AMD, 4 = OHM
 		};
 		string name;
-		BSTR instance; // for ESIF/OHM/SSD sensors
+		IWbemClassObject* instance = NULL; // for ESIF/OHM/SSD sensors
 		BSTR valueName;
 	};
 
@@ -41,7 +41,7 @@ namespace AlienFan_SDK {
 	class Control {
 	private:
 		byte sysType;
-		void EnumSensors(IWbemServices* srv, const wchar_t* sname, byte type);
+		void EnumSensors(IWbemServices* srv, const wchar_t* sname, /*const LPCWSTR instansePath,*/ const LPCWSTR valuePath, string name, byte type);
 		int OperateFan(int function, int fanID);
 	public:
 		VARIANT m_instancePath{};
