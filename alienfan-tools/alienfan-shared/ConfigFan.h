@@ -60,6 +60,7 @@ public:
 	DWORD ocEnable;
 	DWORD diskSensors;
 	DWORD numlockActive;
+	DWORD instantUpdate;
 	bool acPower = true;
 
 	fan_profile prof;

@@ -52,6 +52,7 @@ void ConfigFan::Load() {
 	GetReg("OCEnable", &ocEnable);
 	GetReg("DiskSensors", &diskSensors, 1);
 	GetReg("NumLockActive", &numlockActive, 1);
+	GetReg("InstantUpdate", &instantUpdate);
 
 	// Now load sensor mappings...
 	char name[256];
@@ -108,6 +109,7 @@ void ConfigFan::Save() {
 	SetReg("OCEnable", ocEnable);
 	SetReg("DiskSensors", diskSensors);
 	SetReg("NumLockActive", numlockActive);
+	SetReg("InstantUpdate", instantUpdate);
 
 	// clean old data
 	RegDeleteTree(keyMain, "Sensors");

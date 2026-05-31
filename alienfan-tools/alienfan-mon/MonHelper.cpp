@@ -155,19 +155,20 @@ int MonHelper::GetFanRPM(int fanID) {
 	return (res = acpi->GetFanRPM(fanID)) < 0 ? fanRpm[fanID] : res;
 }
 
-WORD MonHelper::GetSensorData(bool withRPM) {
+WORD MonHelper::GetSensorData(bool forced) {
 	// update values:
-	// temps..
-	for (int i = 0; i < sensorSize; i++) {
-		int temp = acpi->GetTempValue(i);
-		WORD sid = acpi->sensors[i].sid;
-		if (temp != senValues[sid]) {
-			modified = true;
-			senValues[sid] = temp;
-			maxTemps[sid] = max(maxTemps[sid], temp);
+	if (forced || !monThread) {
+		// temps..
+		modified = false;
+		for (int i = 0; i < sensorSize; i++) {
+			int temp = acpi->GetTempValue(i);
+			WORD sid = acpi->sensors[i].sid;
+			if (temp != senValues[sid]) {
+				modified = true;
+				senValues[sid] = temp;
+				maxTemps[sid] = max(maxTemps[sid], temp);
+			}
 		}
-	}
-	if (withRPM) {
 		// fans...
 		for (byte i = 0; i < fansize; i++) {
 			fanRpm[i] = GetFanRPM(i);
@@ -180,7 +181,7 @@ void CMonProc(LPVOID param) {
 	MonHelper* src = (MonHelper*)param;
 	AlienFan_SDK::Control* acpi = src->acpi;
 	fan_profile* active = fan_conf->lastProf;
-	src->modified = false;
+	//src->modified = false;
 
 #ifdef _DEBUG
 	if (!active)
@@ -190,7 +191,7 @@ void CMonProc(LPVOID param) {
 	//DebugPrint("Mon: Poll started\n");
 	if (src->inControl && active) {
 		// check power mode
-		src->powerMode = src->GetSensorData(false);
+		src->powerMode = src->GetSensorData(true);
 		src->SetCurrentMode();
 
 		if (!src->powerMode && src->modified) {

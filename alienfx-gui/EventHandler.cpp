@@ -220,7 +220,7 @@ void EventHandler::CheckProfileChange() {
 	//GetWindowThreadProcessId(GetForegroundWindow(), &prcId);
 
 	processdata procName = GetProcessData(GetForegroundWindow());
-	DebugPrint("Profile: looking for " + procName.appName + "(" + to_string(prcId) + ")\n");
+	//DebugPrint("Profile: looking for " + procName.appName + "(" + to_string(prcId) + ")\n");
 
 
 	if (conf->noDesktop) {

@@ -260,7 +260,7 @@ namespace AlienFan_SDK {
 			case 1: { // AWCC
 				int awt = CallWMIMethod(getTemp, sensors[TempID].index);
 				// Bugfix for AWCC temp - it can be up to 5000C!
-				return awt > 200 ? -1 : awt;
+				return awt > 150 ? -1 : awt;
 			} break;
 			case 2: // SSD
 				serviceObject = m_DiskService;
@@ -270,7 +270,7 @@ namespace AlienFan_SDK {
 				break;
 			}
 			IWbemClassObject* sensorObject = NULL;
-			if (serviceObject->GetObject(sensors[TempID].instance, NULL, nullptr, &sensorObject, nullptr) == S_OK) {
+			if (SUCCEEDED(serviceObject->GetObject(sensors[TempID].instance, NULL, nullptr, &sensorObject, nullptr))) {
 				VARIANT temp;
 				sensorObject->Get(sensors[TempID].valueName, 0, &temp, 0, 0);
 				sensorObject->Release();

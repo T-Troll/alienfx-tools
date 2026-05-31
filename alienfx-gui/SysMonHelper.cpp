@@ -22,8 +22,39 @@ static HKL curLocale;
 
 void CEventProc(LPVOID);
 
+IWbemServices* m_WmiService = NULL, *m_CimService = NULL;
+
+vector<BSTR> esifSensors;
+
 SysMonHelper::SysMonHelper() {
 	DebugPrint("Starting Event thread\n");
+	IWbemLocator* m_WbemLocator;
+	CoInitializeEx(nullptr, COINIT::COINIT_MULTITHREADED);
+	CoInitializeSecurity(nullptr, -1, nullptr, nullptr,
+		RPC_C_AUTHN_LEVEL_NONE, //RPC_C_AUTHN_LEVEL_CONNECT,
+		RPC_C_IMP_LEVEL_IMPERSONATE,
+		nullptr, EOAC_NONE, nullptr);
+	IEnumWbemClassObject* enum_obj;
+	CoCreateInstance(CLSID_WbemLocator, nullptr, CLSCTX_INPROC_SERVER, IID_IWbemLocator, (void**)&m_WbemLocator);
+	m_WbemLocator->ConnectServer((BSTR)L"ROOT\\WMI", nullptr, nullptr, nullptr, WBEM_FLAG_CONNECT_USE_MAX_WAIT, nullptr, nullptr, &m_WmiService);
+	if (m_WmiService && SUCCEEDED(m_WmiService->CreateInstanceEnum((BSTR)L"EsifDeviceInformation", WBEM_FLAG_SHALLOW | WBEM_FLAG_FORWARD_ONLY, NULL, &enum_obj))) {
+		IWbemClassObject* spInstance[32];
+		ULONG uNumOfInstances;
+		HRESULT res = WBEM_S_NO_ERROR;
+		VARIANT instPath{ VT_BSTR };
+		while (res == WBEM_S_NO_ERROR && SUCCEEDED(res = enum_obj->Next(3000, 32, spInstance, &uNumOfInstances)) && uNumOfInstances) {
+			for (byte ind = 0; ind < uNumOfInstances; ind++) {
+				if (SUCCEEDED(spInstance[ind]->Get((BSTR)L"__Path", 0, &instPath, 0, 0)) && instPath.bstrVal) {
+					esifSensors.push_back(instPath.bstrVal);
+				}
+				spInstance[ind]->Release();
+			}
+		}
+		enum_obj->Release();
+	}
+	m_WbemLocator->ConnectServer((BSTR)L"ROOT\\CIMV2", nullptr, nullptr, nullptr, WBEM_FLAG_CONNECT_USE_MAX_WAIT, nullptr, nullptr, &m_CimService);
+
+	m_WbemLocator->Release();
 	//PdhSetDefaultRealTimeDataSource(DATA_SOURCE_WBEM);
 	if (PdhOpenQuery(NULL, 0, &hQuery) == ERROR_SUCCESS) {
 		// Set data source...
@@ -51,6 +82,8 @@ SysMonHelper::~SysMonHelper() {
 		ZeroMemory(&fxhl->eData, sizeof(LightEventData));
 		DebugPrint("Event thread stop.\n");
 		PdhCloseQuery(hQuery);
+
+
 	}
 }
 

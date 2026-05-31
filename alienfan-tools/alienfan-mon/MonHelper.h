@@ -31,7 +31,7 @@ public:
 	int GetPowerMode();
 	void SetPowerMode(byte newMode);
 	int GetFanRPM(int fanID);
-	WORD GetSensorData(bool withRPM = true);
+	WORD GetSensorData(bool forced = false);
 	void ResetBoost();
 	void SetOC();
 };
