@@ -43,7 +43,7 @@ namespace AlienFX_SDK {
 		const byte v1OpCodes[]{ 3, 2, 1, 1, 1, 1, 1 };
 
 	// V4, common tron/desktop
-		const byte COMMV4_control[]{6, 0x03, 0x21, 0x00, 0x03, 0x00, 0xff };
+		const byte COMMV4_control[]{ 6, 0x03, 0x21, 0x00, 0x03, 0xff, 0xff };
 		// [4] - control type (1..7), 1 - start new, 2 - finish and save, 3 - finish and play, 4 - remove, 5 - play, 6 - set default, 7 - set startup
 		// [5-6] - control ID 0xffff - common, 8 - startup, 61 - light
 		const byte COMMV4_colorSel[]{5, 0x03, 0x23, 0x01, 0x00, 0x01};
