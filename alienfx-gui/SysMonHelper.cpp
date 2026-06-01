@@ -182,10 +182,10 @@ void CEventProc(LPVOID param)
 	//	maxData.NET = max(sData->NET, maxData.NET);
 	//}
 	// GPU load
-	auto gpus = GetAllInstances(m_CimService, (BSTR)L"Win32_PerfFormattedData_GPUPerformanceCounters_GPUEngine");
+	//auto gpus = GetAllInstances(m_CimService, (BSTR)L"Win32_PerfFormattedData_GPUPerformanceCounters_GPUEngine");
 	//DWORD count = src->GetCounterValues(src->hGPUCounter);
 	// now sort...
-	map<string, map<char, int>> gpusubs;
+	//map<string, map<char, int>> gpusubs;
 	//PDH_FMT_COUNTERVALUE_ITEM* va = (PDH_FMT_COUNTERVALUE_ITEM*)src->counterValues;
 	//for (DWORD i = 0; i < count; i++) {
 	//	if (va[i].FmtValue.longValue && va[i].FmtValue.CStatus == PDH_CSTATUS_VALID_DATA) {
@@ -195,14 +195,14 @@ void CEventProc(LPVOID param)
 	//		gpusubs[type][physID] += va[i].FmtValue.longValue;
 	//	}
 	//}
-	for (auto it = gpusubs.begin(); it != gpusubs.end(); it++) {
-		// per-adapter
-		for (auto sub = it->second.begin(); sub != it->second.end(); sub++) {
-			sData->GPU = min(max(sData->GPU, sub->second), 100);
-			//DebugPrint("Adapter " + to_string(sub->first) + ", system " + it->first + ": " + to_string(sub->second) + "\n");
-			//sub->second = 0;
-		}
-	}
+	//for (auto it = gpusubs.begin(); it != gpusubs.end(); it++) {
+	//	// per-adapter
+	//	for (auto sub = it->second.begin(); sub != it->second.end(); sub++) {
+	//		sData->GPU = min(max(sData->GPU, sub->second), 100);
+	//		//DebugPrint("Adapter " + to_string(sub->first) + ", system " + it->first + ": " + to_string(sub->second) + "\n");
+	//		//sub->second = 0;
+	//	}
+	//}
 	// Temperatures
 	//sData->Temp = src->GetValuesArray(src->hTempCounter, 273);
 	// RAM load
