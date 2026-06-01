@@ -41,7 +41,7 @@ namespace AlienFan_SDK {
 	class Control {
 	private:
 		byte sysType;
-		void EnumSensors(IWbemServices* srv, const wchar_t* sname, /*const LPCWSTR instansePath,*/ const LPCWSTR valuePath, string name, byte type);
+		void EnumSensors(IWbemServices* srv, const wchar_t* sname, const LPCWSTR valuePath, string name, byte type);
 		int OperateFan(int function, int fanID);
 	public:
 		VARIANT m_instancePath{};
