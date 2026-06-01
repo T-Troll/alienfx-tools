@@ -41,6 +41,9 @@ namespace AlienFan_SDK {
 	class Control {
 	private:
 		byte sysType;
+		IWbemRefresher* m_Refresher;
+		IWbemHiPerfEnum* m_esifInst, * m_ssdInsts, * m_ohmInsts;
+		IWbemConfigureRefresher* m_pConfig = NULL;
 		void EnumSensors(IWbemServices* srv, const wchar_t* sname, const LPCWSTR valuePath, string name, byte type);
 		int OperateFan(int function, int fanID);
 	public:

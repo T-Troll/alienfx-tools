@@ -241,6 +241,7 @@ BOOL CALLBACK TabEventsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 #define maxData fxhl->maxData
 		string usage = to_string(eData.CPU) + " (" + to_string(maxData.CPU) + ")%\n" +
 			to_string(eData.RAM) + " (" + to_string(maxData.RAM) + ")%\n" +
+			to_string(eData.HDD) + " (" + to_string(maxData.HDD) + ")%\n" +
 			to_string(eData.GPU) + " (" + to_string(maxData.GPU) + ")%\n" +
 			to_string(eData.Temp) + " (" + to_string(maxData.Temp) + ")C\n" +
 			to_string(eData.Batt) + " %\n" +
