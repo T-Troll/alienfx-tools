@@ -2,7 +2,8 @@
 
 #include <string>
 #include <vector>
-#include <wbemidl.h>
+//#include <wbemidl.h>
+#include <wbemcli.h>
 #include <wtypes.h>
 
 using namespace std;

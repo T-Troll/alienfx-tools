@@ -3,7 +3,9 @@
 //#include <PdhMsg.h>
 
 //#pragma comment(lib, "pdh.lib")
+#ifdef FANV1
 #pragma comment(lib, "wbemuuid.lib")
+#endif
 
 #ifdef _DEBUG
 #define DebugPrint(_x_) OutputDebugString(string(_x_).c_str());
@@ -21,23 +23,6 @@ static MEMORYSTATUSEX memStat{ sizeof(MEMORYSTATUSEX) };
 static HKL locIDs[10], curLocale;
 
 void CEventProc(LPVOID);
-
-//vector<IWbemClassObject*> GetAllInstances(IWbemServices* srv, const wchar_t* s_name) {
-//	vector<IWbemClassObject*> result;
-//	IEnumWbemClassObject* enum_obj;
-//	if (srv && SUCCEEDED(srv->CreateInstanceEnum((BSTR)s_name, WBEM_FLAG_SHALLOW | WBEM_FLAG_FORWARD_ONLY | WBEM_FLAG_DIRECT_READ, NULL, &enum_obj))) {
-//		IWbemClassObject* spInstance[64];
-//		ULONG uNumOfInstances;
-//		HRESULT res = WBEM_S_NO_ERROR;
-//		while (res == WBEM_S_NO_ERROR && SUCCEEDED(res = enum_obj->Next(3000, 64, spInstance, &uNumOfInstances)) && uNumOfInstances) {
-//			for (byte ind = 0; ind < uNumOfInstances; ind++) {
-//				result.push_back(spInstance[ind]);
-//			}
-//		}
-//		enum_obj->Release();
-//	}
-//	return result;
-//}
 
 vector<IWbemObjectAccess*> GetAllInstances(IWbemHiPerfEnum* insts) {
 	vector<IWbemObjectAccess*> spInstance;
