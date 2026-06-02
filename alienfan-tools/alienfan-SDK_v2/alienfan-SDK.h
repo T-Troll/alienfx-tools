@@ -41,20 +41,20 @@ namespace AlienFan_SDK {
 	class Control {
 	private:
 		byte sysType;
-		IWbemHiPerfEnum* m_esifInst, * m_ssdInsts, * m_ohmInsts;
+		//IWbemHiPerfEnum* m_esifInst, * m_ssdInsts, * m_ohmInsts;
 		IWbemConfigureRefresher* m_pConfig = NULL;
 		void EnumSensors(IWbemServices* srv, const wchar_t* sname, const LPCWSTR valuePath, string name, byte type);
 		int OperateFan(int function, int fanID);
 	public:
 		VARIANT m_instancePath{};
 		IWbemServices* m_WbemServices = NULL, * m_OHMService = NULL, * m_DiskService = NULL;
-		IWbemClassObject* m_InParamaters = NULL;
+		IWbemClassObject* m_AWCCGetObj = NULL, *m_InParamaters = NULL;
 		IWbemRefresher* m_Refresher;
-		bool isAlienware = false,
-			isSupported = false,
-			isTcc = false,
-			isXMP = false,
-			isGmode = false;
+		bool isAlienware = false, // Alienware control found into WMI
+			isSupported = false, // ..And has correct interface (one of)
+			isTcc = false, // TCCOffset method found and working
+			isXMP = false, // XMP Control method found and working
+			isGmode = false; // G-mode method found
 		byte maxTCC, maxOffset;
 		DWORD systemID;
 		Control();
@@ -62,6 +62,7 @@ namespace AlienFan_SDK {
 
 		// Probe hardware, sensors, fans, power modes and fill structures.
 		// Result: true - compatible hardware found, false - not found.
+		// Flags will be filled as well
 		bool Probe(bool diskSensors);
 
 		// Get RPM for the fan index fanID at fans[]
@@ -128,8 +129,6 @@ namespace AlienFan_SDK {
 		vector<ALIENFAN_SEN_INFO> sensors;
 		vector<ALIENFAN_FAN_INFO> fans;
 		vector<byte> powers;
-
-		IWbemClassObject* m_AWCCGetObj = NULL;
 	};
 
 	//class Lights {

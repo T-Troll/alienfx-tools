@@ -65,6 +65,7 @@
     <CharacterSet>NotSet</CharacterSet>
     <Driver_SpectreMitigation>false</Driver_SpectreMitigation>
     <PlatformToolset>WindowsApplicationForDrivers10.0</PlatformToolset>
+    <VCToolsVersion>14.50.35717</VCToolsVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">

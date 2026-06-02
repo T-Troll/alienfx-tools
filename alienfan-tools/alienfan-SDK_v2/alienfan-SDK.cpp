@@ -77,7 +77,6 @@ namespace AlienFan_SDK {
 		long plID;
 		IWbemHiPerfEnum* insts;
 		m_pConfig->AddEnum(srv, (BSTR)s_name, 0, NULL, &insts, &plID);
-		//sensorInsts.push_back(insts);
 		vector<IWbemObjectAccess*> spInstance;
 		ULONG uNumOfInstances;
 		m_Refresher->Refresh(0);
@@ -113,46 +112,9 @@ namespace AlienFan_SDK {
 
 			}
 		}
-
-		//IEnumWbemClassObject* enum_obj;
-		//if (srv && SUCCEEDED(srv->CreateInstanceEnum((BSTR)s_name, WBEM_FLAG_SHALLOW | WBEM_FLAG_FORWARD_ONLY, NULL, &enum_obj))) {
-		//	IWbemClassObject* spInstance[32];
-		//	ULONG uNumOfInstances;
-		//	VARIANT cTemp{ VT_I4 }, instPath{ VT_BSTR }, vtype{ VT_BSTR }, vname{ 0 };
-		//	byte senID = 0;
-
-		//	HRESULT res = WBEM_S_NO_ERROR;
-		//	while (res == WBEM_S_NO_ERROR && SUCCEEDED(res = enum_obj->Next(3000, 32, spInstance, &uNumOfInstances)) && uNumOfInstances) {
-		//		for (byte ind = 0; ind < uNumOfInstances; ind++) {
-		//			string lname;
-		//			if (type == 4) { // OHM sensors
-		//				spInstance[ind]->Get(L"SensorType", 0, &vtype, 0, 0);
-		//				if (!wcscmp(vtype.bstrVal, L"Temperature")) {
-		//					spInstance[ind]->Get(L"Name", 0, &vname, 0, 0);
-		//					for (int i = 0; i < wcslen(vname.bstrVal); i++)
-		//						lname += vname.bstrVal[i];
-		//				}
-		//				else {
-		//					spInstance[ind]->Release();
-		//					continue;
-		//				}
-		//			}
-		//			else {
-		//				lname = name + " sensor " + to_string(senID);
-		//			}
-
-		//			spInstance[ind]->Get(valuePath, 0, &cTemp, 0, 0);
-		//			if (type == 2 || cTemp.intVal > 0 || cTemp.fltVal > 0)
-		//				sensors.push_back({ { senID++,type }, lname, spInstance[ind], (BSTR)valuePath });
-		//			else
-		//				spInstance[ind]->Release();
-		//		}
-		//	}
-		//	enum_obj->Release();
 #ifdef _TRACE_
-			printf("%d sensors of #%d added, %d total\n", uNumOfInstances, type, (int)sensors.size());
+		printf("%d sensors of #%d added, %d total\n", uNumOfInstances, type, (int)sensors.size());
 #endif
-		//}
 	}
 
 	bool Control::Probe(bool diskSensors) {

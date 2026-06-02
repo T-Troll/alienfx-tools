@@ -205,6 +205,9 @@ void SenMonHelper::UpdateSensors()
 
 	if (conf->bSensors) { // group 2
 		// BIOS/WMI temperatures
+#ifndef FANV1
+		acpi->m_Refresher->Refresh(0);
+#endif
 		for (WORD i = 0; i < acpi->sensors.size(); i++) { // BIOS temps, code 0
 			if (sen = UpdateSensor({ acpi->sensors[i].sid, 0, 2 }, acpi->GetTempValue(i)))
 				sen->sname = conf->fan_conf.GetSensorName(&acpi->sensors[i]);

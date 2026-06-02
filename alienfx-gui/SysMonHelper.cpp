@@ -3,6 +3,7 @@
 //#include <PdhMsg.h>
 
 //#pragma comment(lib, "pdh.lib")
+#pragma comment(lib, "wbemuuid.lib")
 
 #ifdef _DEBUG
 #define DebugPrint(_x_) OutputDebugString(string(_x_).c_str());
@@ -41,10 +42,12 @@ void CEventProc(LPVOID);
 vector<IWbemObjectAccess*> GetAllInstances(IWbemHiPerfEnum* insts) {
 	vector<IWbemObjectAccess*> spInstance;
 	ULONG uNumOfInstances;
-	insts->GetObjects(0, 0, spInstance.data(), &uNumOfInstances);
-	if (uNumOfInstances) {
-		spInstance.resize(uNumOfInstances);
-		insts->GetObjects(0, uNumOfInstances, spInstance.data(), &uNumOfInstances);
+	if (insts) {
+		insts->GetObjects(0, 0, spInstance.data(), &uNumOfInstances);
+		if (uNumOfInstances) {
+			spInstance.resize(uNumOfInstances);
+			insts->GetObjects(0, uNumOfInstances, spInstance.data(), &uNumOfInstances);
+		}
 	}
 	return spInstance;
 }
@@ -52,27 +55,24 @@ vector<IWbemObjectAccess*> GetAllInstances(IWbemHiPerfEnum* insts) {
 SysMonHelper::SysMonHelper() {
 	DebugPrint("Starting Event thread\n");
 	IWbemLocator* m_WbemLocator;
+	IWbemHiPerfEnum* netInsts = NULL, * esifInsts = NULL;
+	long plID;
 	CoInitializeEx(nullptr, COINIT::COINIT_MULTITHREADED);
 	CoInitializeSecurity(nullptr, -1, nullptr, nullptr,
-		RPC_C_AUTHN_LEVEL_NONE, //RPC_C_AUTHN_LEVEL_CONNECT,
+		RPC_C_AUTHN_LEVEL_NONE,
 		RPC_C_IMP_LEVEL_IMPERSONATE,
 		nullptr, EOAC_NONE, nullptr);
+
 	CoCreateInstance(CLSID_WbemLocator, nullptr, CLSCTX_INPROC_SERVER, IID_IWbemLocator, (void**)&m_WbemLocator);
 	m_WbemLocator->ConnectServer((BSTR)L"ROOT\\WMI", nullptr, nullptr, nullptr, WBEM_FLAG_CONNECT_USE_MAX_WAIT, nullptr, nullptr, &m_WmiService);
 	m_WbemLocator->ConnectServer((BSTR)L"ROOT\\CIMV2", nullptr, nullptr, nullptr, WBEM_FLAG_CONNECT_USE_MAX_WAIT, nullptr, nullptr, &m_CimService);
 	m_WbemLocator->Release();
-	CoCreateInstance(
-		CLSID_WbemRefresher,
-		NULL,
-		CLSCTX_INPROC_SERVER,
-		IID_IWbemRefresher,
-		(void**)&refresher
-	);
-	long plID;
+
+	CoCreateInstance(CLSID_WbemRefresher, NULL, CLSCTX_INPROC_SERVER, IID_IWbemRefresher, (void**)&refresher);
 	refresher->QueryInterface(IID_IWbemConfigureRefresher, (void**)&pConfig);
+
 	pConfig->AddObjectByPath(m_CimService, (BSTR)L"Win32_PerfFormattedData_PerfOS_Processor.Name=\"_Total\"", 0, NULL, &cpuPath, &plID);
 	pConfig->AddObjectByPath(m_CimService, (BSTR)L"Win32_PerfFormattedData_PerfDisk_PhysicalDisk.Name=\"_Total\"", 0, NULL, &diskPath, &plID);
-	IWbemHiPerfEnum* netInsts, * esifInsts;
 	pConfig->AddEnum(m_CimService, (BSTR)L"Win32_PerfFormattedData_Tcpip_NetworkInterface", 0, NULL, &netInsts, &plID);
 	pConfig->AddEnum(m_CimService, (BSTR)L"Win32_PerfFormattedData_GPUPerformanceCounters_GPUEngine", 0, NULL, &gpuInsts, &plID);
 	pConfig->AddEnum(m_WmiService, (BSTR)L"EsifDeviceInformation", 0, NULL, &esifInsts, &plID);

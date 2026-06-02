@@ -2,6 +2,7 @@
 //#include <pdh.h>
 #include "ThreadHelper.h"
 #include "FXHelper.h"
+#include <wbemidl.h>
 
 class SysMonHelper {
 private:

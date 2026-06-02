@@ -187,19 +187,14 @@ namespace AlienFan_SDK {
 		if (activated) {
 			PACPI_EVAL_OUTPUT_BUFFER resName = NULL;
 			PACPI_EVAL_INPUT_BUFFER_COMPLEX_EX acpiargs;
-			//sensors.clear();
-			//fans.clear();
-			//powers.clear();
 #ifdef _TRACE_
 			printf("Probing devices... ");
 #endif
 			// Check device type...
-			for (int i = 0; i < NUM_DEVICES; i++) {
-				aDev = i;
+			for (aDev = 0; aDev < NUM_DEVICES; aDev++) {
 				// Probe...
-				if ((RunMainCommand(devs[aDev].probe)) > 0) {
+				if (isAlienware = (RunMainCommand(devs[aDev].probe) > 0)) {
 					// Alienware device detected!
-					isAlienware = isSupported = true;
 
 					//if (devs[aDev].commandControlled) {
 
@@ -219,6 +214,7 @@ namespace AlienFan_SDK {
 							fans.push_back({ (byte)(funcID & 0xff), 0xff });
 							fIndex++;
 						}
+						isSupported = !fans.empty();
 #ifdef _TRACE_
 						printf("%d fans detected, last reply %d\n", fIndex, funcID);
 #endif
