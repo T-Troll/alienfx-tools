@@ -4,7 +4,7 @@
 #include "ConfigHandler.h"
 
 struct LightEventData {
-	byte CPU = 0, RAM = 0, HDD = 0, GPU = 0, Temp = 0, Batt = 0, KBD = 0, NET = 0, PWR = 1, ACP = 255, BST = 255,
+	short CPU = 0, RAM = 0, HDD = 0, GPU = 0, Temp = 0, Batt = 0, KBD = 0, NET = 0, PWR = 1, ACP = 255, BST = 255,
 		PWM = 0, Fan = 0;
 };
 

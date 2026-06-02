@@ -17,8 +17,7 @@ extern ConfigHandler* conf;
 static SYSTEM_POWER_STATUS state;
 //static PDH_FMT_COUNTERVALUE cCPUVal, cHDDVal;
 static MEMORYSTATUSEX memStat{ sizeof(MEMORYSTATUSEX) };
-static HKL locIDs[10];
-static HKL curLocale;
+static HKL locIDs[10], curLocale;
 
 void CEventProc(LPVOID);
 
@@ -40,37 +39,15 @@ void CEventProc(LPVOID);
 //}
 
 vector<IWbemObjectAccess*> GetAllInstances(IWbemHiPerfEnum* insts) {
-	//vector<IWbemClassObject*> result;
 	vector<IWbemObjectAccess*> spInstance;
 	ULONG uNumOfInstances;
 	insts->GetObjects(0, 0, spInstance.data(), &uNumOfInstances);
 	if (uNumOfInstances) {
 		spInstance.resize(uNumOfInstances);
-		if (SUCCEEDED(insts->GetObjects(0, uNumOfInstances, spInstance.data(), &uNumOfInstances)) && uNumOfInstances) {
-			return spInstance;
-			//for (byte ind = 0; ind < uNumOfInstances; ind++) {
-			//	result.push_back(spInstance[ind]);
-			//}
-		}
+		insts->GetObjects(0, uNumOfInstances, spInstance.data(), &uNumOfInstances);
 	}
 	return spInstance;
 }
-
-//IWbemClassObject* FindTotalPath(IWbemServices* srv, const wchar_t* s_name) {
-//	IWbemClassObject* finalPath = NULL;
-//	VARIANT name{ VT_BSTR };
-//	auto inst = GetAllInstances(srv, s_name);
-//	for (auto& i : inst) {
-//		if (SUCCEEDED(i->Get((BSTR)L"Name", 0, &name, 0, 0)) && name.bstrVal) {
-//			if (name.bstrVal[0] == L'_') {
-//				finalPath = i;
-//			}
-//			else
-//				i->Release();
-//		}
-//	}
-//	return finalPath;
-//}
 
 SysMonHelper::SysMonHelper() {
 	DebugPrint("Starting Event thread\n");
@@ -82,14 +59,9 @@ SysMonHelper::SysMonHelper() {
 		nullptr, EOAC_NONE, nullptr);
 	CoCreateInstance(CLSID_WbemLocator, nullptr, CLSCTX_INPROC_SERVER, IID_IWbemLocator, (void**)&m_WbemLocator);
 	m_WbemLocator->ConnectServer((BSTR)L"ROOT\\WMI", nullptr, nullptr, nullptr, WBEM_FLAG_CONNECT_USE_MAX_WAIT, nullptr, nullptr, &m_WmiService);
-	//esifSensors = GetAllInstances(m_WmiService, (BSTR)L"EsifDeviceInformation");
 	m_WbemLocator->ConnectServer((BSTR)L"ROOT\\CIMV2", nullptr, nullptr, nullptr, WBEM_FLAG_CONNECT_USE_MAX_WAIT, nullptr, nullptr, &m_CimService);
-	//cpuPath = FindTotalPath(m_CimService, (BSTR)L"Win32_PerfFormattedData_PerfOS_Processor");
-	//diskPath = FindTotalPath(m_CimService, (BSTR)L"Win32_PerfFormattedData_PerfDisk_PhysicalDisk");
-	//netInst = GetAllInstances(m_CimService, (BSTR)L"Win32_PerfFormattedData_Tcpip_NetworkAdapter");
 	m_WbemLocator->Release();
-	//IWbemRefresher* refresher;
-	HRESULT hr = CoCreateInstance(
+	CoCreateInstance(
 		CLSID_WbemRefresher,
 		NULL,
 		CLSCTX_INPROC_SERVER,
@@ -97,10 +69,10 @@ SysMonHelper::SysMonHelper() {
 		(void**)&refresher
 	);
 	long plID;
-	IWbemConfigureRefresher* pConfig = NULL;
 	refresher->QueryInterface(IID_IWbemConfigureRefresher, (void**)&pConfig);
 	pConfig->AddObjectByPath(m_CimService, (BSTR)L"Win32_PerfFormattedData_PerfOS_Processor.Name=\"_Total\"", 0, NULL, &cpuPath, &plID);
 	pConfig->AddObjectByPath(m_CimService, (BSTR)L"Win32_PerfFormattedData_PerfDisk_PhysicalDisk.Name=\"_Total\"", 0, NULL, &diskPath, &plID);
+	IWbemHiPerfEnum* netInsts, * esifInsts;
 	pConfig->AddEnum(m_CimService, (BSTR)L"Win32_PerfFormattedData_Tcpip_NetworkInterface", 0, NULL, &netInsts, &plID);
 	pConfig->AddEnum(m_CimService, (BSTR)L"Win32_PerfFormattedData_GPUPerformanceCounters_GPUEngine", 0, NULL, &gpuInsts, &plID);
 	pConfig->AddEnum(m_WmiService, (BSTR)L"EsifDeviceInformation", 0, NULL, &esifInsts, &plID);
@@ -122,7 +94,7 @@ SysMonHelper::SysMonHelper() {
 
 	//	PdhCollectQueryData(hQuery);
 		// start thread...
-		eventProc = new ThreadHelper(CEventProc, this, 200);
+		eventProc = new ThreadHelper(CEventProc, this, 300);
 		DebugPrint("Event thread start.\n");
 	//}
 }
@@ -135,10 +107,14 @@ SysMonHelper::~SysMonHelper() {
 		DebugPrint("Event thread stop.\n");
 	//	PdhCloseQuery(hQuery);
 	}
-	for (auto& i : esifSensors)
-		i->Release();
-	for (auto& i : netInst)
-		i->Release();
+	if (refresher) {
+		pConfig->Release();
+		refresher->Release();
+	}
+	//for (auto& i : esifSensors)
+	//	i->Release();
+	//for (auto& i : netInst)
+	//	i->Release();
 	if (m_WmiService)
 		m_WmiService->Release();
 	if (m_CimService)
@@ -262,7 +238,7 @@ void CEventProc(LPVOID param)
 		GetKeyboardLayoutList(10, locIDs);
 		sData->KBD = curLocale == locIDs[0] ? 0 : 100;
 	}
-
+	// Fan control
 	if (mon) {
 		mon->GetSensorData();
 		// Check fan RPMs
@@ -291,7 +267,8 @@ void CEventProc(LPVOID param)
 		//}
 		// Powers
 		//sData->PWR = src->GetValuesArray(src->hPwrCounter, 0, 10);
-		maxData.PWR = max(cPwr * 10 / maxData.PWR, maxData.PWR);
+		maxData.PWR = max(cPwr / 10, maxData.PWR);
+		sData->PWR = cPwr * 10 / maxData.PWR;
 		sData->PWR = cPwr * 10 / maxData.PWR;
 		//maxData.PWR = max(sData->PWR, maxData.PWR);
 		//sData->PWR = sData->PWR * 100 / maxData.PWR;

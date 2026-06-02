@@ -294,7 +294,7 @@ namespace AlienFan_SDK {
 			}
 			else {
 				// ESIF, SSD, OHM
-				m_Refresher->Refresh(0);
+				//m_Refresher->Refresh(0);
 				VARIANT temp;
 				sensors[TempID].instance->Get(sensors[TempID].valueName, 0, &temp, 0, 0);
 				return sensors[TempID].type == 4 ? (int)temp.fltVal : temp.intVal;

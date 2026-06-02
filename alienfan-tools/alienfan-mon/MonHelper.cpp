@@ -159,6 +159,7 @@ WORD MonHelper::GetSensorData(bool forced) {
 	// update values:
 	if (forced || !monThread) {
 		// temps..
+		acpi->m_Refresher->Refresh(0);
 		modified = false;
 		for (int i = 0; i < sensorSize; i++) {
 			int temp = acpi->GetTempValue(i);

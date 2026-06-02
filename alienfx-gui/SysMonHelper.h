@@ -14,18 +14,18 @@ private:
 	//	COUNTER_PATH_PWR = "\\EsifDeviceInformation(*)\\RAPL Power", // EsifDeviceInformation Power
 	//	COUNTER_PATH_HDD = "\\PhysicalDisk(_Total)\\% Idle Time"; // Win32_PerfFormattedData_PerfDisk_PhysicalDisk name: _Total PercentDiskTime
 	ThreadHelper* eventProc = NULL;
-	IWbemServices* m_WmiService = NULL, * m_CimService = NULL;
-	IWbemHiPerfEnum* netInsts, * esifInsts;
+	IWbemServices* m_WmiService = NULL, *m_CimService = NULL;
+	IWbemConfigureRefresher* pConfig = NULL;
 public:
 
 //	HQUERY hQuery;
 //	HCOUNTER hCPUCounter, hHDDCounter, hNETCounter, hNETMAXCounter, hGPUCounter, hTempCounter, hTempCounter2, hPwrCounter;
 //	unsigned char* counterValues{ new unsigned char[1] };
 	LightEventData sData;
-	IWbemRefresher* refresher;
+	IWbemRefresher* refresher = NULL;
 	IWbemHiPerfEnum* gpuInsts;
 	vector<IWbemObjectAccess*> esifSensors, netInst;
-	IWbemClassObject* cpuPath, * diskPath;
+	IWbemClassObject* cpuPath, *diskPath;
 
 	SysMonHelper();
 	~SysMonHelper();
