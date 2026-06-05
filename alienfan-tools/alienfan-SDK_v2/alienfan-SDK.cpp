@@ -5,7 +5,7 @@
 
 #pragma comment(lib, "wbemuuid.lib")
 
-//#define _TRACE_
+#define _TRACE_
 
 namespace AlienFan_SDK {
 
@@ -75,46 +75,48 @@ namespace AlienFan_SDK {
 
 	void Control::EnumSensors(IWbemServices* srv, const wchar_t* s_name, const LPCWSTR valuePath, string name, byte type) {
 		long plID;
-		IWbemHiPerfEnum* insts;
+		IWbemHiPerfEnum* insts = NULL;
 		m_pConfig->AddEnum(srv, (BSTR)s_name, 0, NULL, &insts, &plID);
-		vector<IWbemObjectAccess*> spInstance;
-		ULONG uNumOfInstances;
-		m_Refresher->Refresh(0);
-		insts->GetObjects(0, 0, spInstance.data(), &uNumOfInstances);
-		if (uNumOfInstances) {
-			spInstance.resize(uNumOfInstances);
-			if (SUCCEEDED(insts->GetObjects(0, uNumOfInstances, spInstance.data(), &uNumOfInstances)) && uNumOfInstances) {
-				VARIANT cTemp{ VT_I4 }, instPath{ VT_BSTR }, vtype{ VT_BSTR }, vname{ 0 };
-				byte senID = 0;
-				for (auto& i : spInstance) {
-					string lname;
-					if (type == 4) { // OHM sensors
-						i->Get(L"SensorType", 0, &vtype, 0, 0);
-						if (!wcscmp(vtype.bstrVal, L"Temperature")) {
-							i->Get(L"Name", 0, &vname, 0, 0);
-							for (int i = 0; i < wcslen(vname.bstrVal); i++)
-								lname += vname.bstrVal[i];
+		if (insts) {
+			vector<IWbemObjectAccess*> spInstance;
+			ULONG uNumOfInstances;
+			m_Refresher->Refresh(0);
+			insts->GetObjects(0, 0, spInstance.data(), &uNumOfInstances);
+			if (uNumOfInstances) {
+				spInstance.resize(uNumOfInstances);
+				if (SUCCEEDED(insts->GetObjects(0, uNumOfInstances, spInstance.data(), &uNumOfInstances)) && uNumOfInstances) {
+					VARIANT cTemp{ VT_I4 }, instPath{ VT_BSTR }, vtype{ VT_BSTR }, vname{ 0 };
+					byte senID = 0;
+					for (auto& i : spInstance) {
+						string lname;
+						if (type == 4) { // OHM sensors
+							i->Get(L"SensorType", 0, &vtype, 0, 0);
+							if (!wcscmp(vtype.bstrVal, L"Temperature")) {
+								i->Get(L"Name", 0, &vname, 0, 0);
+								for (int i = 0; i < wcslen(vname.bstrVal); i++)
+									lname += vname.bstrVal[i];
+							}
+							else {
+								i->Release();
+								continue;
+							}
 						}
 						else {
-							i->Release();
-							continue;
+							lname = name + " sensor " + to_string(senID);
 						}
+						i->Get(valuePath, 0, &cTemp, 0, 0);
+						if (type == 2 || cTemp.intVal > 0 || cTemp.fltVal > 0)
+							sensors.push_back({ { senID++,type }, lname, i, (BSTR)valuePath });
+						else
+							i->Release();
 					}
-					else {
-						lname = name + " sensor " + to_string(senID);
-					}
-					i->Get(valuePath, 0, &cTemp, 0, 0);
-					if (type == 2 || cTemp.intVal > 0 || cTemp.fltVal > 0)
-						sensors.push_back({ { senID++,type }, lname, i, (BSTR)valuePath });
-					else
-						i->Release();
-				}
 
+				}
 			}
-		}
 #ifdef _TRACE_
-		printf("%d sensors of #%d added, %d total\n", uNumOfInstances, type, (int)sensors.size());
+			printf("%d sensors of #%d added, %d total\n", uNumOfInstances, type, (int)sensors.size());
 #endif
+		}
 	}
 
 	bool Control::Probe(bool diskSensors) {

@@ -27,7 +27,7 @@ public:
 	IWbemRefresher* refresher = NULL;
 	IWbemHiPerfEnum* gpuInsts;
 	vector<IWbemObjectAccess*> esifSensors, netInst;
-	IWbemClassObject* cpuPath, *diskPath;
+	IWbemClassObject* cpuPath = NULL, *diskPath = NULL;
 
 	SysMonHelper();
 	~SysMonHelper();
