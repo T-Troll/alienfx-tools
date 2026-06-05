@@ -5,7 +5,7 @@
 
 #pragma comment(lib, "wbemuuid.lib")
 
-#define _TRACE_
+//#define _TRACE_
 
 namespace AlienFan_SDK {
 
