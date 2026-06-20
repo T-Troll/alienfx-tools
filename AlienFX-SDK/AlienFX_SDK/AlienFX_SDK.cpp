@@ -22,8 +22,7 @@ extern "C" {
 namespace AlienFX_SDK {
 
 	vector<Afx_icommand> *Functions::SetMaskAndColor(vector<Afx_icommand>* mods, Afx_lightblock* act, bool needInverse, DWORD index) {
-		Afx_colorcode c;
-		c.ci = index ? index : needInverse ? ~((1 << act->index)) : 1 << act->index;
+		Afx_colorcode c = index ? index : needInverse ? ~((1 << act->index)) : 1 << act->index;
 		if (version < API_V4) {
 			// index mask generation
 			*mods = { {1, { v1OpCodes[act->act.front().type], chain, c.r, c.g, c.b } } };
@@ -1038,7 +1037,7 @@ namespace AlienFX_SDK {
 				continue;
 			}
 			if (sscanf_s(kName, "DevWhite#%hd_%hd", &vid, &pid) == 2) {
-				AddDeviceById(MAKELPARAM(pid, vid))->white.ci = ((DWORD*)name)[0];
+				AddDeviceById(MAKELPARAM(pid, vid))->white = ((DWORD*)name)[0];
 				continue;
 			}
 			if (sscanf_s(kName, "DevBright#%hd_%hd", &vid, &pid) == 2) {
@@ -1096,7 +1095,7 @@ namespace AlienFX_SDK {
 			if (i->name.length())
 				RegSetValueEx(hKeybase, name.c_str(), 0, REG_SZ, (BYTE *) i->name.c_str(), (DWORD) i->name.length() );
 			name = "DevWhite#" + devID;
-			RegSetValueEx(hKeybase, name.c_str(), 0, REG_DWORD, (BYTE *) &i->white.ci, sizeof(DWORD));
+			RegSetValueEx(hKeybase, name.c_str(), 0, REG_DWORD, (BYTE *) &i->white.cf, sizeof(DWORD));
 			name = "DevBright#" + devID; DWORD br = i->brightness;
 			RegSetValueEx(hKeybase, name.c_str(), 0, REG_DWORD, (BYTE*)&br, sizeof(DWORD));
 			for (auto cl = i->lights.begin(); cl < i->lights.end(); cl++) {

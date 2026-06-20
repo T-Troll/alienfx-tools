@@ -5,6 +5,7 @@
 extern bool SetColor(HWND ctrl, AlienFX_SDK::Afx_action* map, bool update = true);
 extern AlienFX_SDK::Afx_colorcode Act2Code(AlienFX_SDK::Afx_action*);
 extern DWORD MakeRGB(AlienFX_SDK::Afx_action* act);
+extern void Code2Act(AlienFX_SDK::Afx_colorcode c, AlienFX_SDK::Afx_action* fill);
 extern void RedrawButton(HWND ctrl, DWORD);
 extern void UpdateZoneList();
 extern void UpdateZoneAndGrid();
@@ -59,7 +60,7 @@ void RebuildEffectList(HWND hDlg) {
 		for (int i = 0; i < activeMapping->color.size(); i++) {
 			LVITEMA lItem{ LVIF_TEXT | LVIF_IMAGE | LVIF_STATE, i };
 			picData = new COLORREF[GetSystemMetrics(SM_CXSMICON) * GetSystemMetrics(SM_CYSMICON)];
-			fill_n(picData, GetSystemMetrics(SM_CXSMICON) * GetSystemMetrics(SM_CYSMICON), Act2Code(&activeMapping->color[i]).ci);
+			fill_n(picData, GetSystemMetrics(SM_CXSMICON) * GetSystemMetrics(SM_CYSMICON), Act2Code(&activeMapping->color[i]).cf);
 			colorBox = CreateBitmap(GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), 1, 32, picData);
 			delete[] picData;
 			ImageList_Add(hSmall, colorBox, NULL);
@@ -150,6 +151,10 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 				activeMapping->color[effID].type = IsDlgButtonChecked(hDlg, IDC_ACCENT) == BST_CHECKED ?
 					activeMapping->color[effID].type | 0x10 :
 					activeMapping->color[effID].type & 0xf;
+				//if (activeMapping->color[effID].type & 0xf0) {
+				//	fxhl->ChangeAccent(&activeMapping->color[effID]);
+				//	activeMapping->color[effID].type | 0x10;
+				//}
 				SetEffectData(hDlg);
 				fxhl->RefreshZone(activeMapping);
 			}

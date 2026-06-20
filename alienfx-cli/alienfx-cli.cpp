@@ -72,7 +72,7 @@ void Update() {
 }
 
 unsigned int Act2UINT(AlienFX_SDK::Afx_action* act) {
-	return AlienFX_SDK::Afx_colorcode({ act->b,act->g,act->r, 255 }).ci;
+	return AlienFX_SDK::Afx_colorcode({ act->b,act->g,act->r, 255 }).cf;
 }
 
 LFX_COLOR Act2Lfx(AlienFX_SDK::Afx_action* act) {
@@ -104,7 +104,7 @@ vector<AlienFX_SDK::Afx_action> ParseActions(vector<ARG>* args, int startPos) {
 
 int main(int argc, char* argv[])
 {
-	printf("alienfx-cli v9.6.0\n");
+	printf("alienfx-cli v9.6.1\n");
 	if (argc < 2)
 	{
 		printUsage();

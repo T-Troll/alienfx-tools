@@ -8,7 +8,8 @@
 #include "MonHelper.h"
 #include "SysMonHelper.h"
 
-extern AlienFX_SDK::Afx_action Code2Act(AlienFX_SDK::Afx_colorcode c);
+//extern AlienFX_SDK::Afx_action Code2Act(AlienFX_SDK::Afx_colorcode c);
+extern void Code2Act(AlienFX_SDK::Afx_colorcode c, AlienFX_SDK::Afx_action* fill);
 
 extern EventHandler* eve;
 extern HANDLE haveLightFX;
@@ -28,7 +29,20 @@ FXHelper::~FXHelper() {
 	CloseHandle(haveLightFX);
 };
 
+void FXHelper::ChangeAccent(AlienFX_SDK::Afx_action* action) {
+	// Check and change if Accent
+	if (action->type & 0xf0) {
+		action->type &= 0xf;
+		AlienFX_SDK::Afx_colorcode c = conf->accentColor;
+		swap(c.b, c.r);
+		Code2Act(c, action);
+	}
+}
+
 AlienFX_SDK::Afx_action FXHelper::BlendPower(double power, AlienFX_SDK::Afx_action* from, AlienFX_SDK::Afx_action* to) {
+	// NOT SAFE, need check!
+	ChangeAccent(from);
+	ChangeAccent(to);
 	return { 0,0,0,
 		(byte)((1.0 - power) * from->r + power * to->r),
 		(byte)((1.0 - power) * from->g + power * to->g),
@@ -103,7 +117,9 @@ void FXHelper::TestLight(AlienFX_SDK::Afx_device* dev, int id, bool force, bool 
 	DebugPrint("Testing light #" + to_string(id));
 	if (dev && dev->present) {
 		DebugPrint(", have device");
-		AlienFX_SDK::Afx_action c = { wp ? Code2Act(dev->white) : AlienFX_SDK::Afx_action({0})};
+		AlienFX_SDK::Afx_action c{ 0 };
+		if (wp)
+			Code2Act(dev->white, &c);
 
 		if (force && dev->lights.size()) {
 			vector<byte> opLights;
@@ -123,7 +139,8 @@ void FXHelper::TestLight(AlienFX_SDK::Afx_device* dev, int id, bool force, bool 
 			}
 			if (id >= 0) {
 				DebugPrint(", set");
-				dev->dev->SetColor(id, Code2Act(conf->testColor));
+				Code2Act(conf->testColor, &c);
+				dev->dev->SetColor(id, c);
 				oldtest = id;
 			}
 			dev->dev->UpdateColors();
@@ -184,11 +201,12 @@ void FXHelper::QueryCommand(WORD pid, LightQueryElement &lqe) {
 		}
 
 		if (WaitForSingleObject(haveLightFX, 0) == WAIT_TIMEOUT) {
-			modifyQuery.lockWrite();
 			if (wasLFX) {
 				wasLFX = false;
-				devQuery->lightQuery.push({ 0, 2 });
+				QueryAllDevs(LightQueryElement({ 0, 5 }));
+				QueryAllDevs(LightQueryElement({ 0, 2 }));
 			}
+			modifyQuery.lockWrite();
 			devQuery->lightQuery.push(lqe);
 			modifyQuery.unlockWrite();
 			SetEvent(devQuery->haveNewElement);
@@ -207,7 +225,7 @@ void FXHelper::ClearAndRefresh(bool force) {
 
 void FXHelper::QueryAllDevs(LightQueryElement& lqe) {
 	for (auto& devQ : conf->afx_dev.fxdevs) {
-		if (devQ.dev) {
+		if (devQ.present) {
 			QueryCommand(devQ.pid, lqe);
 		}
 	}
@@ -220,19 +238,13 @@ void FXHelper::QueryUpdate(byte force) {
 void FXHelper::SetLight(DWORD lgh, vector<AlienFX_SDK::Afx_action>* actions)
 {
 	auto dev = conf->afx_dev.GetDeviceById(LOWORD(lgh));
-	if (dev && dev->dev && actions->size()) {
+	if (dev && dev->present && actions->size()) {
 		LightQueryElement newBlock{ (byte)HIWORD(lgh), 
 			(byte)(conf->afx_dev.GetFlags(dev, HIWORD(lgh)) & ALIENFX_FLAG_POWER ? 4 : 0), (byte)actions->size() };
 		memcpy(newBlock.actions, actions->data(), newBlock.actsize * sizeof(AlienFX_SDK::Afx_action));
 		for (int i = 0; i < newBlock.actsize; i++) {
 			AlienFX_SDK::Afx_action* action = &newBlock.actions[i];
-			// Check and change if Accent
-			if (action->type & 0xf0) {
-				action->type &= 0xf;
-				AlienFX_SDK::Afx_colorcode c;
-				c.ci = conf->accentColor;
-				action->r = c.b; action->g = c.g; action->b = c.r;
-			}
+			ChangeAccent(action);
 			// gamma-correction...
 			if (conf->gammaCorrection) {
 				action->r = ((UINT)action->r * action->r * dev->white.r) / 65025; // (255 * 255);
@@ -298,7 +310,7 @@ void FXHelper::Stop() {
 		WaitForSingleObject(devQuery.second.updateThread, 20000);
 		CloseHandle(devQuery.second.updateThread);
 		CloseHandle(devQuery.second.haveNewElement);
-		devQuery.second.haveNewElement = NULL;
+		//devQuery.second.haveNewElement = NULL;
 		DebugPrint("Light updates stopped for device " + to_string(devQuery.first) + ".\n");
 	}
 	devLightQuery.clear();
@@ -582,10 +594,11 @@ void FXHelper::RefreshGrid(bool fromRefresh) {
 						}
 
 						int backIndex = (eff->flags & GE_FLAG_PHASE ? phase : (phase / effop->effsize)) % (eff->effectColors.size());
-						AlienFX_SDK::Afx_action from = Code2Act(eff->flags & GE_FLAG_BACK ? eff->effectColors.front() :
-							eff->effectColors[backIndex]);
+						AlienFX_SDK::Afx_action from{ 0 }, to{ 0 };
+							Code2Act(eff->flags & GE_FLAG_BACK ? eff->effectColors.front() :
+							eff->effectColors[backIndex], &from);
 						backIndex++;
-						AlienFX_SDK::Afx_action to = Code2Act(eff->effectColors[backIndex != eff->effectColors.size() ? backIndex : 0]);
+						Code2Act(eff->effectColors[backIndex != eff->effectColors.size() ? backIndex : 0], &to);
 
 						// check for initial repaint/refresh
 						if (effop->stars.empty() || fromRefresh) {
@@ -618,10 +631,12 @@ void FXHelper::RefreshGrid(bool fromRefresh) {
 									if (star->count >= 0 && star->lightID) {
 										// change star color phase
 										int halfW = star->maxCount >> 1;
+										Code2Act(eff->effectColors.front(), &from);
+										Code2Act(eff->effectColors.at(star->colorIndex), &to);
 										power = 1.0 - (double)abs(halfW - star->count) / halfW;
 										cur.front() = { BlendPower(power,
-											&Code2Act(eff->effectColors.front()),
-											&Code2Act(eff->effectColors.at(star->colorIndex))) };
+											&from,
+											&to) };
 										SetLight(star->lightID, &cur);
 										star->count--;
 									}
@@ -653,8 +668,9 @@ void FXHelper::RefreshGrid(bool fromRefresh) {
 
 									if (ce->gaugeflags & GAUGE_GRADIENT) {
 										// Gradient fill
-										AlienFX_SDK::Afx_action grad = Code2Act(eff->flags & GE_FLAG_BACK ? eff->effectColors.front() :
-											backIndex > 0 ? eff->effectColors[backIndex - 1] : eff->effectColors.back());
+										AlienFX_SDK::Afx_action grad{ 0 };
+										Code2Act(eff->flags & GE_FLAG_BACK ? eff->effectColors.front() :
+											backIndex > 0 ? eff->effectColors[backIndex - 1] : eff->effectColors.back(), &grad);
 										for (int nf = 0; nf < effop->size - phase; nf++) {
 											// Gradient to previous color
 											SetGaugeGrid(&(*ce), &zone, effop->size - nf, &BlendPower((double)nf / (effop->size - phase), &grad, &to));

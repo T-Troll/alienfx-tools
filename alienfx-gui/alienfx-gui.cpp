@@ -771,11 +771,15 @@ DWORD MakeRGB(AlienFX_SDK::Afx_action* act) {
 }
 
 AlienFX_SDK::Afx_colorcode Act2Code(AlienFX_SDK::Afx_action *act) {
-	return AlienFX_SDK::Afx_colorcode({ act->b, act->g, act->r });
+	return AlienFX_SDK::Afx_colorcode(act->b, act->g, act->r);
 }
 
-AlienFX_SDK::Afx_action Code2Act(AlienFX_SDK::Afx_colorcode c) {
-	return AlienFX_SDK::Afx_action({ 0,0,0,c.r,c.g,c.b });
+//AlienFX_SDK::Afx_action Code2Act(AlienFX_SDK::Afx_colorcode c) {
+//	return AlienFX_SDK::Afx_action({ 0,0,0,c.r,c.g,c.b });
+//}
+
+void Code2Act(AlienFX_SDK::Afx_colorcode c, AlienFX_SDK::Afx_action* fill) {
+	fill->r = c.r; fill->g = c.g; fill->b = c.b;
 }
 
 UINT_PTR Lpcchookproc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
@@ -816,7 +820,8 @@ bool SetColor(HWND ctrl, AlienFX_SDK::Afx_action* map, bool needUpdate = true) {
 
 bool SetColor(HWND ctrl, AlienFX_SDK::Afx_colorcode& clr) {
 	bool ret;
-	AlienFX_SDK::Afx_action savedColor = Code2Act(clr);
+	AlienFX_SDK::Afx_action savedColor{ 0 };
+	Code2Act(clr, &savedColor);
 	if (ret = SetColor(ctrl, &savedColor, false))
 		clr = Act2Code(&savedColor);
 	return ret;

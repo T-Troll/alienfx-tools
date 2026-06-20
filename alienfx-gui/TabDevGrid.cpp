@@ -101,7 +101,7 @@ void RecalcGridZone(RECT* what = NULL) {
      for (int x = full.left; x < full.right; x++)
         for (int y = full.top; y < full.bottom; y++) {
             int ind = ind(x, y);
-            colorGrid[ind].first.ci = colorGrid[ind].last.ci = 0xff000000;
+            colorGrid[ind].first.cf = colorGrid[ind].last.cf = 0xff000000;
             conf->modifyProfile.lockRead();
             for (auto cs = conf->activeProfile->lightsets.rbegin(); cs != conf->activeProfile->lightsets.rend(); cs++) {
                 if (conf->IsLightInGroup(conf->mainGrid->grid[ind].lgh, conf->FindCreateGroup(cs->group))) {

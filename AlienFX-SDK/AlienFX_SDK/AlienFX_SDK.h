@@ -39,7 +39,10 @@ namespace AlienFX_SDK {
 			byte b, g, r;
 			byte br; // Brightness
 		};
-		DWORD ci;
+		DWORD cf;
+		Afx_colorcode(DWORD ci) : cf(ci) {}
+		Afx_colorcode(byte b, byte g, byte r) : b(b), g(g), r(r) {}
+		Afx_colorcode(byte b, byte g, byte r, byte br) : b(b), g(g), r(r), br(br) {}
 	};
 
 	struct Afx_icommand {
@@ -252,7 +255,7 @@ namespace AlienFX_SDK {
 		Functions* dev = NULL;		// device control object pointer
 		string name;				// device name
 		//int version = API_UNKNOWN;	// API version used for this device
-		Afx_colorcode white = { 255,255,255 }; // white balance
+		Afx_colorcode white = 0xffffffff; // white balance
 		byte brightness = 255;		// global device brightness
 		vector <Afx_light> lights;	// vector of lights defined
 		bool arrived = false, present = false; // for newly arrived and present devices

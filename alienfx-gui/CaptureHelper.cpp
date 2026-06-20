@@ -132,6 +132,7 @@ void CaptureHelper::SetLightGridSize(int x, int y)
 	gridDataSize = gridX * gridY * 3;
 	imgz = new byte[gridDataSize << 1];
 	imgo = imgz + gridDataSize;
+	FillAmbientMap();
 	dwHandle = new ThreadHelper(CScreenProc, this, 100, THREAD_PRIORITY_BELOW_NORMAL);
 }
 
@@ -196,7 +197,6 @@ DWORD WINAPI ColorCalc(LPVOID inp) {
 void CScreenProc(LPVOID param)
 {
 	CaptureHelper* src = (CaptureHelper*)param;
-	src->FillAmbientMap();
 
 	// Resize & calc
 	if (!capRes && scrImg) {

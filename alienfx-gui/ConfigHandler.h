@@ -43,8 +43,8 @@
 #define GE_FLAG_RPOS	0x10
 
 struct freq_map {
-	AlienFX_SDK::Afx_colorcode colorfrom;
-	AlienFX_SDK::Afx_colorcode colorto;
+	AlienFX_SDK::Afx_colorcode colorfrom{ 0 };
+	AlienFX_SDK::Afx_colorcode colorto{ 0 };
 	byte hicut, lowcut, freqsize;
 	vector<byte> freqID;
 };
@@ -69,8 +69,8 @@ struct zonemap {
 };
 
 struct gridClr {
-	AlienFX_SDK::Afx_colorcode first;
-	AlienFX_SDK::Afx_colorcode last;
+	AlienFX_SDK::Afx_colorcode first{ 0 };
+	AlienFX_SDK::Afx_colorcode last{ 0 };
 };
 
 struct grideffect {
@@ -199,8 +199,6 @@ public:
 	DWORD actionLights;
 	DWORD actionTimeout;
 
-	DWORD accentColor;
-
 	COLORREF customColors[16];
 
 	// States
@@ -213,7 +211,8 @@ public:
 	// Freqs for monitor
 	DWORD dcFreq;
 
-	AlienFX_SDK::Afx_colorcode testColor{0,255};
+	AlienFX_SDK::Afx_colorcode testColor{0,255,0};
+	DWORD accentColor = 0;
 	CustomMutex modifyProfile;
 	CustomMutex zoneUpdate;
 
@@ -261,5 +260,4 @@ public:
 	bool IsPriorityProfile(profile* prof);
 	bool SetIconState(bool needCheck = false);
 	DWORD GetAccentColor();
-	//processdata GetProcessData(DWORD proc);
 };

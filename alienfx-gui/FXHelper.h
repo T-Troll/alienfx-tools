@@ -73,4 +73,5 @@ public:
 	void UpdateGlobalEffect(AlienFX_SDK::Afx_device* dev = NULL, bool reset = false);
 	void QueryCommand(WORD pid, LightQueryElement& lqe);
 	void ClearAndRefresh(bool force = false);
+	void ChangeAccent(AlienFX_SDK::Afx_action* action);
 };

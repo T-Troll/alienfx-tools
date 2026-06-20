@@ -96,6 +96,9 @@ BOOL CALLBACK TabAmbientDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
                 activeMapping->ambients.erase(pos);
             conf->modifyProfile.unlockWrite();
             eve->ChangeEffects();
+            if (eve->capt) {
+                ((CaptureHelper*)eve->capt)->FillAmbientMap();
+            }
             UpdateZoneAndGrid();
             break;
         }

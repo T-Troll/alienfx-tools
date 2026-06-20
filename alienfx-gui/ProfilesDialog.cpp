@@ -72,7 +72,7 @@ void RefreshDeviceList(HWND hDlg) {
 			if (i->devID == activeEffectDevice->devID) {
 				ListBox_SetCurSel(dev_list, ind);
 				deviceeffect* b;
-				AlienFX_SDK::Afx_colorcode c1{ 0,0,0,0xff }, c2{ 0,0,0,0xff };
+				AlienFX_SDK::Afx_colorcode c1{ 0 }, c2{ 0 };
 
 				EnableWindow(GetDlgItem(hDlg, IDC_GLOBAL_KEYEFFECT), i->dev->version == 8);
 				EnableWindow(GetDlgItem(hDlg, IDC_CMODE_KEY), i->dev->version == 8);
@@ -88,7 +88,7 @@ void RefreshDeviceList(HWND hDlg) {
 				UpdateCombo(GetDlgItem(hDlg, IDC_GLOBAL_EFFECT), i->dev->version == 8 ? ge_names8 : ge_names5, b ? b->globalEffect : 0, i->dev->version == 8 ? ge_types8 : ge_types5);
 				UpdateCombo(GetDlgItem(hDlg, IDC_CMODE), cModeNames, b ? b->colorMode - 1 : 0);
 
-				c1 = c2 = { 0,0,0,0xff };
+				c1 = c2 = 0;
 
 				if (b = FindDevEffect(2)) {
 					//SendMessage(GetDlgItem(hDlg, IDC_SLIDER_KEYTEMPO), TBM_SETPOS, true, b->globalDelay);

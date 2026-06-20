@@ -42,7 +42,7 @@ void RebuildGEColorsList(HWND hDlg) {
 			LVITEMA lItem{ LVIF_TEXT | LVIF_IMAGE | LVIF_STATE, i };
 			picData = new COLORREF[GetSystemMetrics(SM_CXSMICON) * GetSystemMetrics(SM_CYSMICON)];
 			fill_n(picData, GetSystemMetrics(SM_CXSMICON) * GetSystemMetrics(SM_CYSMICON),
-				/*MakeRGB(*/colors->at(i).ci);
+				/*MakeRGB(*/colors->at(i).cf);
 			colorBox = CreateBitmap(GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), 1, 32, picData);
 			delete[] picData;
 			ImageList_Add(hSmall, colorBox, NULL);

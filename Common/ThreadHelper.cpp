@@ -21,7 +21,7 @@ void ThreadHelper::Stop()
 {
 	if (tHandle) {
 		SetEvent(tEvent);
-		WaitForSingleObject(tHandle, INFINITE/*delay << 2*/);
+		WaitForSingleObject(tHandle, delay << 2);
 		CloseHandle(tHandle);		
 		tHandle = NULL;
 	}
