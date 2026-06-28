@@ -41,7 +41,7 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 		CheckDlgButton(hDlg, IDC_OFFPOWERBUTTON, !conf->offPowerButton);
 		CheckDlgButton(hDlg, IDC_BUT_PROFILESWITCH, conf->enableProfSwitch);
 		CheckDlgButton(hDlg, IDC_AWCC, conf->awcc_disable);
-		CheckDlgButton(hDlg, IDC_ESIFTEMP, conf->esif_temp);
+		//CheckDlgButton(hDlg, IDC_ESIFTEMP, conf->esif_temp);
 		CheckDlgButton(hDlg, IDC_FANCONTROL, conf->fanControl);
 		CheckDlgButton(hDlg, IDC_KEEPSYSTEM, fan_conf->keepSystem);
 		CheckDlgButton(hDlg, IDC_OCENABLE, fan_conf->ocEnable);
@@ -149,12 +149,12 @@ BOOL CALLBACK TabSettingsDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 			conf->Save();
 			wasAWCC = DoStopAWCC((bool)conf->awcc_disable != wasAWCC, wasAWCC);
 			break;
-		case IDC_ESIFTEMP:
-			if (conf->esif_temp = state) {
-				conf->Save();
-				EvaluteToAdmin(mDlg);
-			}
-			break;
+		//case IDC_ESIFTEMP:
+		//	if (conf->esif_temp = state) {
+		//		conf->Save();
+		//		EvaluteToAdmin(mDlg);
+		//	}
+		//	break;
 		case IDC_CHECK_EXCEPTION:
 			conf->noDesktop = state;
 			break;

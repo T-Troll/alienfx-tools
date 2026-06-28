@@ -133,13 +133,16 @@ SysMonHelper::~SysMonHelper() {
 //}
 
 int GetInstanceValue(IWbemClassObject* i_name, const wchar_t* v_name) {
+	int res = 0;
 	VARIANT value;
 	if (i_name && SUCCEEDED(i_name->Get((BSTR)v_name, 0, &value, 0, 0))) {
 		//VARIANT name;
 		//i_name->Get((BSTR)L"Name", 0, &name, 0, 0);
-		return value.vt == VT_BSTR ? _wtoi(value.bstrVal) : value.iVal;
+		res = value.vt == VT_BSTR ? _wtoi(value.bstrVal) : value.iVal;
+		if (value.vt == VT_BSTR)
+			SysFreeString(value.bstrVal);
 	}
-	return 0;
+	return res;
 }
 
 void CEventProc(LPVOID param)
@@ -192,6 +195,7 @@ void CEventProc(LPVOID param)
 			string typeName;
 			for (int i = 0; i < wcslen(pos); i++)
 				typeName += (char)pos[i];
+			SysFreeString(name.bstrVal);
 			gpusubs[typeName][PhysID] += GetInstanceValue(i, (BSTR)L"UtilizationPercentage");
 		}
 	}
@@ -239,7 +243,7 @@ void CEventProc(LPVOID param)
 	}
 
 	// ESIF powers and temps
-	if (conf->esif_temp) {
+	//if (conf->esif_temp) {
 		int cPwr = 0;
 		for (auto& i : src->esifSensors) {
 			if (!mon)
@@ -254,10 +258,9 @@ void CEventProc(LPVOID param)
 		//sData->PWR = src->GetValuesArray(src->hPwrCounter, 0, 10);
 		maxData.PWR = max(cPwr / 10, maxData.PWR);
 		sData->PWR = cPwr * 10 / maxData.PWR;
-		sData->PWR = cPwr * 10 / maxData.PWR;
 		//maxData.PWR = max(sData->PWR, maxData.PWR);
 		//sData->PWR = sData->PWR * 100 / maxData.PWR;
-	}
+	//}
 
 	// Leveling...
 	sData->Temp = min(100, max(0, sData->Temp));

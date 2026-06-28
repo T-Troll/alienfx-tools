@@ -195,13 +195,13 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	//if (conf->activeProfile->flags & PROF_FANS)
 	//	fan_conf->lastProf = (fan_profile*)conf->activeProfile->fansets;
 
-	if (conf->esif_temp || conf->fanControl || conf->awcc_disable)
+	if (/*conf->esif_temp ||*/ conf->fanControl || conf->awcc_disable)
 		if (EvaluteToAdmin()) {
 			wasAWCC = DoStopAWCC(conf->awcc_disable, true);
 			conf->fanControl = DetectFans();
 		}
 		else {
-			conf->fanControl = conf->esif_temp = false;
+			conf->fanControl = /*conf->esif_temp =*/ false;
 		}
 
 	fxhl = new FXHelper();

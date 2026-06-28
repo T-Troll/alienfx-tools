@@ -183,7 +183,7 @@ public:
 	DWORD enableProfSwitch;
 	DWORD offPowerButton;
 	DWORD awcc_disable;
-	DWORD esif_temp;
+	//DWORD esif_temp;
 	DWORD gammaCorrection;
 	DWORD fanControl;
 	DWORD enableEffects;
