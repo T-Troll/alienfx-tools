@@ -2,6 +2,7 @@
 #include "ConfigHandler.h"
 #include "FXHelper.h"
 #include <math.h>
+#include <memory>
 
 #ifndef PI
 #define PI 3.141592653589793238462643383279502884197169399375
@@ -120,7 +121,7 @@ void WSAudioIn::Stop()
 
 IMMDevice* WSAudioIn::GetDefaultMultimediaDevice(EDataFlow DevType)
 {
-	IMMDeviceEnumerator* pEnumerator;
+	IMMDeviceEnumerator* pEnumerator = NULL;
 	IMMDevice* pDevice = NULL;
 
 	CoCreateInstance(__uuidof(MMDeviceEnumerator), NULL, CLSCTX_ALL, __uuidof(IMMDeviceEnumerator), (void**)&pEnumerator);
@@ -207,10 +208,14 @@ DWORD WINAPI FFTProc(LPVOID lpParam)
 	SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_BELOW_NORMAL);
 
 	// Preparing FFT...
+	// RAII so any of the three array allocations throwing bad_alloc
+	// cannot leak the others, and kiss_cfg is checked for NULL.
+	std::unique_ptr<kiss_fft_scalar[]> padded_in(new kiss_fft_scalar[NUMPTS]);
+	std::unique_ptr<kiss_fft_cpx[]>    padded_out(new kiss_fft_cpx[NUMPTS]);
+	std::unique_ptr<double[]>          x2(new double[NUMPTS]);
 	void* kiss_cfg = kiss_fftr_alloc(NUMPTS, 0, 0, 0);
-	kiss_fft_scalar* padded_in = new kiss_fft_scalar[NUMPTS];
-	kiss_fft_cpx* padded_out = new kiss_fft_cpx[NUMPTS];
-	double* x2 = new double[NUMPTS];
+	if (!kiss_cfg)
+		return 0;
 	double peak = 0;
 
 	DWORD res;
@@ -221,7 +226,7 @@ DWORD WINAPI FFTProc(LPVOID lpParam)
 				padded_in[n] = (kiss_fft_scalar)(src->waveD[n] * src->blackman[n]);
 			}
 
-			kiss_fftr(kiss_cfg, padded_in, padded_out);
+			kiss_fftr(kiss_cfg, padded_in.get(), padded_out.get());
 
 			double minP = INT_MAX, maxP = 0;
 			double mult = 1.3394/* sqrt3(2)*/, f = 1.0;
@@ -263,9 +268,6 @@ DWORD WINAPI FFTProc(LPVOID lpParam)
 			fxhl->RefreshHaptics();
 		}
 	}
-	delete[] padded_in;
-	delete[] padded_out;
 	kiss_fft_free(kiss_cfg);
-	delete[] x2;
 	return 0;
 }
