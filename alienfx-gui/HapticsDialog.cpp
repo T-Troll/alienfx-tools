@@ -84,7 +84,6 @@ void DrawFreq(HWND hysto) {
 		DeleteObject(hbmMem);
 		DeleteDC(hdc);
 		ReleaseDC(hysto, hdc_r);
-		DeleteDC(hdc_r);
 	}
 }
 
