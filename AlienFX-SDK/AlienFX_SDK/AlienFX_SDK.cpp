@@ -22,13 +22,12 @@ extern "C" {
 namespace AlienFX_SDK {
 
 	vector<Afx_icommand> *Functions::SetMaskAndColor(vector<Afx_icommand>* mods, Afx_lightblock* act, bool needInverse, DWORD index) {
-		Afx_colorcode c = index ? index : needInverse ? ~((1 << act->index)) : 1 << act->index;
 		if (version < API_V4) {
 			// index mask generation
-			*mods = { {1, { v1OpCodes[act->act.front().type], chain, c.r, c.g, c.b } } };
+			Afx_colorcode c = index ? index : needInverse ? ~((1 << act->index)) : 1 << act->index;
+			*mods = { { 1, { v1OpCodes[act->act.front().type], chain, c.r, c.g, c.b } } };
 		}
-		Afx_action c1 = act->act.front(), c2 = act->act.size() < 2 ? Afx_action({ 0 }) : act->act.back();
-		byte tempo = act->act.front().tempo;
+		Afx_action c1 = act->act.front(), c2 = act->act.size() < 2 || c1.type == AlienFX_A_Breathing ? Afx_action({0}) : act->act.back();
 		switch (version) {
 		case API_V3:
 			mods->push_back({6, {c1.r, c1.g,c1.b,
@@ -40,8 +39,12 @@ namespace AlienFX_SDK {
 						(byte)((c2.g & 0xf0) | ((c2.b & 0xf0) >> 4))}});
 			break;
 		case API_V6: { //case API_V9: {
-			*mods = { { 9, { (byte)index, c1.r, c1.g, c1.b } } };
-			byte mask = (byte)(c1.r ^ c1.g ^ c1.b ^ index);
+			*mods = { { 9, { (byte)index, c1.r, c1.g, c1.b } },
+				{ 3, { v6CLen[c1.type] }},
+				{ 6, { v6OpCodes[c1.type] }},
+				{ 8, { v6TCodes[c1.type] }},
+				{ 10, { c1.r, c1.g, c1.b }} };
+			byte mask = (byte)(c1.r ^ c1.g ^ c1.b ^ index), tempo = act->act.front().tempo;
 			switch (c1.type) {
 			case AlienFX_A_Color:
 				mask ^= 8;
@@ -49,15 +52,11 @@ namespace AlienFX_SDK {
 				break;
 			case AlienFX_A_Pulse:
 				mask ^= byte(tempo ^ 1);
-				mods->insert(mods->end(), {{3, {0xb}}, {6, {0x88}}, {8, {2}}, {13, {bright, tempo}}, {15, {mask}} });
+				mods->push_back({ 13, { bright, tempo, mask}});
 				break;
-			case AlienFX_A_Breathing:
-				c2 = { 0 };
 			case AlienFX_A_Morph:
 				mask ^= (byte)(c2.r ^ c2.g ^ c2.b ^ tempo ^ 4);
-				mods->insert(mods->end(), { {3, {0xf}}, {6, {0x8c}}, {8, {1}},
-					{13, {c2.r,c2.g,c2.b}},
-					{16, {bright, 2, tempo,mask}} });
+				mods->push_back( {13, {c2.r, c2.g, c2.b, bright, 2, tempo,mask}});
 				break;
 			}
 			//vector<byte> command{ 0x51, v6OpCodes[c1.type], 0xd0, v6TCodes[c1.type], (byte)index, c1.r, c1.g, c1.b };
@@ -547,8 +546,32 @@ namespace AlienFX_SDK {
 			AddV5DataBlock(4, &mods, act->index, &act->act.front());
 			PrepareAndSend(COMMV5_colorSet, &mods);
 			return PrepareAndSend(COMMV5_loop);
-		case API_V4: case API_V3: case API_V2: {
+		case API_V4: 
 			// check types and call
+			switch (act->act.front().type) {
+			case AlienFX_A_Color: // it's a color, so set as color
+				return PrepareAndSend(COMMV4_setOneColor, { {3, {act->act.front().r,act->act.front().g,act->act.front().b, 0, 1, (byte)act->index } } });
+				break;
+			case AlienFX_A_Power: // Set power button
+				return SetPowerAction(act);
+			break;
+			default: // Set action
+				return SetV4Action(act);
+			}
+			break;
+		case API_V3: case API_V2: {
+			// check types and call
+			if (act->act.front().type == AlienFX_A_Power) {
+				return SetPowerAction(act);
+			}
+			else {
+				PrepareAndSend(COMMV1_setTempo,
+					{ {2, { (byte)(((WORD)act->act.front().tempo << 3 & 0xff00) >> 8),
+						(byte)((WORD)act->act.front().tempo << 3 & 0xff),
+						(byte)(((WORD)act->act.front().time << 5 & 0xff00) >> 8),
+						(byte)((WORD)act->act.front().time << 5 & 0xff)} } });
+				PrepareAndSend(COMMV1_loop);
+			}
 			switch (act->act.front().type) {
 			case AlienFX_A_Color: // it's a color, so set as color
 				if (version == API_V4)
@@ -557,28 +580,27 @@ namespace AlienFX_SDK {
 			case AlienFX_A_Power: { // Set power button
 				return SetPowerAction(act);
 			} break;
-			default: // Set action
-				if (version == API_V4)
-					return SetV4Action(act);
-				else {
-					PrepareAndSend(COMMV1_setTempo,
-						{ {2, { (byte)(((WORD)act->act.front().tempo << 3 & 0xff00) >> 8),
-							(byte)((WORD)act->act.front().tempo << 3 & 0xff),
-							(byte)(((WORD)act->act.front().time << 5 & 0xff00) >> 8),
-							(byte)((WORD)act->act.front().time << 5 & 0xff)} } });
-					PrepareAndSend(COMMV1_loop);
-				}
+			default: { // Set action
+				PrepareAndSend(COMMV1_setTempo,
+					{ {2, { (byte)(((WORD)act->act.front().tempo << 3 & 0xff00) >> 8),
+						(byte)((WORD)act->act.front().tempo << 3 & 0xff),
+						(byte)(((WORD)act->act.front().time << 5 & 0xff00) >> 8),
+						(byte)((WORD)act->act.front().time << 5 & 0xff)} } });
+				PrepareAndSend(COMMV1_loop);
+				PrepareAndSend(COMMV1_color, SetMaskAndColor(&mods, act));
+				bool res = PrepareAndSend(COMMV1_loop);
+				chain++;
+				return res;
 			}
-			for (auto ca = act->act.begin(); ca != act->act.end(); ca++) {
-				Afx_lightblock t = { act->index, {*ca} };
-				if (act->act.size() > 1)
-					t.act.push_back(ca + 1 != act->act.end() ? *(ca + 1) : act->act.front());
-				DebugPrint("SDK: Set light " + to_string(act->index) + "\n");
-				PrepareAndSend(COMMV1_color, SetMaskAndColor(&mods, &t));
 			}
-			bool res = PrepareAndSend(COMMV1_loop);
-			chain++;
-			return res;
+			// This block for chained lights at v1-v3, off now - provide issues
+			//for (auto ca = act->act.begin(); ca != act->act.end(); ca++) {
+			//	Afx_lightblock t = { act->index, {*ca} };
+			//	if (act->act.size() > 1)
+			//		t.act.push_back(ca + 1 != act->act.end() ? *(ca + 1) : act->act.front());
+			//	DebugPrint("SDK: Set light " + to_string(act->index) + "\n");
+			//	PrepareAndSend(COMMV1_color, SetMaskAndColor(&mods, &t));
+			//}
 		}
 #ifndef NOACPILIGHTS
 		case API_ACPI:

@@ -28,13 +28,13 @@
         "Entry"
         {
         "MsmKey" = "8:_055E075BF224A12F432351DF93952E0E"
-        "OwnerKey" = "8:_B829425435A04EFB81D071102204D8B4"
+        "OwnerKey" = "8:_4B7975803E6C492C8F7D8B599766674C"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
         "MsmKey" = "8:_055E075BF224A12F432351DF93952E0E"
-        "OwnerKey" = "8:_4B7975803E6C492C8F7D8B599766674C"
+        "OwnerKey" = "8:_B829425435A04EFB81D071102204D8B4"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -112,13 +112,13 @@
         "Entry"
         {
         "MsmKey" = "8:_83763AF12CFE41FE16B491DE99592F8F"
-        "OwnerKey" = "8:_FA7989C51ECD437AB3316446FB849F60"
+        "OwnerKey" = "8:_4B7975803E6C492C8F7D8B599766674C"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
         "MsmKey" = "8:_83763AF12CFE41FE16B491DE99592F8F"
-        "OwnerKey" = "8:_4B7975803E6C492C8F7D8B599766674C"
+        "OwnerKey" = "8:_FA7989C51ECD437AB3316446FB849F60"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -130,13 +130,13 @@
         "Entry"
         {
         "MsmKey" = "8:_8F3090BEFD2084C54DFF0BFAD98DA84F"
-        "OwnerKey" = "8:_E287D1712A1A426DA4A815104949F017"
+        "OwnerKey" = "8:_AB07B12C770D4D4A9DE7E3A7F6280FFF"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
         "MsmKey" = "8:_8F3090BEFD2084C54DFF0BFAD98DA84F"
-        "OwnerKey" = "8:_AB07B12C770D4D4A9DE7E3A7F6280FFF"
+        "OwnerKey" = "8:_E287D1712A1A426DA4A815104949F017"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -184,17 +184,17 @@
         "Entry"
         {
         "MsmKey" = "8:_E57C9B0CB5862DCB6BAC31D289B34509"
-        "OwnerKey" = "8:_FA7989C51ECD437AB3316446FB849F60"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_E57C9B0CB5862DCB6BAC31D289B34509"
         "OwnerKey" = "8:_4B7975803E6C492C8F7D8B599766674C"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
+        "MsmKey" = "8:_E57C9B0CB5862DCB6BAC31D289B34509"
+        "OwnerKey" = "8:_FA7989C51ECD437AB3316446FB849F60"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_E62E3EC8F5681811CD45B0147079B24F"
         "OwnerKey" = "8:_1924518F6EA84AD696BCCE8E589E25C7"
         "MsmSig" = "8:_UNDEFINED"
@@ -209,18 +209,18 @@
         {
         "MsmKey" = "8:_ECA7B10455E9FEA298D65C36BC39D1CE"
         "OwnerKey" = "8:_1924518F6EA84AD696BCCE8E589E25C7"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_ECA7B10455E9FEA298D65C36BC39D1CE"
-        "OwnerKey" = "8:_E287D1712A1A426DA4A815104949F017"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
         "MsmKey" = "8:_ECA7B10455E9FEA298D65C36BC39D1CE"
         "OwnerKey" = "8:_AB07B12C770D4D4A9DE7E3A7F6280FFF"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_ECA7B10455E9FEA298D65C36BC39D1CE"
+        "OwnerKey" = "8:_E287D1712A1A426DA4A815104949F017"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -855,15 +855,15 @@
         {
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:AlienFX Tools"
-        "ProductCode" = "8:{53383482-3F1A-46FA-AF4A-A9A759CA5D70}"
-        "PackageCode" = "8:{BF14B299-0A7C-4D1E-B6BC-0A488D1B8FD4}"
+        "ProductCode" = "8:{97D29451-052B-4843-9760-8D8CAA135637}"
+        "PackageCode" = "8:{FD351A8D-7BDA-48BD-AF61-FFE9CC0C3400}"
         "UpgradeCode" = "8:{EFC2D182-AE5E-4585-92D3-0759F77F59AA}"
         "AspNetVersion" = "8:4.0.30319.0"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:TRUE"
         "DetectNewerInstalledVersion" = "11:FALSE"
         "InstallAllUsers" = "11:FALSE"
-        "ProductVersion" = "8:9.6.102"
+        "ProductVersion" = "8:9.6.200"
         "Manufacturer" = "8:T-Troll"
         "ARPHELPTELEPHONE" = "8:"
         "ARPHELPLINK" = "8:https://github.com/T-Troll/alienfx-tools/discussions"
@@ -1223,7 +1223,7 @@
         {
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_1924518F6EA84AD696BCCE8E589E25C7"
             {
-            "SourcePath" = "8:..\\x64\\Release x86\\alienfx-gui.exe"
+            "SourcePath" = "8:..\\x64\\Debug\\alienfx-gui.exe"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_77CCC7F3944A4B009D9231F8B41DFD6D"
@@ -1251,7 +1251,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_4B7975803E6C492C8F7D8B599766674C"
             {
-            "SourcePath" = "8:..\\x64\\Release x86\\alienfan-gui.exe"
+            "SourcePath" = "8:..\\x64\\Debug\\alienfan-gui.exe"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_77CCC7F3944A4B009D9231F8B41DFD6D"
@@ -1279,7 +1279,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_AB07B12C770D4D4A9DE7E3A7F6280FFF"
             {
-            "SourcePath" = "8:..\\Win32\\Release x86\\LightFX\\LightFX.dll"
+            "SourcePath" = "8:..\\x64\\Debug\\LightFX.dll"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_43144C8E2A664A74BBFC062B5C1593BA"
@@ -1307,7 +1307,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_B829425435A04EFB81D071102204D8B4"
             {
-            "SourcePath" = "8:..\\x64\\Release x86\\alienfan-cli.exe"
+            "SourcePath" = "8:..\\x64\\Debug\\alienfan-cli.exe"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_77CCC7F3944A4B009D9231F8B41DFD6D"
@@ -1363,7 +1363,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_E287D1712A1A426DA4A815104949F017"
             {
-            "SourcePath" = "8:..\\x64\\Release x86\\alienfx-cli.exe"
+            "SourcePath" = "8:..\\x64\\Debug\\alienfx-cli.exe"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_77CCC7F3944A4B009D9231F8B41DFD6D"
@@ -1391,7 +1391,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_FA7989C51ECD437AB3316446FB849F60"
             {
-            "SourcePath" = "8:..\\x64\\Release x86\\alienfx-mon.exe"
+            "SourcePath" = "8:..\\x64\\Debug\\alienfx-mon.exe"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_77CCC7F3944A4B009D9231F8B41DFD6D"

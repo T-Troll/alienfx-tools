@@ -16,7 +16,7 @@ namespace AlienFX_SDK {
 
 	// V1-V3, old devices
 		const byte COMMV1_color[]{ 1, 0x03 };
-		// [1] - 1-3 as a effect type type
+		// [1] - 1-3 as a effect type
 		// [2] - chain
 		// [4-6] - light mask
 		// [rest] - RGB, RGB2
@@ -102,7 +102,7 @@ namespace AlienFX_SDK {
 		// 1,8c - [10,11,12] - RGB, [13,14,15] - RGB2, [16] - brightness, [17,18] - tempo, [19] - checksum
 		const byte v6OpCodes[]{ 0x87, 0x88, 0x8c,0x8c,0x8c,0x8c,0x8c };
 		const byte v6TCodes[]{     4,    2,    1,   1,   1,   1,   1 };
-		//const byte v6CLen[]{ 0xa,  0xb,  0xf, 0xf, 0xf, 0xf, 0xf };
+		const byte v6CLen[]{ 0xa,  0xb,  0xf, 0xf, 0xf, 0xf, 0xf };
 
 	// V7, mouses
 		const byte COMMV7_update[]{8, 0x40,0x60,0x07,0x00,0xc0,0x4e,0x00,0x01};
