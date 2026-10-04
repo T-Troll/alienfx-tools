@@ -280,7 +280,7 @@ void FXHelper::UpdateGlobalEffect(AlienFX_SDK::Afx_device* dev, bool reset) {
 	conf->modifyProfile.lockRead();
 
 	for (auto cdev = conf->afx_dev.fxdevs.begin(); cdev != conf->afx_dev.fxdevs.end(); cdev++) {
-		if (cdev->dev && cdev->dev->IsHaveGlobal() && (!dev || (dev->devID == cdev->devID))) {
+		if (cdev->present && cdev->dev->IsHaveGlobal() && (!dev || (dev->devID == cdev->devID))) {
 			if (!reset && conf->activeProfile->effects[cdev->devID].size()) {
 				for (auto it = conf->activeProfile->effects[cdev->devID].begin(); it != conf->activeProfile->effects[cdev->devID].end(); it++) {
 					cdev->dev->SetGlobalEffects(it->globalEffect, it->globalMode, it->colorMode, it->globalDelay,

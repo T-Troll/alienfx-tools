@@ -1,4 +1,7 @@
 #include "MonHelper.h"
+#include <powrprof.h>
+
+#pragma comment(lib, "PowrProf.lib")
 
 // debug print
 #ifdef _DEBUG
@@ -15,6 +18,7 @@ extern ConfigFan* fan_conf;
 
 MonHelper::MonHelper() {
 	acpi = new AlienFan_SDK::Control();
+	IIDFromString(L"{be337238-0d82-4146-a960-4f3749d470c7}", &perfset);
 	if (acpi->Probe(fan_conf->diskSensors)) {
 		fan_conf->lastSelectedSensor = acpi->sensors.front().sid;
 		fansize = (WORD)acpi->fans.size();
@@ -149,6 +153,14 @@ void MonHelper::SetPowerMode(byte newMode) {
 	SetCurrentMode(newMode);
 }
 
+void MonHelper::SetCpuModes() {
+	PowerGetActiveScheme(NULL, &sch_guid);
+	PowerWriteACValueIndex(NULL, sch_guid, &GUID_PROCESSOR_SETTINGS_SUBGROUP, &perfset, fan_conf->lastProf->acMode);
+	PowerWriteDCValueIndex(NULL, sch_guid, &GUID_PROCESSOR_SETTINGS_SUBGROUP, &perfset, fan_conf->lastProf->dcMode);
+	PowerSetActiveScheme(NULL, sch_guid);
+	LocalFree(sch_guid);
+}
+
 // I need this wrapper for buggy G-series BIOS which return error from time to time
 int MonHelper::GetFanRPM(int fanID) {
 	int res;
@@ -184,7 +196,6 @@ void CMonProc(LPVOID param) {
 	MonHelper* src = (MonHelper*)param;
 	AlienFan_SDK::Control* acpi = src->acpi;
 	fan_profile* active = fan_conf->lastProf;
-	//src->modified = false;
 
 #ifdef _DEBUG
 	if (!active)

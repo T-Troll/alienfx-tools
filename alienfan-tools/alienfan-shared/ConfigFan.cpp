@@ -52,6 +52,7 @@ void ConfigFan::Load() {
 	GetReg("OCEnable", &ocEnable);
 	GetReg("DiskSensors", &diskSensors, 1);
 	GetReg("NumLockActive", &numlockActive, 1);
+	GetReg("CPUModes", &prof.cpuModes);
 	//GetReg("InstantUpdate", &instantUpdate);
 
 	// Now load sensor mappings...
@@ -109,6 +110,7 @@ void ConfigFan::Save() {
 	SetReg("OCEnable", ocEnable);
 	SetReg("DiskSensors", diskSensors);
 	SetReg("NumLockActive", numlockActive);
+	SetReg("CPUModes", prof.cpuModes);
 	//SetReg("InstantUpdate", instantUpdate);
 
 	// clean old data

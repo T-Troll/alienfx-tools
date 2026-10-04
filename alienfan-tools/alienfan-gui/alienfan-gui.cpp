@@ -1,6 +1,5 @@
 #include <windowsx.h>
-#include <windows.h>
-#include <powrprof.h>
+//#include <windows.h>
 #include "Resource.h"
 #include "ConfigFan.h"
 #include "MonHelper.h"
@@ -9,7 +8,6 @@
 #pragma comment(linker,"\"/manifestdependency:type='win32' \
 name='Microsoft.Windows.Common-Controls' version='6.0.0.0' \
 processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
-#pragma comment(lib,"PowrProf.lib")
 
 using namespace std;
 
@@ -106,6 +104,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
             SendMessage(mDlg, WM_SETICON, ICON_BIG, (LPARAM)LoadIcon(hInst, MAKEINTRESOURCE(IDI_ALIENFANGUI)));
             SendMessage(mDlg, WM_SETICON, ICON_SMALL, (LPARAM)LoadImage(hInst, MAKEINTRESOURCE(IDI_ALIENFANGUI), IMAGE_ICON, 16, 16, 0));
 
+            mon->SetCpuModes();
             SetHotkeys();
 
             ShowWindow(mDlg, fan_conf->startMinimized ? SW_HIDE : SW_SHOW);
@@ -190,14 +189,8 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             Sleep(100);
 
         // set PerfBoost lists...
-        IIDFromString(L"{be337238-0d82-4146-a960-4f3749d470c7}", &perfset);
-        PowerGetActiveScheme(NULL, &sch_guid);
-        DWORD acMode, dcMode;
-        PowerReadACValueIndex(NULL, sch_guid, &GUID_PROCESSOR_SETTINGS_SUBGROUP, &perfset, &acMode);
-        PowerReadDCValueIndex(NULL, sch_guid, &GUID_PROCESSOR_SETTINGS_SUBGROUP, &perfset, &dcMode);
-
-        UpdateCombo(GetDlgItem(hDlg, IDC_AC_BOOST), pModes, acMode);
-        UpdateCombo(GetDlgItem(hDlg, IDC_DC_BOOST), pModes, dcMode);;
+        UpdateCombo(GetDlgItem(hDlg, IDC_AC_BOOST), pModes, fan_conf->lastProf->acMode);
+        UpdateCombo(GetDlgItem(hDlg, IDC_DC_BOOST), pModes, fan_conf->lastProf->dcMode);
 
         // So open fan control window...
         RECT cDlg;
@@ -242,11 +235,11 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             case CBN_SELCHANGE:
             {
                 int cBst = ComboBox_GetCurSel(GetDlgItem(hDlg, wmId));
-                if (wmId == IDC_AC_BOOST)
-                    PowerWriteACValueIndex(NULL, sch_guid, &GUID_PROCESSOR_SETTINGS_SUBGROUP, &perfset, cBst);
+                if (LOWORD(wParam) == IDC_AC_BOOST)
+                    fan_conf->lastProf->acMode = cBst;
                 else
-                    PowerWriteDCValueIndex(NULL, sch_guid, &GUID_PROCESSOR_SETTINGS_SUBGROUP, &perfset, cBst);
-                PowerSetActiveScheme(NULL, sch_guid);
+                    fan_conf->lastProf->dcMode = cBst;
+                mon->SetCpuModes();
             } break;
             }
         } break;
@@ -516,7 +509,6 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         SendMessage(hDlg, SW_SHOW, SIZE_MINIMIZED, 0);
         break;
     case WM_DESTROY:
-        LocalFree(sch_guid);
         PostQuitMessage(0);
         break;
     case WM_ENDSESSION:
@@ -548,7 +540,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             break;
         }
         break;
-    case WM_TIMER:
+    case WM_TIMER: {
         //DebugPrint("Fans UI update...\n");
         if (wParam == 1) {
             toolTipShown = false;
@@ -556,9 +548,10 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             break;
         }
         mon->GetSensorData();
+        string name;
         if (mon->modified) {
             for (int i = 0; i < mon->sensorSize; i++) {
-                string name = to_string(mon->senValues[mon->acpi->sensors[i].sid]) + " (" + to_string(mon->maxTemps[mon->acpi->sensors[i].sid]) + ")";
+                name = to_string(mon->senValues[mon->acpi->sensors[i].sid]) + " (" + to_string(mon->maxTemps[mon->acpi->sensors[i].sid]) + ")";
                 ListView_SetItemText(tempList, i, 0, (LPSTR)name.c_str());
                 name = fan_conf->GetSensorName(&mon->acpi->sensors[i]);
                 ListView_SetItemText(tempList, i, 1, (LPSTR)name.c_str());
@@ -569,11 +562,11 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             ListView_SetColumnWidth(tempList, 1, cArea.right - ListView_GetColumnWidth(tempList, 0));
         }
         for (int i = 0; i < mon->fansize; i++) {
-            string name = GetFanName(i);
+            name = GetFanName(i);
             ListView_SetItemText(fanList, i, 0, (LPSTR)name.c_str());
         }
         DrawFan();
-        break;
+    } break;
     default: return false;
     }
     return true;

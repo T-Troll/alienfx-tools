@@ -1,9 +1,6 @@
 #include "alienfx-gui.h"
 #include "MonHelper.h"
 #include "common.h"
-#include <powrprof.h>
-
-#pragma comment(lib, "PowrProf.lib")
 
 extern ConfigFan* fan_conf;
 extern MonHelper* mon;
@@ -37,14 +34,8 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
     case WM_INITDIALOG:
     {
         // set PerfBoost lists...
-        IIDFromString(L"{be337238-0d82-4146-a960-4f3749d470c7}", &perfset);
-        PowerGetActiveScheme(NULL, &sch_guid);
-        DWORD acMode, dcMode;
-        PowerReadACValueIndex(NULL, sch_guid, &GUID_PROCESSOR_SETTINGS_SUBGROUP, &perfset, &acMode);
-        PowerReadDCValueIndex(NULL, sch_guid, &GUID_PROCESSOR_SETTINGS_SUBGROUP, &perfset, &dcMode);
-
-        UpdateCombo(GetDlgItem(hDlg, IDC_AC_BOOST), pModes, acMode);
-        UpdateCombo(GetDlgItem(hDlg, IDC_DC_BOOST), pModes, dcMode);;
+        UpdateCombo(GetDlgItem(hDlg, IDC_AC_BOOST), pModes, fan_conf->lastProf->acMode);
+        UpdateCombo(GetDlgItem(hDlg, IDC_DC_BOOST), pModes, fan_conf->lastProf->dcMode);
 
         ReloadPowerList(power_list);
         ReloadFanView(fanList);
@@ -87,10 +78,10 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             {
                 int cBst = ComboBox_GetCurSel(GetDlgItem(hDlg, LOWORD(wParam)));
                 if (LOWORD(wParam) == IDC_AC_BOOST)
-                    PowerWriteACValueIndex(NULL, sch_guid, &GUID_PROCESSOR_SETTINGS_SUBGROUP, &perfset, cBst);
+                    fan_conf->lastProf->acMode = cBst;
                 else
-                    PowerWriteDCValueIndex(NULL, sch_guid, &GUID_PROCESSOR_SETTINGS_SUBGROUP, &perfset, cBst);
-                PowerSetActiveScheme(NULL, sch_guid);
+                    fan_conf->lastProf->dcMode = cBst;
+                mon->SetCpuModes();
             } break;
             }
         } break;
@@ -189,12 +180,13 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             mon->SetOC();
         } break;
         } break;
-    case WM_TIMER:
+    case WM_TIMER: {
         mon->GetSensorData();
+        string name;
         if (mon->modified) {
             for (int i = 0; i < mon->sensorSize; i++) {
                 WORD sid = mon->acpi->sensors[i].sid;
-                string name = to_string(mon->senValues[sid]) + " (" + to_string(mon->maxTemps[sid]) + ")";
+                name = to_string(mon->senValues[sid]) + " (" + to_string(mon->maxTemps[sid]) + ")";
                 ListView_SetItemText(tempList, i, 0, (LPSTR)name.c_str());
                 name = fan_conf->GetSensorName(&mon->acpi->sensors[i]);
                 ListView_SetItemText(tempList, i, 1, (LPSTR)name.c_str());
@@ -205,14 +197,14 @@ BOOL CALLBACK TabFanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             ListView_SetColumnWidth(tempList, 1, cArea.right - ListView_GetColumnWidth(tempList, 0));
         }
         for (int i = 0; i < mon->fansize; i++) {
-            string name = GetFanName(i);
+            name = GetFanName(i);
             ListView_SetItemText(fanList, i, 0, (LPSTR)name.c_str());
         }
         DrawFan();
-        break;
-    case WM_DESTROY:
-        LocalFree(sch_guid);
-        break;
+    } break;
+    //case WM_DESTROY:
+
+    //    break;
     }
     return 0;
 }

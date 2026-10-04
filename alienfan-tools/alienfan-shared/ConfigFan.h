@@ -34,6 +34,14 @@ struct fan_profile {
 		};
 		DWORD ocSettings = 100;
 	};
+	// CPU modes
+	union {
+		struct {
+			WORD acMode;
+			WORD dcMode;
+		};
+		DWORD cpuModes = 0;
+	};
 };
 
 struct fan_overboost {

@@ -131,28 +131,29 @@ void EventHandler::SwitchActiveProfile(profile* newID, bool force)
 		conf->modifyProfile.unlockWrite();
 		for (auto& dev : conf->afx_dev.fxdevs) {
 			if (oldId->effects[dev.devID].size() || newID->effects[dev.devID].size()) {
-				fxhl->UpdateGlobalEffect(NULL);
-				break;
+				fxhl->UpdateGlobalEffect(&dev);
 			}
 		}
 		ToggleFans();
 		ChangeEffectMode();
-				// Freqs
+		// Freqs
 		SetDisplayFreq(newID->freqMode);
 
 		if (newID->flags & PROF_RUN_SCRIPT && !(newID->flags & PROF_ACTIVE) && newID->script.size())
 			ShellExecute(NULL, NULL, newID->script.c_str(), NULL, NULL, SW_SHOWDEFAULT);
 
-		DebugPrint("Profile switched to " + to_string(newID->id) + " (" + newID->name + ")\n");
+		DebugPrint("Profile switched to " + to_string(conf->activeProfile->id) + " (" + conf->activeProfile->name + ")\n");
 	}
 #ifdef _DEBUG
 	else
-		DebugPrint("Same profile \"" + newID->name + "\", skipping switch.\n");
+		DebugPrint("Same profile \"" + conf->activeProfile->name + "\", skipping switch.\n");
 #endif
 }
 
 void EventHandler::ToggleFans() {
 	if (conf->fanControl && mon) {
+		mon->SetCpuModes();
+		mon->SetCurrentMode();
 		if (conf->fansOnBattery || conf->statePower)
 			mon->Start();
 		else

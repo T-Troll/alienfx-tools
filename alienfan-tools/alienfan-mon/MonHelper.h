@@ -11,6 +11,7 @@ private:
 	void Run();
 	void Finish();
 	void ToggleMode();
+	GUID* sch_guid, perfset;
 public:
 	AlienFan_SDK::Control* acpi;
 	bool inControl = true;
@@ -34,5 +35,6 @@ public:
 	WORD GetSensorData(bool forced = false);
 	void ResetBoost();
 	void SetOC();
+	void SetCpuModes();
 };
 

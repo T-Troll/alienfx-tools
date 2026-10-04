@@ -264,6 +264,13 @@ void ConfigHandler::Load() {
 			((fan_profile*)prof->fansets)->ocSettings = *(DWORD*)data;
 			continue;
 		}
+		if (sscanf_s(name, "Profile-CPU-%d", &pid) == 1) {
+			prof = FindCreateProfile(pid);
+			if (!prof->fansets)
+				prof->fansets = new fan_profile();
+			((fan_profile*)prof->fansets)->cpuModes = *(DWORD*)data;
+			continue;
+		}
 	}
 	// Loading zones...
 	for (int vindex = 0; lend = GetRegData(hKeyZones, vindex, name, &data); vindex++) {
@@ -481,6 +488,8 @@ void ConfigHandler::Save() {
 			RegSetValueEx(hKeyProfiles, name.c_str(), 0, REG_DWORD, (BYTE*)&((fan_profile*)prof->fansets)->powerSet, sizeof(DWORD));
 			name = "Profile-OC-" + profID;
 			RegSetValueEx(hKeyProfiles, name.c_str(), 0, REG_DWORD, (BYTE*)&((fan_profile*)prof->fansets)->ocSettings, sizeof(DWORD));
+			name = "Profile-CPU-" + profID;
+			RegSetValueEx(hKeyProfiles, name.c_str(), 0, REG_DWORD, (BYTE*)&((fan_profile*)prof->fansets)->cpuModes, sizeof(DWORD));
 			// save fans...
 			fan_conf->SaveSensorBlocks(hKeyProfiles, "Profile-fan-" + profID, ((fan_profile*)prof->fansets));
 		}
