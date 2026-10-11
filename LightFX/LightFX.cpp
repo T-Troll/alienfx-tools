@@ -174,6 +174,16 @@ FN_DECLSPEC LFX_RESULT STDCALL LFX_Initialize() {
 		stopQuery = CreateEvent(NULL, false, false, NULL);
 		haveNewElement = CreateEvent(NULL, false, false, NULL);
 		updateThread = CreateThread(NULL, 0, CLightsProc, NULL, 0, NULL);
+		if (!updateThread) {
+			// CreateThread failed: roll back the events we created so they don't
+			// leak, and free afx_dev so the next LFX_Initialize starts clean.
+			CloseHandle(stopQuery);
+			CloseHandle(haveNewElement);
+			stopQuery = haveNewElement = NULL;
+			delete afx_dev;
+			afx_dev = NULL;
+			return LFX_ERROR_NOINIT;
+		}
 		lightsNoDelay = true;
 	}
 	for (int g = 0; g < 4; g++)
@@ -202,8 +212,26 @@ FN_DECLSPEC LFX_RESULT STDCALL LFX_Initialize() {
 		}
 		return LFX_SUCCESS;
 	}
-	else
+	else {
+		// No devices found. CLightsProc (line 54) dereferences afx_dev WITHOUT a
+		// null check, so the worker thread MUST be stopped before afx_dev is freed,
+		// otherwise the next CLightsProc iteration crashes. We also release the
+		// thread+events so this NODEVS path doesn't leak resources to process exit
+		// when the caller (typically a game) decides "no Alienware hardware - give up".
+		if (updateThread) {
+			HANDLE oldUpdate = updateThread;
+			updateThread = NULL;
+			SetEvent(stopQuery);
+			WaitForSingleObject(oldUpdate, 20000);
+			CloseHandle(oldUpdate);
+			CloseHandle(stopQuery);
+			CloseHandle(haveNewElement);
+			stopQuery = haveNewElement = NULL;
+		}
+		delete afx_dev;
+		afx_dev = NULL;
 		return LFX_ERROR_NODEVS;
+	}
 }
 
 FN_DECLSPEC LFX_RESULT STDCALL LFX_Release() {

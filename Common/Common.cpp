@@ -1,6 +1,7 @@
 #include "Common.h"
 #include <windowsx.h>
 #include <WinInet.h>
+#include <memory>
 //#include <Psapi.h>
 
 using namespace std;
@@ -139,7 +140,8 @@ void ShowNotification(NOTIFYICONDATA* niData, string title, string message) {
 DWORD WINAPI CUpdateCheck(LPVOID lparam) {
 	NOTIFYICONDATA* niData = (NOTIFYICONDATA*)lparam;
 	HINTERNET session, req = NULL;
-	char* buf = new char[255];
+	// RAII so the buffer can't leak if std::string ops on `res` below ever throw bad_alloc.
+	unique_ptr<char[]> buf(new char[255]);
 	DWORD byteRead;
 	if (!needUpdateFeedback)
 		// check connection for some seconds
@@ -148,9 +150,9 @@ DWORD WINAPI CUpdateCheck(LPVOID lparam) {
 	if (InternetGetConnectedState(&byteRead, 0) && (session = InternetOpen("alienfx-tools", INTERNET_OPEN_TYPE_PRECONFIG, NULL, NULL, 0))) {
 		if (req = InternetOpenUrl(session, "https://api.github.com/repos/t-troll/alienfx-tools/tags?per_page=1",
 			NULL, 0, INTERNET_FLAG_RELOAD | INTERNET_FLAG_NO_CACHE_WRITE, NULL)) {
-			if (InternetReadFile(req, buf, 254, &byteRead)) {
+			if (InternetReadFile(req, buf.get(), 254, &byteRead)) {
 				buf[byteRead] = 0;
-				string res = buf;
+				string res = buf.get();
 				size_t pos = res.find("\"name\":");
 				if (pos != string::npos) {
 					//isConnectionFailed = false;
@@ -177,7 +179,6 @@ DWORD WINAPI CUpdateCheck(LPVOID lparam) {
 	}
 	if (needUpdateFeedback && !req)
 			ShowNotification(niData, "Update check failed!", "Can't connect to GitHub for update check.");
-	delete[] buf;
 	needUpdateFeedback = false;
 	return 0;
 }
