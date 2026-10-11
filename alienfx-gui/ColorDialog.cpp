@@ -28,7 +28,7 @@ void SetEffectData(HWND hDlg) {
 	EnableWindow(GetDlgItem(hDlg, IDC_SPEED1), hasEffects);
 	EnableWindow(GetDlgItem(hDlg, IDC_LENGTH1), hasEffects);
 	EnableWindow(GetDlgItem(hDlg, IDC_ACCENT), hasEffects);
-	RedrawButton(GetDlgItem(hDlg, IDC_BUTTON_C1), activeMapping && activeMapping->color.size() ?
+	RedrawButton(GetDlgItem(hDlg, IDC_BUTTON_C1), hasEffects ?
 		activeMapping->color[effID].type & 0xf0 ?
 			conf->accentColor :
 			MakeRGB(&activeMapping->color[effID]) :
@@ -140,8 +140,7 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 		{
 		case IDC_TYPE1:
 			if (HIWORD(wParam) == CBN_SELCHANGE && activeMapping) {
-				activeMapping->color[effID].type = IsDlgButtonChecked(hDlg, IDC_ACCENT) == BST_CHECKED ?
-					0x10 : 0 | ComboBox_GetCurSel(GetDlgItem(hDlg, IDC_TYPE1));
+				activeMapping->color[effID].type = (activeMapping->color[effID].type & 0x10) | ComboBox_GetCurSel(GetDlgItem(hDlg, IDC_TYPE1));
 				RebuildEffectList(hDlg);
 				fxhl->RefreshZone(activeMapping);
 			}
@@ -151,11 +150,8 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 				activeMapping->color[effID].type = IsDlgButtonChecked(hDlg, IDC_ACCENT) == BST_CHECKED ?
 					activeMapping->color[effID].type | 0x10 :
 					activeMapping->color[effID].type & 0xf;
-				//if (activeMapping->color[effID].type & 0xf0) {
-				//	fxhl->ChangeAccent(&activeMapping->color[effID]);
-				//	activeMapping->color[effID].type | 0x10;
-				//}
-				SetEffectData(hDlg);
+				//SetEffectData(hDlg);
+				RebuildEffectList(hDlg);
 				fxhl->RefreshZone(activeMapping);
 			}
 			break;
@@ -171,15 +167,15 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 			break;
 		case IDC_BUT_REMOVE_EFFECT:
 			if (HIWORD(wParam) == BN_CLICKED && activeMapping && effID < activeMapping->color.size()) {
-				if (conf->FindZoneMap(activeMapping->group)->havePower && activeMapping->color.size() == 2) {
-					activeMapping->color.clear();
-					effID = 0;
-				}
-				else {
+				//if (conf->FindZoneMap(activeMapping->group)->havePower && activeMapping->color.size() == 2) {
+				//	activeMapping->color.clear();
+				//	effID = 0;
+				//}
+				//else {
 					activeMapping->color.erase(activeMapping->color.begin() + effID);
 					if (effID)
 						effID--;
-				}
+				//}
 				RebuildEffectList(hDlg);
 				UpdateZoneAndGrid();
 				fxhl->Refresh();
@@ -199,7 +195,8 @@ BOOL CALLBACK TabColorDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 					activeMapping->color[effID].time = (BYTE)SendMessage((HWND)lParam, TBM_GETPOS, 0, 0);
 					SetSlider(sTip2, activeMapping->color[effID].time);
 				}
-				fxhl->Refresh();
+				fxhl->RefreshZone(activeMapping);
+				//fxhl->Refresh();
 			}
 			break;
 		} break;

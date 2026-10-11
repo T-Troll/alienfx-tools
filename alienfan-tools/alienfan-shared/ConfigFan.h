@@ -85,7 +85,8 @@ public:
 
 	void AddSensorCurve(fan_profile* prof, byte fid, WORD sid, byte* data, DWORD lend);
 	void SaveSensorBlocks(HKEY key, string pname, fan_profile* data);
-	string* GetPowerName(int index);
+	string GetPowerName(vector<byte>* powers, int index);
+	string GetPowerName(int index);
 	string GetSensorName(AlienFan_SDK::ALIENFAN_SEN_INFO* acpi);
 	map<WORD, sen_block>* GetFanBlocks();
 	sen_block* GetSenBlock();

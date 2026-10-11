@@ -217,7 +217,7 @@ void FXHelper::QueryCommand(WORD pid, LightQueryElement &lqe) {
 
 }
 
-// Clear light states before forced save
+// Clear light states before forced update
 void FXHelper::ClearAndRefresh(bool force) {
 	QueryAllDevs(LightQueryElement({ 0,5 }));
 	Refresh(force);

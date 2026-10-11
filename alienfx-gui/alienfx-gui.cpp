@@ -564,34 +564,65 @@ BOOL CALLBACK MainDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 				isNewVersion = false;
 			}
 			break;
-		case WM_MOUSEMOVE: {
+		case WM_MOUSEMOVE:
 			if (!toolTipShown) {
-				string name = conf->activeProfile->name;
-				if (conf->stateEffects) {
-					name.append(string("\nEffects: ") + (eve->sysmon ? "M" : "m")
-						+ (eve->capt ? "A" : "a")
-						+ (eve->audio ? "H" : "h")
-						+ (eve->grid ? "G" : "g"));
-				}
-				if (mon) {
-					WORD powerMode = mon->GetSensorData();
-					name.append(string("\n") + (powerMode < mon->powerSize ? *fan_conf->GetPowerName(mon->acpi->powers[powerMode]) : "G-Mode"));
-					for (int i = 0; i < mon->fansize; i++) {
-						name.append("\n" + GetFanName(i, true));
-					}
-				}
-				conf->niData.szTip[127] = 0;
-				strcpy_s(conf->niData.szTip, min(127, name.length() + 1), name.c_str());
-				Shell_NotifyIcon(NIM_MODIFY, &conf->niData);
+				//TRACKMOUSEEVENT tme{};
+				//tme.cbSize = sizeof(TRACKMOUSEEVENT);
+				//tme.dwFlags = TME_HOVER | TME_LEAVE | TME_NONCLIENT;
+				//tme.hwndTrack = hDlg;
+				//tme.dwHoverTime = HOVER_DEFAULT;
+				//TrackMouseEvent(&tme);
+				//string name = conf->activeProfile->name;
+				//if (conf->stateEffects) {
+				//	name.append(string("\nEffects: ") + (eve->sysmon ? "M" : "m")
+				//		+ (eve->capt ? "A" : "a")
+				//		+ (eve->audio ? "H" : "h")
+				//		+ (eve->grid ? "G" : "g"));
+				//}
+				//if (mon) {
+				//	WORD powerMode = mon->GetSensorData();
+				//	name.append(string("\n") + fan_conf->GetPowerName(&mon->acpi->powers, powerMode));
+				//	for (int i = 0; i < mon->fansize; i++) {
+				//		name.append("\n" + GetFanName(i, true));
+				//	}
+				//}
+				//conf->niData.szTip[127] = 0;
+				//strcpy_s(conf->niData.szTip, min(127, name.length() + 1), name.c_str());
+				//Shell_NotifyIcon(NIM_MODIFY, &conf->niData);
 				toolTipShown = true;
-				SetTimer(hDlg, 1, 500, NULL);
+				SetTimer(hDlg, 1, 30000, NULL);
+				SetTimer(hDlg, 2, 300, NULL);
 			}
-		} break;
+		    break;
 		}
 	} break;
 	case WM_TIMER:
-		toolTipShown = false;
-		KillTimer(hDlg, 1);
+		switch (wParam) {
+		case 1: // timeout
+			toolTipShown = false;
+			KillTimer(hDlg, 1);
+			KillTimer(hDlg, 2);
+			break;
+		case 2: {
+			string name = conf->activeProfile->name;
+			if (conf->stateEffects) {
+				name.append(string("\nEffects: ") + (eve->sysmon ? "M" : "m")
+					+ (eve->capt ? "A" : "a")
+					+ (eve->audio ? "H" : "h")
+					+ (eve->grid ? "G" : "g"));
+			}
+			if (mon) {
+				WORD powerMode = mon->GetSensorData();
+				name.append(string("\n") + fan_conf->GetPowerName(&mon->acpi->powers, powerMode));
+				for (int i = 0; i < mon->fansize; i++) {
+					name.append("\n" + GetFanName(i, true));
+				}
+			}
+			conf->niData.szTip[127] = 0;
+			strcpy_s(conf->niData.szTip, min(127, name.length() + 1), name.c_str());
+			Shell_NotifyIcon(NIM_MODIFY, &conf->niData);
+		}
+		}
 		break;
 	case WM_MENUCOMMAND: {
 		int idx = GetMenuItemID((HMENU)lParam, LOWORD(wParam));

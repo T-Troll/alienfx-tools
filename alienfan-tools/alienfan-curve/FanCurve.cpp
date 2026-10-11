@@ -308,13 +308,12 @@ INT_PTR CALLBACK FanCurve(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 }
 
 string GetFanName(int ind, bool forTray = false) {
-    string fname = "";
+    string fname = "Fan";
     if (ind < mon->acpi->fans.size()) {
         switch (mon->acpi->fans[ind].type)
         {
         case 1: fname = "CPU"; break;
-        case 6: fname = "GPU"; break;
-        default: fname = "Fan";
+        case 6: fname = "GPU";
         }
         fname += ' ' + to_string(ind + 1);
         if (forTray) {
@@ -352,7 +351,7 @@ void ReloadFanView(HWND list) {
 void ReloadPowerList(HWND list) {
     ComboBox_ResetContent(list);
     for (auto i = mon->acpi->powers.begin(); i != mon->acpi->powers.end(); i++)
-        ComboBox_AddString(list, (LPARAM)(fan_conf->GetPowerName(*i)->c_str()));
+        ComboBox_AddString(list, (LPARAM)(fan_conf->GetPowerName(*i).c_str()));
     if (mon->acpi->isGmode)
         ComboBox_AddString(list, (LPARAM)("G-Mode"));
     ComboBox_SetCurSel(list, mon->powerMode);
@@ -468,7 +467,7 @@ void PowerChangeNotify(bool needBlink, HWND power_list) {
     if (power_list)
         ComboBox_SetCurSel(power_list, mon->powerMode);
     ShowNotification((NOTIFYICONDATA*)fan_conf->niData, "Power mode switched!", "New power mode - " + 
-        (mon->powerMode == mon->powerSize ? "G-mode" : *fan_conf->GetPowerName(mon->acpi->powers[mon->powerMode])));
+        fan_conf->GetPowerName(&mon->acpi->powers, mon->powerMode));
     if (needBlink)
         BlinkNumLock(mon->powerMode);
 }

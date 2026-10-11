@@ -438,7 +438,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         case WM_MOUSEMOVE: {
             if (!toolTipShown) {
                 WORD powerMode = mon->GetSensorData();
-                string tooltip = string("Power: ") + (powerMode < mon->powerSize ? *fan_conf->GetPowerName(mon->acpi->powers[powerMode]) : "G-Mode");
+                string tooltip = string("Power: ") + fan_conf->GetPowerName(&mon->acpi->powers, powerMode);
                 for (int i = 0; i < mon->fansize; i++) {
                     tooltip.append("\n" + GetFanName(i, true));
                 }
@@ -446,7 +446,7 @@ LRESULT CALLBACK FanDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
                 strcpy_s(niDataFC.szTip, min(127, tooltip.length() + 1), tooltip.c_str());
                 Shell_NotifyIcon(NIM_MODIFY, &niDataFC);
                 toolTipShown = true;
-                SetTimer(hDlg, 1, 500, NULL);
+                SetTimer(hDlg, 1, 300, NULL);
             }
         } break;
         }

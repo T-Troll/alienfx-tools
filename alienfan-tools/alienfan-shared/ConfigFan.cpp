@@ -139,10 +139,17 @@ void ConfigFan::Save() {
 	}
 }
 
-string* ConfigFan::GetPowerName(int index) {
+string ConfigFan::GetPowerName(vector<byte>* powers, int index) {
+	if (index < 0 || index >= powers->size())
+		return string(index < 0 ? "Unknown" : "G-Mode");
+	else
+		return GetPowerName(powers->at(index));
+}
+
+string ConfigFan::GetPowerName(int index) {
 	if (powers[index].empty())
 		powers[index] = "Level " + to_string(index);
-	return &powers[index];
+	return powers[index];
 }
 
 void ConfigFan::UpdateBoost(byte fanID, byte boost, WORD rpm) {

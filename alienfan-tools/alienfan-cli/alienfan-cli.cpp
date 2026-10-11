@@ -226,7 +226,7 @@ int main(int argc, char* argv[])
                 if (acpi.SetPower(acpi.powers[args[0].num]) < 0)
                     printf("Power mode error.\n");
                 else
-                    printf("Power mode set to %s (%x)\n", fan_conf.GetPowerName(acpi.powers[args[0].num])->c_str(), acpi.powers[args[0].num]);
+                    printf("Power mode set to %s (%x)\n", fan_conf.GetPowerName(&acpi.powers, args[0].num).c_str(), acpi.powers[args[0].num]);
                 continue;
             }
             if (command == "setperf" && CheckArgs(2, 5)) {
@@ -245,7 +245,7 @@ int main(int argc, char* argv[])
                 if (res < 0)
                     printf("Power mode error.\n");
                 else
-                    printf("Power mode: %s (%x)\n", fan_conf.GetPowerName(res)->c_str(), res);
+                    printf("Power mode: %s (%x)\n", fan_conf.GetPowerName(res).c_str(), res);
                 continue;
             }
             if (command == "getfans") {
