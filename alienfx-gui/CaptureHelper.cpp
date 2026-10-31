@@ -132,7 +132,9 @@ void CaptureHelper::SetLightGridSize(int x, int y)
 	gridDataSize = gridX * gridY * 3;
 	imgz = new byte[gridDataSize << 1];
 	imgo = imgz + gridDataSize;
-	FillAmbientMap();
+	// Grid effect calls it under profile write lock and doesn't need the map
+	if (needLightsUpdate)
+		FillAmbientMap();
 	dwHandle = new ThreadHelper(CScreenProc, this, 100, THREAD_PRIORITY_BELOW_NORMAL);
 }
 
