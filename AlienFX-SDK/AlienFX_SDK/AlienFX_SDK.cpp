@@ -7,6 +7,7 @@ extern "C" {
 #include <hidsdi.h>
 }
 #include <SetupAPI.h>
+#include <algorithm>
 
 #pragma comment(lib,"setupapi.lib")
 #pragma comment(lib, "hid.lib")
@@ -783,9 +784,114 @@ namespace AlienFX_SDK {
 		return false;
 	}
 
-	bool Functions::SetGlobalEffects(byte effType, byte mode, byte nc, byte tempo, Afx_colorcode act1, Afx_colorcode act2) {
+	bool Functions::SendV4Checked(const byte* command, vector<Afx_icommand> mods, byte statusPos) {
+		byte buffer[MAX_BUFFERSIZE]{ 1 };
+		if (!PrepareAndSend(command, &mods))
+			return false;
+		// Device reply is a copy of command until it processed, previous command can be in progress as well
+		for (int i = 0; i < 20; i++) {
+			Sleep(10);
+			if (HidD_GetInputReport(devHandle, buffer, length) && buffer[2] == command[2] && !buffer[statusPos])
+				return true;
+		}
+		return false;
+	}
+
+	bool Functions::SetV4Animation(vector<Afx_animseries>* anim, bool save) {
+		byte idH = save ? 0 : 0xff, idL = save ? 0x61 : 0xff;
+		bool res;
+		if (inSet)
+			UpdateColors();
+		inSet = false;
+		// Slot can be empty, so result of removal is not checked
+		PrepareAndSend(COMMV4_control, { { 4, {4, idH, idL} } });
+		if (save)
+			Sleep(250);
+		res = SendV4Checked(COMMV4_control, { { 4, {1, idH, idL} } }, 7);
+		for (auto s = anim->begin(); res && s != anim->end(); s++) {
+			byte page = 0;
+			for (size_t pos = 0; res && pos < s->lights.size(); page++) {
+				byte count = (byte)min(s->lights.size() - pos, (size_t)28);
+				res = SendV4Checked(COMMV4_colorSel, { { 4, {page, count} },
+					{ 6, vector<byte>(s->lights.begin() + pos, s->lights.begin() + pos + count) } }, 3);
+				pos += count;
+			}
+			for (auto ca = s->act.begin(); res && ca != s->act.end();) {
+				// 3 phases per record..
+				vector<Afx_icommand> mods;
+				for (byte bPos = 3; bPos < length - 7 && ca != s->act.end(); bPos += 8) {
+					mods.push_back({ bPos, {ca->type, HIBYTE(ca->time), LOBYTE(ca->time), HIBYTE(ca->tempo), LOBYTE(ca->tempo), ca->r, ca->g, ca->b} });
+					ca++;
+				}
+				res = SendV4Checked(COMMV4_colorSet, mods, 3);
+			}
+		}
+		res = res && SendV4Checked(COMMV4_control, { { 4, {(byte)(save ? 2 : 3), idH, idL} } }, 7);
+		if (res && save) {
+			Sleep(250);
+			res = SendV4Checked(COMMV4_control, { { 4, {6, idH, idL} } }, 7);
+		}
+		v4Playing = res;
+		return res;
+	}
+
+	bool Functions::SetV4Effect(byte effType, byte tempo, Afx_colorcode act1, Afx_colorcode act2, vector<vector<byte>>* zones, bool save) {
+		vector<Afx_animseries> anim;
+		vector<byte> all;
+		for (auto& z : *zones)
+			all.insert(all.end(), z.begin(), z.end());
+		if (all.empty())
+			return false;
+		// Default tempo (5) keeps base phase length
+		auto phase = [tempo](int ms) { return (WORD)(ms * (tempo + 1) / 6); };
+		byte specSize = (byte)(sizeof(v4Spectrum) / 3);
+		switch (effType) {
+		case 1: // static color
+			anim = { { all, { {0, 2000, 250, act1.r, act1.g, act1.b} } } };
+			break;
+		case 2: // pulse
+			anim = { { all, { {1, phase(2000), phase(100), act1.r, act1.g, act1.b} } } };
+			break;
+		case 3: // 2-color morph
+			anim = { { all, { {2, phase(1000), 100, act1.r, act1.g, act1.b},
+				{2, phase(1000), 100, act2.r, act2.g, act2.b} } } };
+			break;
+		case 7: // breathing
+			anim = { { all, { {2, phase(1500), 100, act1.r, act1.g, act1.b}, {2, phase(1500), 100, 0, 0, 0} } } };
+			break;
+		case 8: // spectrum
+			anim = { { all } };
+			for (byte c = 0; c < specSize; c++)
+				anim[0].act.push_back({ 2, phase(640), 15, v4Spectrum[c][0], v4Spectrum[c][1], v4Spectrum[c][2] });
+			break;
+		case 16: // rainbow wave
+			for (int z = 0; z < zones->size(); z++) {
+				anim.push_back({ (*zones)[z] });
+				for (int c = 0; c < specSize; c++) {
+					const byte* clr = v4Spectrum[(c + z * specSize / zones->size()) % specSize];
+					anim.back().act.push_back({ 2, phase(400), 10, clr[0], clr[1], clr[2] });
+				}
+			}
+			break;
+		default:
+			return false;
+		}
+		return SetV4Animation(&anim, save);
+	}
+
+	bool Functions::SetGlobalEffects(byte effType, byte mode, byte nc, byte tempo, Afx_colorcode act1, Afx_colorcode act2, vector<vector<byte>>* zones) {
 		vector<Afx_icommand> mods;
 		switch (version) {
+		case API_V4:
+			if (!IsHaveGlobal())
+				return false;
+			if (!effType) { // animation ID 0 - stop current one
+				if (!v4Playing)
+					return true;
+				inSet = v4Playing = false;
+				return PrepareAndSend(COMMV4_control, { { 4, {5, 0, 0} } });
+			}
+			return zones && SetV4Effect(effType, tempo, act1, act2, zones, mode == 3);
 		case API_V8:
 			PrepareAndSend(COMMV8_effectReady);
 			PrepareAndSend(COMMV8_effectReady, { {3, { effType, act1.r, act1.g, act1.b, act2.r, act2.g, act2.b,
@@ -1045,6 +1151,28 @@ namespace AlienFX_SDK {
 		return false;
 	}
 
+	vector<vector<byte>> Mappings::GetLightColumns(Afx_device* dev) {
+		vector<vector<byte>> columns;
+		vector<byte> rest;
+		for (auto& l : dev->lights)
+			if (!l.flags)
+				rest.push_back(l.lightid);
+		for (auto& g : grids) {
+			columns.resize(max((size_t)g.x, columns.size()));
+			for (int pos = 0; pos < g.x * g.y; pos++) {
+				auto it = find(rest.begin(), rest.end(), (byte)g.grid[pos].lid);
+				if (g.grid[pos].did == dev->pid && it != rest.end()) {
+					columns[pos % g.x].push_back(*it);
+					rest.erase(it);
+				}
+			}
+		}
+		columns.erase(remove_if(columns.begin(), columns.end(), [](vector<byte>& c) { return c.empty(); }), columns.end());
+		for (byte l : rest)
+			columns.push_back({ l });
+		return columns;
+	}
+
 	void Mappings::RemoveMapping(Afx_device* dev, WORD lightID)
 	{
 		if (dev) {
@@ -1195,6 +1323,19 @@ namespace AlienFX_SDK {
 
 	bool Functions::IsHaveGlobal()
 	{
-		return version == API_V5 || version == API_V8;
+		return version == API_V5 || version == API_V8 || (version == API_V4 && IsV4Animated());
+	}
+
+	bool Functions::IsV4Animated() {
+		if (!v4Platform && (pid == 0x550 || pid == 0x551)) {
+			byte buffer[MAX_BUFFERSIZE]{ 1 };
+			if (PrepareAndSend(COMMV4_getConfig))
+				for (int i = 0; i < 20 && !v4Platform; i++) {
+					Sleep(10);
+					if (HidD_GetInputReport(devHandle, buffer, length) && buffer[2] == COMMV4_getConfig[2] && buffer[3] == COMMV4_getConfig[3])
+						v4Platform = MAKEWORD(buffer[5], buffer[4]);
+				}
+		}
+		return find(begin(v4AnimPlatforms), end(v4AnimPlatforms), v4Platform) != end(v4AnimPlatforms);
 	}
 }

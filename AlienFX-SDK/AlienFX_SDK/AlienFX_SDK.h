@@ -94,6 +94,17 @@ namespace AlienFX_SDK {
 		vector<Afx_action> act;
 	};
 
+	struct Afx_animaction { // atomic phase of APIv4 device animation
+		byte type; // 0 - color, 1 - pulse, 2 - morph
+		WORD time, tempo; // phase length (ms) and transform speed
+		byte r, g, b; // phase color
+	};
+
+	struct Afx_animseries { // lights group playing the same phases
+		vector<byte> lights;
+		vector<Afx_animaction> act;
+	};
+
 	enum Afx_Version {
 		API_ACPI = 0, //128
 	//	API_V9 = 9, //193
@@ -125,6 +136,8 @@ namespace AlienFX_SDK {
 		void* ACPIdevice = NULL; // ACPI device object pointer
 
 		bool inSet = false;
+		bool v4Playing = false; // APIv4 device animation is active
+		WORD v4Platform = 0; // APIv4 platform ID, reported by device
 
 		int length = -1; // HID report length
 		byte chain = 1; // seq. number for APIv1-v3
@@ -147,6 +160,15 @@ namespace AlienFX_SDK {
 
 		// Support function for APIv4 action set
 		bool SetV4Action(Afx_lightblock* act);
+
+		// Send APIv4 command and check result byte of device reply
+		bool SendV4Checked(const byte* command, vector<Afx_icommand> mods, byte statusPos);
+
+		// Build APIv4 device animation for global effect and start it
+		bool SetV4Effect(byte effType, byte tempo, Afx_colorcode act1, Afx_colorcode act2, vector<vector<byte>>* zones, bool save);
+
+		// Check if APIv4 device platform has tested device animations
+		bool IsV4Animated();
 
 		// return current device state
 		BYTE GetDeviceStatus();
@@ -232,14 +254,20 @@ namespace AlienFX_SDK {
 		// power - if true, power and indicator lights will be set too
 		bool SetBrightness(BYTE brightness, BYTE gbr, vector <Afx_light>* mappings, bool power);
 
-		// Global (whole device) effect control for APIv5, v8
+		// Global (whole device) effect control for APIv4 (tested platforms only), v5, v8
 		// effType - effect type
-		// mode - effect mode (off, steady, keypress, etc)
+		// mode - effect mode (off, steady, keypress, etc). For APIv4 3 - store as power-on default
 		// nc - number of colors (3 - spectrum)
 		// tempo - effect tempo
 		// act1 - first effect color
 		// act2 - second effect color (not for all effects)
-		bool SetGlobalEffects(byte effType, byte mode, byte nc, byte tempo, Afx_colorcode act1, Afx_colorcode act2);
+		// zones - light IDs by wave order (APIv4 only, see Mappings::GetLightColumns)
+		bool SetGlobalEffects(byte effType, byte mode, byte nc, byte tempo, Afx_colorcode act1, Afx_colorcode act2, vector<vector<byte>>* zones = NULL);
+
+		// Send animation to APIv4 device
+		// anim - lights groups and their phases
+		// save - if true, store it as power-on default, otherwise just play it
+		bool SetV4Animation(vector<Afx_animseries>* anim, bool save = false);
 
 		// Apply changes and update colors
 		bool UpdateColors();
@@ -297,6 +325,10 @@ namespace AlienFX_SDK {
 		// br - brightness level
 		// power - set power/indicator lights too
 		bool SetDeviceBrightness(Afx_device* dev, BYTE br, bool power);
+
+		// Get device lights grouped by grid columns (lights out of grid - one per group)
+		// Power and indicator lights are not included.
+		vector<vector<byte>> GetLightColumns(Afx_device* dev);
 
 		// get saved light structure by device ID and light ID
 		Afx_light* GetMappingByID(WORD pid, WORD vid);

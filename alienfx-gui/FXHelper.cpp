@@ -276,22 +276,36 @@ void FXHelper::SetState(bool force) {
 	}
 }
 
+void FXHelper::SetDeviceEffect(AlienFX_SDK::Afx_device* dev, deviceeffect* eff, byte mode) {
+	auto zones = conf->afx_dev.GetLightColumns(dev);
+	dev->dev->SetGlobalEffects(eff->globalEffect, mode, eff->colorMode, eff->globalDelay,
+		eff->effColor1,
+		eff->effColor2,
+		&zones);
+}
+
+void FXHelper::ApplyGlobalEffect(AlienFX_SDK::Afx_device* dev, bool reset) {
+	if (!reset && conf->activeProfile->effects[dev->devID].size()) {
+		for (auto it = conf->activeProfile->effects[dev->devID].begin(); it != conf->activeProfile->effects[dev->devID].end(); it++) {
+			SetDeviceEffect(dev, &(*it), it->globalMode);
+		}
+	}
+	else {
+		dev->dev->SetGlobalEffects(0, 1, 1, 0, { 0 }, { 0 });
+		devLightQuery[dev->pid].lstate.clear();
+	}
+}
+
 void FXHelper::UpdateGlobalEffect(AlienFX_SDK::Afx_device* dev, bool reset) {
 	conf->modifyProfile.lockRead();
 
 	for (auto cdev = conf->afx_dev.fxdevs.begin(); cdev != conf->afx_dev.fxdevs.end(); cdev++) {
 		if (cdev->present && cdev->dev->IsHaveGlobal() && (!dev || (dev->devID == cdev->devID))) {
-			if (!reset && conf->activeProfile->effects[cdev->devID].size()) {
-				for (auto it = conf->activeProfile->effects[cdev->devID].begin(); it != conf->activeProfile->effects[cdev->devID].end(); it++) {
-					cdev->dev->SetGlobalEffects(it->globalEffect, it->globalMode, it->colorMode, it->globalDelay,
-						it->effColor1,
-						it->effColor2);
-				}
-			}
-			else {
-				cdev->dev->SetGlobalEffects(0, 1, 1, 0, { 0 }, { 0 });
-				devLightQuery[cdev->pid].lstate.clear();
-			}
+			// APIv4 animation takes many packets, so it can't go together with light updates
+			if (cdev->dev->version == AlienFX_SDK::API_V4 && updateAllowed)
+				QueryCommand(cdev->pid, LightQueryElement({ (byte)reset, 6 }));
+			else
+				ApplyGlobalEffect(&(*cdev), reset);
 		}
 	}
 	conf->modifyProfile.unlockRead();
@@ -762,9 +776,23 @@ DWORD WINAPI CLightsProc(LPVOID param) {
 					dev->dev->UpdateColors();
 					//lightQuery->inUpdate = false;
 				}
+				else if (current.light == 1 && dev && dev->present && dev->dev->version == AlienFX_SDK::API_V4) {
+					// device animation is active, so store it instead of lights
+					conf->modifyProfile.lockRead();
+					for (auto& eff : conf->activeProfile->effects[dev->devID])
+						src->SetDeviceEffect(dev, &eff, 3);
+					conf->modifyProfile.unlockRead();
+				}
 				dev_query.clear();
 				//DebugPrint("Update complete\n");
 			} break;
+			case 6: // global effect
+				if (dev && dev->present) {
+					conf->modifyProfile.lockRead();
+					src->ApplyGlobalEffect(dev, current.light);
+					conf->modifyProfile.unlockRead();
+				}
+				break;
 			case 4: { // power button
 				if (current.actsize < 2)
 					memcpy(&current.actions[1], current.actions, sizeof(AlienFX_SDK::Afx_action));

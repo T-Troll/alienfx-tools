@@ -71,6 +71,15 @@ namespace AlienFX_SDK {
 		// [8-33] - IDs
 		static byte v4OpCodes[]{ 0xd0, 0xdc, 0xcf, 0xdc, 0x82, 0xac, 0xe8 };
 		// Operation codes for light mode
+		const byte COMMV4_getConfig[]{3, 0x03, 0x20, 0x02};
+		// Reply: [2-3] - command echo, [4-5] - platform ID, [6] - lights count
+		const WORD v4AnimPlatforms[]{ 0x0811 };
+		// Platforms with tested device animations (0x811 - Aurora ACT1250)
+		const byte v4Spectrum[][3]{ {255,0,0}, {255,128,0}, {255,255,0}, {0,255,0}, {0,255,255}, {0,0,255}, {128,0,255} };
+		// Colors for spectrum and rainbow wave device animations
+		// Device reply: [2] - command echo, [3] - colorSel and colorSet result, [7] - control result (0 - ok)
+		// Control [4] 5 with ID 0 stops current animation.
+		// Warning: command 0xff erases device SPI flash.
 
 	// V5, notebook rgb keyboards
 		const byte COMMV5_reset[]{1, 0x94};

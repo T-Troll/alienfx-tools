@@ -28,7 +28,8 @@ AlienFX_SDK::Afx_device* activeEffectDevice = NULL;
 const char* ge_names8[] = { "Off", "Color or Morph", "Pulse", "Back Morph", "Breath", "Spectrum",
 	"One key (K)", "Circle out (K)", "Wave out (K)", "Right wave (K)", "Default", "Rain Drop (K)",
 	"Wave", "Rainbow wave", "Circle wave", "Random white (K)", ""},
-	*ge_names5[] = { "Off", "Static", "Breathing", "Side Wave", "Dual Wave", "Pulse", "Morph", "Bounce", "Laser", "Rainbow", ""};
+	*ge_names5[] = { "Off", "Static", "Breathing", "Side Wave", "Dual Wave", "Pulse", "Morph", "Bounce", "Laser", "Rainbow", ""},
+	*ge_names4[] = { "Off", "Static", "Pulse", "Morph", "Breathing", "Spectrum", "Rainbow wave", ""};
 /*
 	0 - off
 	1 - static color
@@ -42,7 +43,7 @@ const char* ge_names8[] = { "Off", "Color or Morph", "Pulse", "Back Morph", "Bre
 	14 - rainbow
 */
 const char* cModeNames[] = { "Single-color", "Multi-color", "Rainbow", ""};
-const int ge_types8[]{ 0,1,2,3,7,8,9,10,11,12,13,14,15,16,17,18 }, ge_types5[]{ 0,1,2,3,4,8,9,10,11,14 };
+const int ge_types8[]{ 0,1,2,3,7,8,9,10,11,12,13,14,15,16,17,18 }, ge_types5[]{ 0,1,2,3,4,8,9,10,11,14 }, ge_types4[]{ 0,1,2,3,7,8,16 };
 
 deviceeffect* FindDevEffect(int type, bool remove = false) {
 	if (activeEffectDevice)
@@ -73,9 +74,12 @@ void RefreshDeviceList(HWND hDlg) {
 				ListBox_SetCurSel(dev_list, ind);
 				deviceeffect* b;
 				AlienFX_SDK::Afx_colorcode c1{ 0 }, c2{ 0 };
+				const char** ge_names = i->dev->version == 8 ? ge_names8 : i->dev->version == 4 ? ge_names4 : ge_names5;
+				const int* ge_types = i->dev->version == 8 ? ge_types8 : i->dev->version == 4 ? ge_types4 : ge_types5;
 
 				EnableWindow(GetDlgItem(hDlg, IDC_GLOBAL_KEYEFFECT), i->dev->version == 8);
 				EnableWindow(GetDlgItem(hDlg, IDC_CMODE_KEY), i->dev->version == 8);
+				EnableWindow(GetDlgItem(hDlg, IDC_CMODE), i->dev->version != 4);
 
 				if (b = FindDevEffect(1)) {
 					//SendMessage(GetDlgItem(hDlg, IDC_SLIDER_TEMPO), TBM_SETPOS, true, b->globalDelay);
@@ -85,7 +89,7 @@ void RefreshDeviceList(HWND hDlg) {
 
 				RedrawButton(GetDlgItem(hDlg, IDC_BUTTON_EFFCLR1), MakeRGB(c1));
 				RedrawButton(GetDlgItem(hDlg, IDC_BUTTON_EFFCLR2), MakeRGB(c2));
-				UpdateCombo(GetDlgItem(hDlg, IDC_GLOBAL_EFFECT), i->dev->version == 8 ? ge_names8 : ge_names5, b ? b->globalEffect : 0, i->dev->version == 8 ? ge_types8 : ge_types5);
+				UpdateCombo(GetDlgItem(hDlg, IDC_GLOBAL_EFFECT), ge_names, b ? b->globalEffect : 0, ge_types);
 				UpdateCombo(GetDlgItem(hDlg, IDC_CMODE), cModeNames, b ? b->colorMode - 1 : 0);
 
 				c1 = c2 = 0;
@@ -98,7 +102,7 @@ void RefreshDeviceList(HWND hDlg) {
 
 				RedrawButton(GetDlgItem(hDlg, IDC_BUTTON_EFFCLR3), MakeRGB(c1));
 				RedrawButton(GetDlgItem(hDlg, IDC_BUTTON_EFFCLR4), MakeRGB(c2));
-				UpdateCombo(GetDlgItem(hDlg, IDC_GLOBAL_KEYEFFECT), i->dev->version == 8 ? ge_names8 : ge_names5, b ? b->globalEffect : 0, i->dev->version == 8 ? ge_types8 : ge_types5);
+				UpdateCombo(GetDlgItem(hDlg, IDC_GLOBAL_KEYEFFECT), ge_names, b ? b->globalEffect : 0, ge_types);
 				UpdateCombo(GetDlgItem(hDlg, IDC_CMODE_KEY), cModeNames, b ? b->colorMode - 1 : 0);
 			}
 		}
