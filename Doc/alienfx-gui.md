@@ -322,6 +322,8 @@ APIv5 (per-key RGB notebook keyboards) support hardware effect, APIv8 (external 
 APIv4 ELC devices of tested platforms (now it's Aurora ACT1250) support hardware effect: device plays it without running application. Rainbow wave goes by grid columns. Then profile with this effect is active, "Save" button stores effect as power-on default.  
 Use lights brightness controls ("Dim lights", device "Balance and brightness") to change hardware effect brightness.
 
+"Import AWCC presets" button (APIv4 ELC devices only) creates profile with device effect for every Alienware Command Center lighting preset which is possible to present by one effect. New profiles have "AWCC" name prefix and game applications as a triggers. Presets with different animation for different lights are skipped and listed after import. Existing profiles are not changed, and AWCC data stays untouched.
+
 The next block is "Triggers" - it define cases app should switch to this profile if "Profile auto switch" turned on at "Settings".
 - "Keyboard" check box define this profile can be switched by pressing keyboard key. Upon selected, it will provide key selection dialog to choose the key.
 - "Power" block - if checked, profile will be activated if power source changed to checked state.

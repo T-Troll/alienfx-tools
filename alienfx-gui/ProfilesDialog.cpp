@@ -22,6 +22,8 @@ extern ConfigFan* fan_conf;
 extern const char* freqNames[];
 extern const int* freqValues;
 
+extern string ImportAWCCPresets();
+
 profile* prof = NULL;
 AlienFX_SDK::Afx_device* activeEffectDevice = NULL;
 
@@ -293,6 +295,7 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 		for (auto& i : conf->afx_dev.fxdevs)
 			if (i.dev && i.dev->IsHaveGlobal()) {
 				EnableWindow(GetDlgItem(hDlg, IDC_DEV_EFFECT), true);
+				EnableWindow(GetDlgItem(hDlg, IDC_AWCC_IMPORT), i.dev->version == AlienFX_SDK::API_V4);
 				break;
 			}
 		ReloadProfileView(hDlg);
@@ -309,6 +312,12 @@ BOOL CALLBACK TabProfilesDialog(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 		case IDC_DEV_EFFECT:
 			DialogBox(hInst, MAKEINTRESOURCE(IDD_DIALOG_DEVICEEFFECTS), hDlg, (DLGPROC)DeviceEffectDialog);
 			break;
+		case IDC_AWCC_IMPORT: {
+			string result = ImportAWCCPresets();
+			UpdateProfileList();
+			ReloadProfileView(hDlg);
+			MessageBox(hDlg, result.c_str(), "AWCC presets import", MB_OK | MB_ICONINFORMATION);
+		} break;
 		case IDC_ADD_LOCK:
 			prof->triggerapp.push_back("LockApp.exe");
 			ReloadProfileView(hDlg);

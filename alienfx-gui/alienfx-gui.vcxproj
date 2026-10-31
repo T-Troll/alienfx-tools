@@ -482,6 +482,7 @@
   <ItemGroup>
     <ClCompile Include="alienfx-gui.cpp" />
     <ClCompile Include="AmbientDialog.cpp" />
+    <ClCompile Include="AWCCImport.cpp" />
     <ClCompile Include="CaptureHelper.cpp">
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|x64'">MaxSpeed</Optimization>
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Release x86|x64'">MaxSpeed</Optimization>
