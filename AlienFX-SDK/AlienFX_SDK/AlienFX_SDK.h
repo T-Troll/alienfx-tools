@@ -326,7 +326,7 @@ namespace AlienFX_SDK {
 		// power - set power/indicator lights too
 		bool SetDeviceBrightness(Afx_device* dev, BYTE br, bool power);
 
-		// Get device lights grouped by grid columns (lights out of grid - one per group)
+		// Get device lights grouped along longer grid side, up to 10 groups per grid (lights out of grid - one per group)
 		// Power and indicator lights are not included.
 		vector<vector<byte>> GetLightColumns(Afx_device* dev);
 

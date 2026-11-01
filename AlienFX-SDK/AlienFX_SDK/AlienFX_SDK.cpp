@@ -1158,11 +1158,14 @@ namespace AlienFX_SDK {
 			if (!l.flags)
 				rest.push_back(l.lightid);
 		for (auto& g : grids) {
-			columns.resize(max((size_t)g.x, columns.size()));
+			// Wave goes along longer grid side, device has no space for more then 10 series
+			bool byRow = g.y > g.x;
+			int size = byRow ? g.y : g.x, count = min(size, 10);
+			columns.resize(max((size_t)count, columns.size()));
 			for (int pos = 0; pos < g.x * g.y; pos++) {
 				auto it = find(rest.begin(), rest.end(), (byte)g.grid[pos].lid);
 				if (g.grid[pos].did == dev->pid && it != rest.end()) {
-					columns[pos % g.x].push_back(*it);
+					columns[(byRow ? pos / g.x : pos % g.x) * count / size].push_back(*it);
 					rest.erase(it);
 				}
 			}

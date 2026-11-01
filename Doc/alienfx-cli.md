@@ -32,7 +32,7 @@ Supported Zones: `left, right, top, bottom, front, rear` for high level, any zon
 Supported Actions: `pulse, morph (you need 2 colors for morph), color (disable action)`. For APIv4 and APIv8 devices, `breath, spectrum, rainbow` also supported. APIv5 not supported.
 
 Supported global effect types:  
-For APIv4 ELC (tested platforms only, now it's Aurora ACT1250, requires lights setup) - 0 - Off, 1 - Static color, 2 - Pulse, 3 - Morph, 7 - Breathing, 8 - Spectrum, 16 - Rainbow wave. Wave goes by grid columns. Use `settempo` first to change speed, phase length is multiplied by (tempo + 1) / 6.  
+For APIv4 ELC (tested platforms only, now it's Aurora ACT1250, requires lights setup) - 0 - Off, 1 - Static color, 2 - Pulse, 3 - Morph, 7 - Breathing, 8 - Spectrum, 16 - Rainbow wave. Wave goes along longer grid side. Use `settempo` first to change speed, phase length is multiplied by (tempo + 1) / 6.  
 For APIv5 - 0 - Color(off), 2 - Breathing, 3 - Single-color Wave, 4 - Dual-color Wave, 8 - Pulse, 9 -Mixed Pulse, 10 - Night Rider, 11 - Laser.  
 For APIv8 - 0 - Off, 1 - Color or Morph, 2 - Pulse, 3 - Back Morph, 7 - Breath, 8 - Spectrum, 9 - One key (Key press only), 10 - Circle out (Key press only), 11 - Wave out (Key press only), 12 - Right wave (Key press only), 13 - Default cyan, 14 - Rain Drop (Key press only), 15 - Wave, 16 - Rainbow wave, 17 - Circle wave, 18 - Random white (Key press only), 19 - Reset to default.  
 Supported global effect modes (APIv8 only): 1 - Permanent effect, 2 - On key press effect. This value ignored for APIv5.  

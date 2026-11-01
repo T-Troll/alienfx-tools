@@ -319,7 +319,7 @@ The settings are:
 ![Device Effects](https://github.com/T-Troll/alienfx-tools/blob/master/Doc/img/gui_deviceeffect.png?raw=true)  
 At this dialog, you can select device supporting per-device effects and set it parameters - types, colors, tempo, color mode.  
 APIv5 (per-key RGB notebook keyboards) support hardware effect, APIv8 (external keyboards) support both hardware and key press effects.  
-APIv4 ELC devices of tested platforms (now it's Aurora ACT1250) support hardware effect: device plays it without running application. Rainbow wave goes by grid columns. Then profile with this effect is active, "Save" button stores effect as power-on default.  
+APIv4 ELC devices of tested platforms (now it's Aurora ACT1250) support hardware effect: device plays it without running application. Rainbow wave goes along longer grid side. Then profile with this effect is active, "Save" button stores effect as power-on default.  
 Use lights brightness controls ("Dim lights", device "Balance and brightness") to change hardware effect brightness.
 
 "Import AWCC presets" button (APIv4 ELC devices only) creates profile with device effect for every Alienware Command Center lighting preset which is possible to present by one effect. New profiles have "AWCC" name prefix and game applications as a triggers. Presets with different animation for different lights are skipped and listed after import. Existing profiles are not changed, and AWCC data stays untouched.
