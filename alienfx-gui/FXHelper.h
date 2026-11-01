@@ -10,7 +10,7 @@ struct LightEventData {
 
 struct LightQueryElement {
 	byte light;	  // lightID or forced state
-	byte command; // 0 - color, 1 - update, 2 - set brightness, 3 - device clean, 4 - power button, 5 - light state clean
+	byte command; // 0 - color, 1 - update, 2 - set brightness, 3 - device clean, 4 - power button, 5 - light state clean, 6 - global effect
 	byte actsize;
 	AlienFX_SDK::Afx_action actions[9];
 };
@@ -70,6 +70,8 @@ public:
 	void RefreshHaptics(bool fromRefresh = false);
 	void RefreshGrid(bool fromRefresh = false);
 	void SetState(bool force = false);
+	void SetDeviceEffect(AlienFX_SDK::Afx_device* dev, deviceeffect* eff, byte mode);
+	void ApplyGlobalEffect(AlienFX_SDK::Afx_device* dev, bool reset);
 	void UpdateGlobalEffect(AlienFX_SDK::Afx_device* dev = NULL, bool reset = false);
 	void QueryCommand(WORD pid, LightQueryElement& lqe);
 	void ClearAndRefresh(bool force = false);

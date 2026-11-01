@@ -38,7 +38,7 @@ void FindCreateMapping(bool key) {
         if (activeDevice->dev) {
             conf->afx_dev.activeLights++;
             // for rgb keyboards, check key...
-            if (key && activeDevice->dev->IsHaveGlobal()) {
+            if (key && activeDevice->dev->IsHaveGlobal() && activeDevice->dev->version != AlienFX_SDK::API_V4) {
                 DialogBox(hInst, MAKEINTRESOURCE(IDD_DIALOG_KEY), NULL, (DLGPROC)KeyPressDialog);
             }
         }

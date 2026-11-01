@@ -20,7 +20,7 @@ The following commands are available:
 - `setzoneaction=<zone>,,<action>,r,g,b[,<action>,r,g,b]` Set zone light to color provided and enable action.
 - `setpower=<dev>,<light>,r,g,b,r,g,b` Set light as a hardware power button. First color for AC, 2nd for battery power. This command only works with low-level API.
 - `settempo=<tempo>[,length]` Set next action tempo (0..255) and phase length (for low-level, 0..255).
-- `setglobal=<dev>,<type>,<mode>[,r,g,b[,r2,g2,b2]]` Set global effect mode (v5 and v8 devices)
+- `setglobal=<dev>,<type>,<mode>[,r,g,b[,r2,g2,b2]]` Set global effect mode (APIv4 ELC, v5 and v8 devices)
 - `setdim=[<dev>,]brightness` if device provided, set device hardware brightness (dimming) level (from 0 to 255, low-level and API v4-v5 only). If device not provided, set software brightness level for next light operations.
 - `lowlevel` Next commands pass trough low-level API (USB driver) instead of high-level.
 - `highlevel` Next commands pass trough high-level API (Alienware LightFX), if it's available.
@@ -32,9 +32,11 @@ Supported Zones: `left, right, top, bottom, front, rear` for high level, any zon
 Supported Actions: `pulse, morph (you need 2 colors for morph), color (disable action)`. For APIv4 and APIv8 devices, `breath, spectrum, rainbow` also supported. APIv5 not supported.
 
 Supported global effect types:  
+For APIv4 ELC (tested platforms only, now it's Aurora ACT1250, requires lights setup) - 0 - Off, 1 - Static color, 2 - Pulse, 3 - Morph, 7 - Breathing, 8 - Spectrum, 16 - Rainbow wave. Wave goes along longer grid side. Use `settempo` first to change speed, phase length is multiplied by (tempo + 1) / 6.  
 For APIv5 - 0 - Color(off), 2 - Breathing, 3 - Single-color Wave, 4 - Dual-color Wave, 8 - Pulse, 9 -Mixed Pulse, 10 - Night Rider, 11 - Laser.  
 For APIv8 - 0 - Off, 1 - Color or Morph, 2 - Pulse, 3 - Back Morph, 7 - Breath, 8 - Spectrum, 9 - One key (Key press only), 10 - Circle out (Key press only), 11 - Wave out (Key press only), 12 - Right wave (Key press only), 13 - Default cyan, 14 - Rain Drop (Key press only), 15 - Wave, 16 - Rainbow wave, 17 - Circle wave, 18 - Random white (Key press only), 19 - Reset to default.  
-Supported global effect modes (APIv8 only): 1 - Permanent effect, 2 - On key press effect. This value ignored for APIv5.
+Supported global effect modes (APIv8 only): 1 - Permanent effect, 2 - On key press effect. This value ignored for APIv5.  
+For APIv4 ELC: 1 - Play effect, 3 - Play effect and store it as power-on default into device memory.
 For APIv8, number of colors defines color mode. It will be Spectrum if no colors provided, 1-color if one only and 2 colors in case you set.
 
 For `probe` command, `l` for define number of lights, `d` for deviceID and (optionally) lightid. Can be combined or absent.  

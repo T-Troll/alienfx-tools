@@ -182,6 +182,7 @@
 #define IDC_BUT_KEY                     1176
 #define IDC_DE_LIST                     1178
 #define IDC_DEV_EFFECT                  1179
+#define IDC_AWCC_IMPORT                 1224
 #define IDC_BUT_DEVCLEAR                1179
 #define IDC_BUT_EVENT_DOWN              1181
 #define IDC_BUTT_REMOVE_EVENT           1182
@@ -252,7 +253,7 @@
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        167
 #define _APS_NEXT_COMMAND_VALUE         32814
-#define _APS_NEXT_CONTROL_VALUE         1224
+#define _APS_NEXT_CONTROL_VALUE         1225
 #define _APS_NEXT_SYMED_VALUE           113
 #endif
 #endif
